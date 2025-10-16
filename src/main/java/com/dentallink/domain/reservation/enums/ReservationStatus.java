@@ -1,4 +1,4 @@
-package com.dentallink.reservation.enums;
+package com.dentallink.domain.reservation.enums;
 
 
 import lombok.Getter;

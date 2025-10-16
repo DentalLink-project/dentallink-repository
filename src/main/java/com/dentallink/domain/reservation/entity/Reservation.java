@@ -1,7 +1,7 @@
-package com.dentallink.reservation.entity;
+package com.dentallink.domain.reservation.entity;
 
 import com.dentallink.common.entity.BaseEntity;
-import com.dentallink.reservation.enums.ReservationStatus;
+import com.dentallink.domain.reservation.enums.ReservationStatus;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -28,7 +28,7 @@ public class Reservation extends BaseEntity {
     @Column(name = "hospital_id", nullable = false)
     private Long hospitalId;
 
-    //TODO: User Entity 새성 후 주서거 해제하고 userId 제거
+    //TODO: User Entity 새성 후 주석 해제하고 userId 제거
 //    @ManyToOne(fetch = FetchType.LAZY)
 //    @JoinColumn(name = "user_id", nullable = false)
 //    private User user;
