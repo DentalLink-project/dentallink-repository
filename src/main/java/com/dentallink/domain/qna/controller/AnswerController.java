@@ -19,6 +19,12 @@ public class AnswerController {
     // 답변 등록 API answer create api
     @PostMapping
     public ResponseEntity<ApiResponse<AnswerResponseDto.AnswerResponse>> createAnswer(
+            /**
+             * responderId를 @RequestParam으로 직접 전달받는 것은 심각한 보안 취약점을 유발할 수 있습니다.
+             * 이를 통해 다른 사용자의 ID로 답변을 등록하는 등의 어뷰징이 가능해집니다.
+             * 사용자 ID는 Spring Security의 AuthenticationPrincipal 어노테이션 등을 사용하여 현재 인증된 사용자의 정보를 가져와야 합니다.
+             * 이 문제는 updateAnswer와 deleteAnswer 메소드에도 동일하게 적용됩니다.
+             * */
             @RequestParam Long responderId,
             @RequestBody AnswerRequestDto.AnswerCreateRequest req
     ) {

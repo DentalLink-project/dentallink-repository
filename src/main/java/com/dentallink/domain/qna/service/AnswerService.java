@@ -19,6 +19,13 @@ public class AnswerService {
 
     // 비즈니스 로직 작성 create
     public AnswerResponseDto.AnswerResponse create(Long questionId, Long responderId, String content) {
+        /**
+         * todo: questionRepository.findById()를 사용하면 논리적으로 삭제된(soft-deleted) 질문에도 답변을 달 수 있게 됩니다.
+         * deleted = false인 질문만 조회하도록 findByIdAndDeletedFalse() 메소드를 사용해야 합니다.
+         *
+         * Question question = questionRepository.findByIdAndDeletedFalse(questionId)
+         *                 .orElseThrow(() -> new IllegalArgumentException("문의글을 찾을 수 없습니다."));
+         * */
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new IllegalArgumentException("문의글을 찾을 수 없습니다."));
         Answer saved = answerRepository.save(Answer.of(question, responderId, content));
@@ -27,7 +34,14 @@ public class AnswerService {
 
     // 비즈니스 로직 작성 read
     @Transactional(readOnly = true)
-    public Answer get(Long answerId) {
+    public AnswerResponseDto.AnswerResponse get(Long answerId) {
+        /**
+         * todo: answerRepository.findById()를 사용하면 논리적으로 삭제된(soft-deleted) 답변도 조회될 수 있습니다.
+         * deleted = false인 답변만 조회하도록 findByIdAndDeletedFalse() 메소드를 사용해야 합니다.
+         *
+         * return answerRepository.findByIdAndDeletedFalse(answerId)
+         *                 .orElseThrow(() -> new IllegalArgumentException("답변글을 찾을 수 없습니다."));
+         * */
         return answerRepository.findById(answerId)
                 .orElseThrow(() -> new IllegalArgumentException("답변글을 찾을 수 없습니다."));
     }

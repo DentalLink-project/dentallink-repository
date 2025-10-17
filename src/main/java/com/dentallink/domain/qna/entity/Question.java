@@ -27,11 +27,18 @@ public class Question extends BaseEntity {
     @Column(length = 100, nullable = false)
     private String title;
 
-    @Column(length = 255, nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     // 질문 삭제 시 해당 질문에 달린 답변들도 함께 삭제
-    @OneToMany(mappedBy = "question", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "question", fetch = FetchType.LAZY)
+    // todo: List.of() 제거 검토
+    /**
+     * answerList를 List.of()로 초기화하면 불변 리스트가 생성됩니다.
+     * JPA가 엔티티를 로드할 때는 이 컬렉션을 자체 구현으로 교체하지만,
+     * 새로 생성된 Question 객체의 answerList에 요소를 추가하려고 하면 UnsupportedOperationException이 발생할 수 있습니다.
+     * 안전하게 가변 리스트인 new ArrayList<>()로 초기화하는 것이 좋습니다.
+     * */
     private List<Answer> answerList = List.of();
 
     // 질문 생성 메서드
