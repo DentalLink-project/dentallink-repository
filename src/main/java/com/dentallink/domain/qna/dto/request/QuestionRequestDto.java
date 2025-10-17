@@ -1,4 +1,4 @@
-package com.dentallink.qna.dto.request;
+package com.dentallink.domain.qna.dto.request;
 
 public class QuestionRequestDto {
 
