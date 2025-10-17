@@ -1,4 +1,4 @@
-package com.dentallink.qna.entity;
+package com.dentallink.domain.qna.entity;
 
 import com.dentallink.common.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -35,11 +35,11 @@ public class Question extends BaseEntity {
     private LocalDateTime deletedAt;
 
     // 질문 삭제 시 해당 질문에 달린 답변들도 함께 삭제
-    @OneToMany(mappedBy = "question", cascade = CascadeType.REMOVE)
-    private List<Answer> answerList;
+    @OneToMany(mappedBy = "question", fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
+    private List<Answer> answerList = List.of();
 
     // 질문 생성 메서드
-    public static Question createQuestion(Long userId, Long hospitalId, String title, String content) {
+    public static Question of(Long userId, Long hospitalId, String title, String content) {
         Question question = new Question();
         question.userId = userId;
         question.hospitalId = hospitalId;
