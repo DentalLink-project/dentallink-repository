@@ -4,6 +4,7 @@ import com.dentallink.common.response.ApiResponse;
 import com.dentallink.domain.qna.dto.request.AnswerRequestDto;
 import com.dentallink.domain.qna.dto.response.AnswerResponseDto;
 import com.dentallink.domain.qna.service.AnswerService;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,7 +27,7 @@ public class AnswerController {
              * 이 문제는 updateAnswer와 deleteAnswer 메소드에도 동일하게 적용됩니다.
              * */
             @RequestParam Long responderId,
-            @RequestBody AnswerRequestDto.AnswerCreateRequest req
+            @Valid @RequestBody AnswerRequestDto.AnswerCreateRequest req
     ) {
         return ApiResponse.created(
                 answerService.create(req.questionId(), responderId, req.content()),
