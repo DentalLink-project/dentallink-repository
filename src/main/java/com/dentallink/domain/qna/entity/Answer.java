@@ -6,8 +6,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Entity
 @Table(name = "answers")
@@ -28,9 +26,6 @@ public class Answer extends BaseEntity {
     @Column(length = 255, nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
     // 생성 팩토리 메서드
     public static Answer of(Question question, Long responderId, String content) {
         Answer answer = new Answer();
@@ -45,9 +40,8 @@ public class Answer extends BaseEntity {
         this.content = content;
     }
 
-    // 답변 소프트 삭제 메서드
+    // 답변 삭제 메서드 (soft delete)
     public void deleteAnswer() {
-        this.delete();                          // BaseEntity의 soft_delete 메서드 호출
-        this.deletedAt = LocalDateTime.now();
+        this.delete();
     }
 }
