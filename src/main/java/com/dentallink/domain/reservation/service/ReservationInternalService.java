@@ -47,7 +47,7 @@ public class ReservationInternalService {
         // 병원 관리자 권한 확인
         validateHospitalAdmin(hospitalId, hospitalAdminId);
 
-        Page<Reservation> reservations = reservationRepository.findByHospitalId(hospitalId, pageable);
+        Page<Reservation> reservations = reservationRepository.findByHospitalIdWithPaging(hospitalId, pageable);
         return reservations.map(ReservationResponse::from);
     }
 
