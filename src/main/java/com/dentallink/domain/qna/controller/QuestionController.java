@@ -19,6 +19,12 @@ public class QuestionController {
     // 질문 등록 API question create api
     @PostMapping
     public ResponseEntity<ApiResponse<QuestionResponseDto.QuestionResponse>> createQuestion(
+            /**
+             * userId를 @RequestParam으로 전달받는 것은 심각한 보안 취약점을 야기할 수 있습니다.
+             * 악의적인 사용자가 다른 사용자의 ID를 사용하여 질문을 생성, 수정, 삭제할 수 있습니다.
+             * 현재 인증된 사용자의 ID는 Spring Security의 AuthenticationPrincipal 등을 통해 보안 컨텍스트에서 안전하게 얻어와야 합니다.
+             * 이 문제는 updateQuestion, deleteQuestion 메소드에도 동일하게 적용됩니다.
+             * */
             @RequestParam Long userId,
             @RequestBody QuestionRequestDto.QuestionCreateRequest req
     ) {
@@ -42,6 +48,7 @@ public class QuestionController {
     // 질문 수정 API question update api
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateQuestion(
+            // todo 보안 취약점 확인
             @PathVariable Long id,
             @RequestParam Long userId,
             @RequestBody QuestionRequestDto.QuestionUpdateRequest req
@@ -53,6 +60,7 @@ public class QuestionController {
     // 질문 삭제 API question delete api
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(
+            // todo 보안 취약점 확인
             @PathVariable Long id,
             @RequestParam Long userId
     ) {

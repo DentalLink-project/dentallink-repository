@@ -23,6 +23,14 @@ public class QuestionService {
     // 비즈니스 로직 작성 read
     @Transactional(readOnly = true)
     public Question get(Long questionId) {
+        /**
+         * todo: questionRepository.findById()를 사용하면 논리적으로 삭제된(soft-deleted) 질문도 조회될 수 있습니다.
+         * deleted = false인 질문만 조회하도록 findByIdAndDeletedFalse() 메소드를 사용해야 합니다.
+         * 이 get 메소드는 update와 delete에서도 사용되므로 수정이 필요합니다.
+         *
+         * return questionRepository.findByIdAndDeletedFalse(questionId)
+         *                 .orElseThrow(() -> new IllegalArgumentException("문의글을 찾을 수 없습니다."));
+         * */
         return questionRepository.findById(questionId)
                 .orElseThrow(() -> new IllegalArgumentException("문의글을 찾을 수 없습니다."));
     }
@@ -51,5 +59,10 @@ public class QuestionService {
             throw new IllegalArgumentException("본인 문의글만 삭제할 수 있습니다.");
         }
         question.deleteQuestion(); // soft delete
+        /**
+         * todo: delete 메소드에서 get(questionId)를 호출하여 질문을 조회하고 있습니다. 이 get 메소드는 answerList를 함께 가져오지 않습니다.
+         * 따라서 question.deleteQuestion() 내부에서 answerList에 접근할 때 지연 로딩이 발생하여 추가적인 쿼리가 실행됩니다 (N+1 문제).
+         * 삭제 시에는 질문과 답변 목록을 함께 조회하는 것이 효율적입니다. getWithAnswers 메소드를 재사용하는 것을 고려해보세요.
+         * */
     }
 }
