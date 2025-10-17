@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 public class AnswerResponseDto {
 
     public record AnswerResponse(
-            Long Id,
+            Long id,
             Long questionId,
             Long responderId,
             String content,

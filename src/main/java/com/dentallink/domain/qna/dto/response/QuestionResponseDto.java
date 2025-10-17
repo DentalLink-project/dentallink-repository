@@ -16,7 +16,7 @@ public class QuestionResponseDto {
             String content,
             LocalDateTime createdAt,
             LocalDateTime updatedAt,
-            List<AnswerResponseDto> answerResponseDto
+            List<AnswerResponseDto.AnswerResponse> answers
     ) {
         public static QuestionResponse from(Question question) {
             return new QuestionResponse(
@@ -28,26 +28,8 @@ public class QuestionResponseDto {
                     question.getCreatedAt(),
                     question.getUpdatedAt(),
                     question.getAnswerList().stream()
-                            .map(AnswerResponseDto::from)
+                            .map(AnswerResponseDto.AnswerResponse::from)
                             .toList()
-            );
-        }
-    }
-
-    public record AnswerResponseDto(
-            Long id,
-            Long responderId,
-            String content,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt
-    ) {
-        public static AnswerResponseDto from(Answer answer) {
-            return new AnswerResponseDto(
-                    answer.getId(),
-                    answer.getResponderId(),
-                    answer.getContent(),
-                    answer.getCreatedAt(),
-                    answer.getUpdatedAt()
             );
         }
     }
