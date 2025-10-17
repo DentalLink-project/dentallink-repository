@@ -1,4 +1,4 @@
-package com.dentallink.qna.entity;
+package com.dentallink.domain.qna.entity;
 
 import com.dentallink.common.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -14,8 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Answer extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -29,14 +28,11 @@ public class Answer extends BaseEntity {
     @Column(length = 255, nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    private Long questionId;
-    private Long userId;
-
     @Column(name = "deleted_at")
-    private java.time.LocalDateTime deletedAt;
+    private LocalDateTime deletedAt;
 
     // 생성 팩토리 메서드
-    public static Answer createAnswer(Question question, Long responderId, String content) {
+    public static Answer of(Question question, Long responderId, String content) {
         Answer answer = new Answer();
         answer.question = question;
         answer.responderId = responderId;
@@ -51,7 +47,7 @@ public class Answer extends BaseEntity {
 
     // 답변 소프트 삭제 메서드
     public void deleteAnswer() {
-        this.delete(); // BaseEntity의 soft_delete 메서드 호출
+        this.delete();                          // BaseEntity의 soft_delete 메서드 호출
         this.deletedAt = LocalDateTime.now();
     }
 }
