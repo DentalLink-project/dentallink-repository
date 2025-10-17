@@ -32,7 +32,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "AND DATE(r.appointmentDate) = :date " +
             "AND r.status NOT IN ('CANCELLED', 'REJECTED') " +
             "AND r.deletedAt IS NULL")
-    List<Reservation> findByHospitalId(
+    List<Reservation> findByHospitalIdAndDate(
             @Param("hospitalId") Long hospitalId,
             @Param("date") LocalDate date
     );
@@ -42,6 +42,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "WHERE r.hospitalId = :hospitalId " +
             "AND r.deletedAt IS NULL " +
             "ORDER BY r.appointmentDate DESC")
-    Page<Reservation> findByHospitalId(@Param("hospitalId") Long hospitalId, Pageable pageable);
+    Page<Reservation> findByHospitalIdWithPaging(
+            @Param("hospitalId") Long hospitalId,
+            Pageable pageable);
 
 }
