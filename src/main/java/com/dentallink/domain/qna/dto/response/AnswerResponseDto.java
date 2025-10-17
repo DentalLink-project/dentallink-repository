@@ -1,6 +1,6 @@
-package com.dentallink.qna.dto.response;
+package com.dentallink.domain.qna.dto.response;
 
-import com.dentallink.qna.entity.Answer;
+import com.dentallink.domain.qna.entity.Answer;
 
 import java.time.LocalDateTime;
 
