@@ -3,7 +3,7 @@ package com.dentallink.domain.reservation.controller;
 import com.dentallink.common.response.ApiResponse;
 import com.dentallink.common.response.PageResponse;
 import com.dentallink.domain.reservation.dto.ReservationResponse;
-import com.dentallink.domain.reservation.dto.UpdateReservationStatusRequest;
+import com.dentallink.domain.reservation.dto.ReservationUpdateStatusRequest;
 import com.dentallink.domain.reservation.service.ReservationInternalService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -71,7 +71,7 @@ public class ReservationController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<ApiResponse<ReservationResponse>> updateReservationStatus(
             @PathVariable @Min(1) Long id,
-            @RequestBody @Valid UpdateReservationStatusRequest request,
+            @RequestBody @Valid ReservationUpdateStatusRequest request,
             @RequestParam @Min(1) Long hospitalAdminId) {
 
         ReservationResponse response = reservationService.updateReservationStatus(
