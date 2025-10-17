@@ -23,7 +23,7 @@ public class Answer extends BaseEntity {
     @Column(name = "responder_id", nullable = false)
     private Long responderId;
 
-    @Column(length = 255, nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     // 생성 팩토리 메서드
