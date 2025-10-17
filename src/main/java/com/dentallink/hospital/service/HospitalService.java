@@ -1,7 +1,9 @@
 package com.dentallink.hospital.service;
 
 import com.dentallink.hospital.dto.request.HospitalCreateRequest;
+import com.dentallink.hospital.dto.request.HospitalUpdateRequest;
 import com.dentallink.hospital.dto.response.HospitalCreateResponse;
+import com.dentallink.hospital.dto.response.HospitalUpdateResponse;
 import com.dentallink.hospital.entity.Hospital;
 import com.dentallink.hospital.entity.HospitalSchedule;
 import com.dentallink.hospital.repository.HospitalRepository;
@@ -10,12 +12,21 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class HospitalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
 
+    /**
+     * 병원 등록
+     *
+     * @param hospitalCreateRequest 병원 생성 요청 DTO
+     * @return 생성된 병원 및 스케줄 정보를 담은 응답 DTO
+     */
     @Transactional
     public HospitalCreateResponse createHospital(HospitalCreateRequest hospitalCreateRequest)
     {
@@ -56,4 +67,12 @@ public class HospitalService {
     }
 
 
+    @Transactional
+    public HospitalUpdateResponse updateHospital(Long id, HospitalUpdateRequest hospitalUpdateRequest){
+
+
+        return  new HospitalUpdateResponse(
+
+        );
+    }
 }
