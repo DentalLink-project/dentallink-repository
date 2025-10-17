@@ -9,15 +9,14 @@ public record PointLogResponse(
         Long amount,
         Long balanceAfter,
         PointLogPointAccountResponse account
-
-){
+) {
     public static PointLogResponse from(PointLog pointLog) {
         return new PointLogResponse(
                 pointLog.getId(),
                 pointLog.getType(),
                 pointLog.getAmount(),
                 pointLog.getBalanceAfter(),
-                PointLogPointAccountResponse.from(pointLog)
+                PointLogPointAccountResponse.from(pointLog.getPointAccount())
         );
     }
 }

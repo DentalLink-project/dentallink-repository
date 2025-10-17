@@ -15,9 +15,8 @@ public class PointLogExternalService {
     private final PointLogRepository pointLogRepository;
 
     @Transactional
-    public PointLogResponse createLog(PointAccount account, PointLogType type, Long amount) {
+    public void createLog(PointAccount account, PointLogType type, Long amount) {
         PointLog log = PointLog.create(account, type, amount);
         pointLogRepository.save(log);
-        return PointLogResponse.from(log);
     }
 }
