@@ -1,13 +1,10 @@
 package com.dentallink.hospital.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.sql.Time;
+import java.time.LocalTime;
 
 @Entity
 @Getter
@@ -17,20 +14,26 @@ public class HospitalSchedule {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Time openTime;
-    private Time closeTime;
-    private Time breakStart;
-    private Time breakEnd;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hospitalId")
+    private Hospital hospital;
+
+    private LocalTime openTime;
+    private LocalTime closeTime;
+    private LocalTime breakStart;
+    private LocalTime breakEnd;
 
     public HospitalSchedule(
-            Time openTime,
-            Time closeTime,
-            Time breakStart,
-            Time breakEnd
+            LocalTime openTime,
+            LocalTime closeTime,
+            LocalTime breakStart,
+            LocalTime breakEnd,
+            Hospital  hospital
     ){
         this.openTime = openTime;
         this.closeTime = closeTime;
         this.breakStart = breakStart;
         this.breakEnd = breakEnd;
+        this.hospital = hospital;
     }
 }
