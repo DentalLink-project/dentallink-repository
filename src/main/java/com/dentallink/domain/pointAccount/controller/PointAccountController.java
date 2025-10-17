@@ -64,7 +64,7 @@ public class PointAccountController {
 
     // 잔액 확인하기
     @GetMapping("/account")
-    public ResponseEntity<ApiResponse<PointAccountGetResponse>> GetPointAccount(
+    public ResponseEntity<ApiResponse<PointAccountGetResponse>> getPointAccount(
             @PathVariable Long userId // 수정 필요,
     ){
         PointAccountGetResponse response = pointAccountInternalService.getPointAccount(userId);
