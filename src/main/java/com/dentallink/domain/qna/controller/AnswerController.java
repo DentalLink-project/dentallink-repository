@@ -1,0 +1,62 @@
+package com.dentallink.domain.qna.controller;
+
+import com.dentallink.common.response.ApiResponse;
+import com.dentallink.domain.qna.dto.request.AnswerRequestDto;
+import com.dentallink.domain.qna.dto.response.AnswerResponseDto;
+import com.dentallink.domain.qna.service.AnswerService;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
+@RequestMapping("/api/answers")
+public class AnswerController {
+
+    private final AnswerService answerService;
+
+    // 답변 등록 API answer create api
+    @PostMapping
+    public ResponseEntity<ApiResponse<AnswerResponseDto.AnswerResponse>> createAnswer(
+            @RequestParam Long responderId,
+            @RequestBody AnswerRequestDto.AnswerCreateRequest req
+    ) {
+        return ApiResponse.created(
+                answerService.create(req.questionId(), responderId, req.content()),
+                "답변 등록 완료"
+        );
+    }
+
+    // 답변 조회 API answer read api
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<AnswerResponseDto.AnswerResponse>> getAnswer(
+            @PathVariable Long id
+    ) {
+        return ApiResponse.success(
+                AnswerResponseDto.AnswerResponse.from(answerService.get(id)),
+                "답변 조회 완료"
+        );
+    }
+
+    // 답변 수정 API answer update api
+    @PatchMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> updateAnswer(
+            @PathVariable Long id,
+            @RequestParam Long responderId,
+            @RequestBody AnswerRequestDto.AnswerUpdateRequest req
+    ) {
+        answerService.update(id, responderId, req.content());
+        return ApiResponse.success(null, "답변 수정 완료");
+    }
+
+    // 답변 삭제 API answer delete api
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteAnswer(
+            @PathVariable Long id,
+            @RequestParam Long responderId
+    ) {
+        answerService.delete(id, responderId);
+        return ApiResponse.deleteSuccess("답변 삭제 완료");
+    }
+}
