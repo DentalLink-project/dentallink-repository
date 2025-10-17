@@ -14,15 +14,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class AnswerService {
 
-    private final AnswerRepository answerRespository;
-    private final QuestionRepository questionRespository;
+    private final AnswerRepository answerRepository;
+    private final QuestionRepository questionRepository;
 
     // 비즈니스 로직 작성 create
-    public AnswerResponseDto create(Long questionId, Long responderId, String content) {
+    public AnswerResponseDto.AnswerResponse create(Long questionId, Long responderId, String content) {
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() -> new IllegalArgumentException("문의글을 찾을 수 없습니다."));
         Answer saved = answerRepository.save(Answer.of(question, responderId, content));
-        return AnswerResponseDto.from(saved);
+        return AnswerResponseDto.AnswerResponse.from(saved);
     }
 
     // 비즈니스 로직 작성 read
@@ -39,7 +39,7 @@ public class AnswerService {
         if (!answer.getResponderId().equals(responderId)) {
             throw new IllegalArgumentException("본인 답변글만 수정할 수 있습니다.");
         }
-        answer.update(content);
+        answer.updateAnswer(content);
     }
 
     // 비즈니스 로직 작성 delete
@@ -49,6 +49,6 @@ public class AnswerService {
         if (!answer.getResponderId().equals(responderId)) {
             throw new IllegalArgumentException("본인 답변글만 삭제할 수 있습니다.");
         }
-        answer.delete(); // BaseEntity soft delete
+        answer.deleteAnswer(); // soft delete
     }
 }

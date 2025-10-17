@@ -15,9 +15,9 @@ public class QuestionService {
     private final QuestionRepository questionRepository;
 
     // 비즈니스 로직 작성 creeate
-    public QuestionResponseDto create(Long userId, Long hospitalId, String title, String content) {
+    public QuestionResponseDto.QuestionResponse create(Long userId, Long hospitalId, String title, String content) {
         Question saved = questionRepository.save(Question.of(userId, hospitalId, title, content));
-        return QuestionResponseDto.from(saved);
+        return QuestionResponseDto.QuestionResponse.from(saved);
     }
 
     // 비즈니스 로직 작성 read
@@ -30,7 +30,7 @@ public class QuestionService {
     // 답변과 함께 문의글 조회
     @Transactional(readOnly = true)
     public Question getWithAnswers(Long id) {
-        return questionRepository.findWithAnswersById(id)
+        return questionRepository.findActiveWithAnswersById(id)
                 .orElseThrow(() -> new IllegalArgumentException("문의글을 찾을 수 없습니다."));
     }
 
@@ -41,7 +41,7 @@ public class QuestionService {
         if (!question.getUserId().equals(userId)) {
             throw new IllegalArgumentException("본인 문의글만 수정할 수 있습니다.");
         }
-        question.update(title, content);
+        question.updateQuestion(title, content);
     }
 
     // 비즈니스 로직 작성 delete
@@ -50,6 +50,6 @@ public class QuestionService {
         if (!question.getUserId().equals(userId)) {
             throw new IllegalArgumentException("본인 문의글만 삭제할 수 있습니다.");
         }
-        question.delete(); // soft delete
+        question.deleteQuestion(); // soft delete
     }
 }
