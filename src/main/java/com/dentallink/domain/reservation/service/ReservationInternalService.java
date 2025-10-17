@@ -3,7 +3,7 @@ package com.dentallink.domain.reservation.service;
 
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.domain.reservation.dto.ReservationResponse;
-import com.dentallink.domain.reservation.dto.UpdateReservationStatusRequest;
+import com.dentallink.domain.reservation.dto.ReservationUpdateStatusRequest;
 import com.dentallink.domain.reservation.entity.Reservation;
 import com.dentallink.domain.reservation.execption.ReservationErrorCode;
 import com.dentallink.domain.reservation.repository.ReservationRepository;
@@ -55,7 +55,7 @@ public class ReservationInternalService {
     @Transactional
     public ReservationResponse updateReservationStatus(
             Long id,
-            UpdateReservationStatusRequest request,
+            ReservationUpdateStatusRequest request,
             Long hospitalAdminId) {
 
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
