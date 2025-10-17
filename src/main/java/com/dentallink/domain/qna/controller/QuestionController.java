@@ -17,10 +17,10 @@ public class QuestionController {
     private final QuestionService questionService;
 
     // 질문 등록 API question create api
-    @PostMapping("/{id}")
-    public ResponseEntity<ApiResponse<QuestionResponseDto>> createQuestion(
+    @PostMapping
+    public ResponseEntity<ApiResponse<QuestionResponseDto.QuestionResponse>> createQuestion(
             @RequestParam Long userId,
-            @RequestBody QuestionRequestDto.Create req
+            @RequestBody QuestionRequestDto.QuestionCreateRequest req
     ) {
         return ApiResponse.created(
                 questionService.create(userId, req.hospitalId(), req.title(), req.content()),
@@ -30,9 +30,11 @@ public class QuestionController {
 
     // 질문 조회 APi question read api
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<QuestionResponseDto>> getQuestion(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<QuestionResponseDto.QuestionResponse>> getQuestion(
+            @PathVariable Long id
+    ) {
         return ApiResponse.success(
-                QuestionResponseDto.from(questionService.getWithAnswers(id)),
+                QuestionResponseDto.QuestionResponse.from(questionService.getWithAnswers(id)),
                 "문의 조회 완료"
         );
     }
@@ -42,13 +44,14 @@ public class QuestionController {
     public ResponseEntity<ApiResponse<Void>> updateQuestion(
             @PathVariable Long id,
             @RequestParam Long userId,
-            @RequestBody QuestionRequestDto.Update req
+            @RequestBody QuestionRequestDto.QuestionUpdateRequest req
     ) {
         questionService.update(id, userId, req.title(), req.content());
         return ApiResponse.success(null, "문의 수정 완료");
     }
 
     // 질문 삭제 API question delete api
+    @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(
             @PathVariable Long id,
             @RequestParam Long userId

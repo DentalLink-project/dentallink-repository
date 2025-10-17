@@ -18,9 +18,9 @@ public class AnswerController {
 
     // 답변 등록 API answer create api
     @PostMapping
-    public ResponseEntity<ApiResponse<AnswerResponseDto>> createAnswer(
+    public ResponseEntity<ApiResponse<AnswerResponseDto.AnswerResponse>> createAnswer(
             @RequestParam Long responderId,
-            @RequestBody AnswerRequestDto.Create req
+            @RequestBody AnswerRequestDto.AnswerCreateRequest req
     ) {
         return ApiResponse.created(
                 answerService.create(req.questionId(), responderId, req.content()),
@@ -30,10 +30,11 @@ public class AnswerController {
 
     // 답변 조회 API answer read api
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<AnswerResponseDto>> getAnswer(
-            @PathVariable Long id) {
+    public ResponseEntity<ApiResponse<AnswerResponseDto.AnswerResponse>> getAnswer(
+            @PathVariable Long id
+    ) {
         return ApiResponse.success(
-                AnswerResponseDto.from(answerService.get(id)),
+                AnswerResponseDto.AnswerResponse.from(answerService.get(id)),
                 "답변 조회 완료"
         );
     }
@@ -43,7 +44,7 @@ public class AnswerController {
     public ResponseEntity<ApiResponse<Void>> updateAnswer(
             @PathVariable Long id,
             @RequestParam Long responderId,
-            @RequestBody AnswerRequestDto.Update req
+            @RequestBody AnswerRequestDto.AnswerUpdateRequest req
     ) {
         answerService.update(id, responderId, req.content());
         return ApiResponse.success(null, "답변 수정 완료");
