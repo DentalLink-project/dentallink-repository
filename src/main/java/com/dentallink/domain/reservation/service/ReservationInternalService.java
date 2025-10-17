@@ -5,7 +5,6 @@ import com.dentallink.common.exception.GlobalException;
 import com.dentallink.domain.reservation.dto.ReservationResponse;
 import com.dentallink.domain.reservation.dto.UpdateReservationStatusRequest;
 import com.dentallink.domain.reservation.entity.Reservation;
-import com.dentallink.domain.reservation.enums.ReservationStatus;
 import com.dentallink.domain.reservation.execption.ReservationErrorCode;
 import com.dentallink.domain.reservation.repository.ReservationRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,34 +22,103 @@ public class ReservationInternalService {
 
     private final ReservationRepository reservationRepository;
 
-    //TODO: 예약생성은 병원도메인 작업 후 진행
-
-    public Reservation getReservation(Long id) {
-        return reservationRepository.findByIdAndNotDeleted(id)
+    //예약 조회 (단건)
+    public ReservationResponse getReservation(Long id) {
+        Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+        return ReservationResponse.from(reservation);
     }
 
-    public Page<Reservation> getReservationsByUserId(Long userId, Pageable pageable) {
-        return reservationRepository.findByUserId(userId, pageable);
+
+    //내 예약 목록 조회
+    public Page<ReservationResponse> getMyReservations(Long userId, Pageable pageable) {
+        Page<Reservation> reservations = reservationRepository.findByUserId(userId, pageable);
+        return reservations.map(ReservationResponse::from);
     }
 
-    public Page<Reservation> getReservationsByHospitalId(Long hospitalId, Pageable pageable) {
-        return reservationRepository.findByHospitalId(hospitalId, pageable);
+    /**
+     * 병원의 예약 목록 조회 (병원 관리자)
+     */
+    public Page<ReservationResponse> getHospitalReservations(
+            Long hospitalId,
+            Long hospitalAdminId,
+            Pageable pageable) {
+
+        // 병원 관리자 권한 확인
+        validateHospitalAdmin(hospitalId, hospitalAdminId);
+
+        Page<Reservation> reservations = reservationRepository.findByHospitalId(hospitalId, pageable);
+        return reservations.map(ReservationResponse::from);
     }
 
+    //예약 상태 변경 (병원 관리자)
     @Transactional
-    public Reservation updateStatus(Reservation reservation, ReservationStatus status) {
-        switch (status) {
+    public ReservationResponse updateReservationStatus(
+            Long id,
+            UpdateReservationStatusRequest request,
+            Long hospitalAdminId) {
+
+        Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
+                .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+
+        // 병원 관리자 권한 확인
+        validateHospitalAdmin(reservation.getHospitalId(), hospitalAdminId);
+
+        // 상태 변경
+        switch (request.status()) {
             case APPROVED -> reservation.approve();
             case REJECTED -> reservation.reject();
             case COMPLETED -> reservation.complete();
             default -> throw new GlobalException(ReservationErrorCode.INVALID_STATUS_TRANSITION);
         }
-        return reservation;
+
+        return ReservationResponse.from(reservation);
     }
 
+    //예약 취소
     @Transactional
-    public void cancelReservation(Reservation reservation) {
+    public void cancelReservation(Long id, Long userId) {
+        Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
+                .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+
+        // 예약 소유자 확인
+        validateReservationOwner(reservation, userId);
+
+        // 예약 시간 확인 (과거 예약 취소 불가)
+        validateAppointmentTime(reservation);
+
+        // 취소 처리
         reservation.cancel();
+    }
+
+
+    // TODO: Hospital Entity 생성 후 실제 권한 확인 로직 추가
+
+    private void validateHospitalAdmin(Long hospitalId, Long hospitalAdminId) {
+        // TODO: Hospital 도메인 완성 후 구현
+        // Hospital hospital = hospitalRepository.findById(hospitalId);
+        // if (!hospital.getUserId().equals(hospitalAdminId)) {
+        //     throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
+        // }
+
+        // 임시: hospitalId와 hospitalAdminId가 유효한지만 체크
+        if (hospitalId == null || hospitalAdminId == null) {
+            throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
+        }
+    }
+
+    //소유자 확인
+
+    private void validateReservationOwner(Reservation reservation, Long userId) {
+        if (!reservation.getUserId().equals(userId)) {
+            throw new GlobalException(ReservationErrorCode.NOT_RESERVATION_OWNER);
+        }
+    }
+
+    //시간
+    private void validateAppointmentTime(Reservation reservation) {
+        if (reservation.getAppointmentDate().isBefore(LocalDateTime.now())) {
+            throw new GlobalException(ReservationErrorCode.PAST_APPOINTMENT_TIME);
+        }
     }
 }
