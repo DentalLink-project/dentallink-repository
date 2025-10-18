@@ -15,7 +15,7 @@ public class HospitalSchedule {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "hospitalId")
+    @JoinColumn(name = "hospital_id")
     private Hospital hospital;
 
     private LocalTime openTime;
