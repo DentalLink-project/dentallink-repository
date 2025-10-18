@@ -1,19 +1,16 @@
-package com.dentallink.hospital.service;
+package com.dentallink.domain.hospital.service;
 
-import com.dentallink.hospital.dto.request.HospitalCreateRequest;
-import com.dentallink.hospital.dto.request.HospitalUpdateRequest;
-import com.dentallink.hospital.dto.response.HospitalCreateResponse;
-import com.dentallink.hospital.dto.response.HospitalUpdateResponse;
-import com.dentallink.hospital.entity.Hospital;
-import com.dentallink.hospital.entity.HospitalSchedule;
-import com.dentallink.hospital.repository.HospitalRepository;
-import com.dentallink.hospital.repository.HospitalScheduleRepository;
+import com.dentallink.domain.hospital.dto.request.HospitalCreateRequest;
+import com.dentallink.domain.hospital.dto.request.HospitalUpdateRequest;
+import com.dentallink.domain.hospital.dto.response.HospitalCreateResponse;
+import com.dentallink.domain.hospital.dto.response.HospitalUpdateResponse;
+import com.dentallink.domain.hospital.entity.Hospital;
+import com.dentallink.domain.hospital.entity.HospitalSchedule;
+import com.dentallink.domain.hospital.repository.HospitalRepository;
+import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor

@@ -1,4 +1,4 @@
-package com.dentallink.hospital.entity;
+package com.dentallink.domain.hospital.entity;
 
 import com.dentallink.common.entity.BaseEntity;
 import jakarta.persistence.Entity;

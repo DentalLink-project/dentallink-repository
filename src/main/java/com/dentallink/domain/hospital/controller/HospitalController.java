@@ -1,10 +1,10 @@
-package com.dentallink.hospital.controller;
+package com.dentallink.domain.hospital.controller;
 
-import com.dentallink.hospital.dto.request.HospitalCreateRequest;
-import com.dentallink.hospital.dto.request.HospitalUpdateRequest;
-import com.dentallink.hospital.dto.response.HospitalCreateResponse;
-import com.dentallink.hospital.dto.response.HospitalUpdateResponse;
-import com.dentallink.hospital.service.HospitalService;
+import com.dentallink.domain.hospital.dto.request.HospitalCreateRequest;
+import com.dentallink.domain.hospital.dto.request.HospitalUpdateRequest;
+import com.dentallink.domain.hospital.dto.response.HospitalCreateResponse;
+import com.dentallink.domain.hospital.dto.response.HospitalUpdateResponse;
+import com.dentallink.domain.hospital.service.HospitalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

@@ -1,6 +1,6 @@
-package com.dentallink.hospital.repository;
+package com.dentallink.domain.hospital.repository;
 
-import com.dentallink.hospital.entity.HospitalSchedule;
+import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

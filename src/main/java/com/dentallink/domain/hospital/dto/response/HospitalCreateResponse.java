@@ -1,4 +1,4 @@
-package com.dentallink.hospital.dto.response;
+package com.dentallink.domain.hospital.dto.response;
 
 import lombok.Getter;
 import java.time.LocalDateTime;
