@@ -36,7 +36,7 @@ public class ReservationInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
 
-    private static final int MAX_RESERVATION_PER_MAN = 3;
+    private static final int MAX_RESERVATIONS_PER_SLOT = 3;
     private static final int TIME_PERIOD = 30;
 
 
@@ -170,7 +170,7 @@ public class ReservationInternalService {
 
         for (LocalDateTime timeSlot : timesPeriod) {
             long existingCount = reservationCountMap.getOrDefault(timeSlot, 0L);
-            int availableCount = MAX_RESERVATION_PER_MAN - (int) existingCount;
+            int availableCount = MAX_RESERVATIONS_PER_SLOT - (int) existingCount;
 
             AvailableTimeSlotResponse response = AvailableTimeSlotResponse.of(
                     timeSlot,
@@ -221,7 +221,7 @@ public class ReservationInternalService {
                 hospitalId, appointmentDate
         );
 
-        if (currentReservationCount >= MAX_RESERVATION_PER_MAN) {
+        if (currentReservationCount >= MAX_RESERVATIONS_PER_SLOT) {
             throw new GlobalException(ReservationErrorCode.RESERVATION_FULL);
         }
     }

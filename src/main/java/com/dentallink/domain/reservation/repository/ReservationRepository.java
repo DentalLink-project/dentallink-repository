@@ -1,5 +1,6 @@
 package com.dentallink.domain.reservation.repository;
 
+import com.dentallink.domain.reservation.dto.ReservationCountDto;
 import com.dentallink.domain.reservation.entity.Reservation;
 import com.dentallink.domain.reservation.enums.ReservationStatus;
 import org.springframework.data.domain.Page;
@@ -21,7 +22,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             "AND r.status NOT IN ('CANCELLED', 'REJECTED') " +
             "AND r.deletedAt IS NULL")
     int countByHospitalIdAndAppointmentDate(
-            @Param("hospitalId") Long hospital,
+            @Param("hospitalId") Long hospitalId,
             @Param("appointmentDate") LocalDateTime appointmentDate
     );
 
@@ -78,5 +79,18 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     Page<Reservation> findByHospitalIdWithPaging(
             @Param("hospitalId") Long hospitalId,
             Pageable pageable);
+
+    @Query("SELECT r.appointmentDate as timeSlot, COUNT(r.id) as count " +
+            "FROM Reservation r " +
+            "WHERE r.hospitalId = :hospitalId " +
+            "AND r.appointmentDate BETWEEN :startDateTime AND :endDateTime " +
+            "AND r.status NOT IN ('CANCELLED', 'REJECTED') " +
+            "AND r.deletedAt IS NULL " +
+            "GROUP BY r.appointmentDate")
+    List<ReservationCountDto> countReservationsByTimeSlot(
+            @Param("hospitalId") Long hospitalId,
+            @Param("startDateTime") LocalDateTime startDateTime,
+            @Param("endDateTime") LocalDateTime endDateTime
+    );
 
 }
