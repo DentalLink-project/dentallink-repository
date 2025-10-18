@@ -1,4 +1,4 @@
-package com.dentallink.hospital.dto.request;
+package com.dentallink.domain.hospital.dto.request;
 
 import lombok.Getter;
 

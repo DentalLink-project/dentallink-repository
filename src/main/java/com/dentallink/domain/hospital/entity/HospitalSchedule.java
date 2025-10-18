@@ -1,4 +1,4 @@
-package com.dentallink.hospital.entity;
+package com.dentallink.domain.hospital.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
