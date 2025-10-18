@@ -1,6 +1,6 @@
-package com.dentallink.hospital.repository;
+package com.dentallink.domain.hospital.repository;
 
-import com.dentallink.hospital.entity.Hospital;
+import com.dentallink.domain.hospital.entity.Hospital;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
