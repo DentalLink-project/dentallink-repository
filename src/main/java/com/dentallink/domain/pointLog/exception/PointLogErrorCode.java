@@ -1,4 +1,4 @@
-package com.dentallink.domain.pointAccount.exception;
+package com.dentallink.domain.pointLog.exception;
 
 import com.dentallink.common.exception.ErrorCode;
 import lombok.AllArgsConstructor;
@@ -7,8 +7,9 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
-public enum PointAccountErrorCode implements ErrorCode {
-    ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "포인트 계좌를 찾을 수 없습니다."),;
+public enum PointLogErrorCode implements ErrorCode {
+
+    ;
     private final HttpStatus httpStatus;
     private final String message;
 }
