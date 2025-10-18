@@ -7,7 +7,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
-public interface HospitalScheduleRepository extends JpaRepository<HospitalSchedule, Integer> {
+public interface HospitalScheduleRepository extends JpaRepository<HospitalSchedule, Long> {
 
     //병원 ID로 스케쥴 조회 석호
     @Query("SELECT hs FROM HospitalSchedule hs " +
