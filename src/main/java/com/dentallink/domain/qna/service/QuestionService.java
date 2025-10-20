@@ -47,7 +47,6 @@ public class QuestionService {
     // 비즈니스 로직 작성 delete
     public void delete(Long questionId, Long userId) {
         Question question = getWithAnswers(questionId);
-        question.validateOwner(userId);
         question.deleteQuestion(userId); // soft delete
     }
 }
