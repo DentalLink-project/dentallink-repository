@@ -43,7 +43,7 @@ public class HospitalController {
             @RequestBody HospitalUpdateRequest hospitalUpdateRequest
     ){
         HospitalUpdateResponse hospital = hospitalService.updateHospital(id, hospitalUpdateRequest);
-        return ResponseEntity.ok(hospitalService.updateHospital(id, hospitalUpdateRequest));
+        return ResponseEntity.ok(hospital);
     }
 
     @DeleteMapping("/hospital/{id}")

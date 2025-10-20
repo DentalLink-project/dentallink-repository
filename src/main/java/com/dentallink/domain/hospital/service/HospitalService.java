@@ -9,6 +9,7 @@ import com.dentallink.domain.hospital.dto.response.HospitalListResponse;
 import com.dentallink.domain.hospital.dto.response.HospitalUpdateResponse;
 import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
+import com.dentallink.domain.hospital.exception.HospitalErrorCode;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import com.dentallink.domain.reservation.execption.ReservationErrorCode;
@@ -72,10 +73,10 @@ public class HospitalService {
     @Transactional(readOnly = true)
     public HospitalDetailResponse findHospitalById(Long id) {
         Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
 
         HospitalSchedule schedule = hospitalScheduleRepository.findByHospitalId(id)
-                .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND));
 
         return HospitalDetailResponse.of(hospital, schedule);
     }
@@ -86,7 +87,7 @@ public class HospitalService {
     @Transactional
     public HospitalUpdateResponse updateHospital(Long id, HospitalUpdateRequest hospitalUpdateRequest) {
         Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
 
         hospital.updateHospital(
                 hospitalUpdateRequest.getHospitalName(),
@@ -97,7 +98,7 @@ public class HospitalService {
         );
 
         HospitalSchedule schedule = hospitalScheduleRepository.findByHospitalId(id)
-                .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND));
 
         schedule.updateSchedule(
                 hospitalUpdateRequest.getOpenTime(),
@@ -115,10 +116,9 @@ public class HospitalService {
     @Transactional
     public void deleteHospital(Long id) {
         Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
 
-        hospitalScheduleRepository.findByHospitalId(id)
-                .ifPresent(hospitalScheduleRepository::delete);
+        hospitalScheduleRepository.deleteByHospital(hospital);
         hospitalRepository.delete(hospital);
     }
 }

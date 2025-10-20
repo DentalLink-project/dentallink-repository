@@ -62,7 +62,7 @@ public class HospitalCreateResponse {
                 hospitalSchedule.getOpenTime(),
                 hospitalSchedule.getCloseTime(),
                 hospitalSchedule.getBreakStart(),
-                hospitalSchedule.getCloseTime()
+                hospitalSchedule.getBreakEnd()
         );
     }
 }
