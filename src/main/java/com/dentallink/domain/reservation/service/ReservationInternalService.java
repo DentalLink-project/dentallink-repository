@@ -33,7 +33,7 @@ public class ReservationInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
 
-    private static final int MAX_RESERVATION_PER_MAN = 3;
+    private static final int MAX_RESERVATIONS_PER_SLOT = 3;
     private static final int TIME_PERIOD = 30;
 
 
