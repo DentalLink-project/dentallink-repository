@@ -70,13 +70,13 @@ public class Reservation extends BaseEntity {
         this.status = ReservationStatus.COMPLETED;
     }
 
-    // Getter 추가 (Service에서 사용)
-    public Long getHospitalId() {
-        return hospital.getId();
+    // 행위 중심 메서드 - 객체지향적 접근
+    public boolean isOwnedBy(Long userId) {
+        return this.user.getId().equals(userId);
     }
 
-    public Long getUserId() {
-        return user.getId();
+    public boolean belongsToHospital(Long hospitalId) {
+        return this.hospital.getId().equals(hospitalId);
     }
 
     private void validateNotDeleted() {
