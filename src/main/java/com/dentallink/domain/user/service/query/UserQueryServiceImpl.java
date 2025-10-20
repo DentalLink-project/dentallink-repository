@@ -60,7 +60,7 @@ public class UserQueryServiceImpl implements UserQueryService {
     @Override
     public PageResponse<UserResponse> getUsers(int page, int size) {
         Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
-        Page<User> users = userRepository.findAllWhereDeletedIsFalse(pageable);
+        Page<User> users = userRepository.findAllByDeletedFalse(pageable);
         Page<UserResponse> response = users.map(UserResponse::from);
         return PageResponse.fromPage(response);
     }
