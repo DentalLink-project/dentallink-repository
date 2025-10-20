@@ -31,20 +31,20 @@ public class HospitalService {
     public HospitalCreateResponse createHospital(HospitalCreateRequest hospitalCreateRequest)
     {
        Hospital hospital = new Hospital(
-               hospitalCreateRequest.getHospitalName(),
-               hospitalCreateRequest.getHospitalDescription(),
-               hospitalCreateRequest.getHospitalAddress(),
-               hospitalCreateRequest.getHospitalIsOpen(),
-               hospitalCreateRequest.getDoctorName()
+               hospitalCreateRequest.hospitalName(),
+               hospitalCreateRequest.hospitalDescription(),
+               hospitalCreateRequest.hospitalAddress(),
+               hospitalCreateRequest.hospitalIsOpen(),
+               hospitalCreateRequest.doctorName()
        );
 
        Hospital createHospital = hospitalRepository.save(hospital);
 
        HospitalSchedule hospitalSchedule = new HospitalSchedule(
-               hospitalCreateRequest.getOpenTime(),
-               hospitalCreateRequest.getCloseTime(),
-               hospitalCreateRequest.getBreakStart(),
-               hospitalCreateRequest.getBreakEnd(),
+               hospitalCreateRequest.openTime(),
+               hospitalCreateRequest.closeTime(),
+               hospitalCreateRequest.breakStart(),
+               hospitalCreateRequest.breakEnd(),
                createHospital
        );
 
@@ -85,21 +85,21 @@ public class HospitalService {
                 .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
 
         hospital.updateHospital(
-                hospitalUpdateRequest.getHospitalName(),
-                hospitalUpdateRequest.getHospitalDescription(),
-                hospitalUpdateRequest.getHospitalAddress(),
-                hospitalUpdateRequest.getHospitalIsOpen(),
-                hospitalUpdateRequest.getDoctorName()
+                hospitalUpdateRequest.hospitalName(),
+                hospitalUpdateRequest.hospitalDescription(),
+                hospitalUpdateRequest.hospitalAddress(),
+                hospitalUpdateRequest.hospitalIsOpen(),
+                hospitalUpdateRequest.doctorName()
         );
 
         HospitalSchedule schedule = hospitalScheduleRepository.findByHospitalId(id)
                 .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND));
 
         schedule.updateSchedule(
-                hospitalUpdateRequest.getOpenTime(),
-                hospitalUpdateRequest.getCloseTime(),
-                hospitalUpdateRequest.getBreakStart(),
-                hospitalUpdateRequest.getBreakEnd()
+                hospitalUpdateRequest.openTime(),
+                hospitalUpdateRequest.closeTime(),
+                hospitalUpdateRequest.breakStart(),
+                hospitalUpdateRequest.breakEnd()
         );
 
         return HospitalUpdateResponse.of(hospital, schedule);
