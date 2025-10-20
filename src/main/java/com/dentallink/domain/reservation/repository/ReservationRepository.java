@@ -16,7 +16,7 @@ import java.util.Optional;
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
     @Query("SELECT COUNT(r) FROM Reservation r " +
-            "WHERE r.hospitalId = :hospitalId " +
+            "WHERE r.hospital.id = :hospitalId " +
             "AND r.appointmentDate = :appointmentDate " +
             "AND r.status NOT IN ('CANCELLED', 'REJECTED') " +
             "AND r.deletedAt IS NULL")
@@ -26,7 +26,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     );
 
     @Query("SELECT r FROM Reservation r " +
-            "WHERE r.hospitalId = :hospitalId " +
+            "WHERE r.hospital.id = :hospitalId " +
             "AND r.appointmentDate BETWEEN :startDateTime AND :endDateTime " +
             "AND r.status NOT IN ('CANCELLED', 'REJECTED') " +
             "AND r.deletedAt IS NULL")
@@ -36,10 +36,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("endDateTime") LocalDateTime endDateTime
     );
 
-
     //특정 시간대에 예약이 존재하는지 확인
     @Query("SELECT COUNT(r) > 0 FROM Reservation r " +
-            "WHERE r.userId = :userId " +
+            "WHERE r.user.id = :userId " +
             "AND r.appointmentDate = :appointmentDate " +
             "AND r.status NOT IN ('CANCELLED', 'REJECTED') " +
             "AND r.deletedAt IS NULL")
@@ -54,14 +53,14 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     //사용자의 예약 목록 조회
     @Query("SELECT r FROM Reservation r " +
-            "WHERE r.userId = :userId " +
+            "WHERE r.user.id = :userId " +
             "AND r.deletedAt IS NULL " +
             "ORDER BY r.appointmentDate DESC")
-    Page<Reservation> findByUserId(@Param("userId") Long longId, Pageable pageable);
+    Page<Reservation> findByUserId(@Param("userId") Long userId, Pageable pageable);
 
     //병원의 특정일 예약 조회
     @Query("SELECT r FROM Reservation r " +
-            "WHERE r.hospitalId = :hospitalId " +
+            "WHERE r.hospital.id = :hospitalId " +
             "AND DATE(r.appointmentDate) = :date " +
             "AND r.status NOT IN ('CANCELLED', 'REJECTED') " +
             "AND r.deletedAt IS NULL")
@@ -72,7 +71,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     //병원의 예약 목록 조회
     @Query("SELECT r FROM Reservation r " +
-            "WHERE r.hospitalId = :hospitalId " +
+            "WHERE r.hospital.id = :hospitalId " +
             "AND r.deletedAt IS NULL " +
             "ORDER BY r.appointmentDate DESC")
     Page<Reservation> findByHospitalIdWithPaging(
@@ -81,7 +80,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
 
     @Query("SELECT r.appointmentDate as timeSlot, COUNT(r.id) as count " +
             "FROM Reservation r " +
-            "WHERE r.hospitalId = :hospitalId " +
+            "WHERE r.hospital.id = :hospitalId " +
             "AND r.appointmentDate BETWEEN :startDateTime AND :endDateTime " +
             "AND r.status NOT IN ('CANCELLED', 'REJECTED') " +
             "AND r.deletedAt IS NULL " +
@@ -91,5 +90,4 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime
     );
-
 }
