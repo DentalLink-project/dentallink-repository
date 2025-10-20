@@ -49,7 +49,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
 
     // 키워드를 기반으로 검색 (제목과 내용 모두 검색 대상 포함)
     @Query("""
-        select distinct question
+        select question
         from Question question
         where question.deleted = false
           and (question.title like %:keyword% or question.content like %:keyword%)
