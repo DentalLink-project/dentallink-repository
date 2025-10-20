@@ -31,6 +31,7 @@ public class HospitalService {
     public HospitalCreateResponse createHospital(HospitalCreateRequest hospitalCreateRequest)
     {
        Hospital hospital = new Hospital(
+               hospitalCreateRequest.userId(),
                hospitalCreateRequest.hospitalName(),
                hospitalCreateRequest.hospitalDescription(),
                hospitalCreateRequest.hospitalAddress(),
