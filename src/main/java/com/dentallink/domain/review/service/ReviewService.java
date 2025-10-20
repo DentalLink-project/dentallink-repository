@@ -2,9 +2,11 @@ package com.dentallink.domain.review.service;
 
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.domain.review.dto.request.ReviewCreateRequest;
+import com.dentallink.domain.review.dto.request.ReviewUpdateRequest;
 import com.dentallink.domain.review.dto.response.ReviewCreateResponse;
 import com.dentallink.domain.review.dto.response.ReviewDetailResponse;
 import com.dentallink.domain.review.dto.response.ReviewListResponse;
+import com.dentallink.domain.review.dto.response.ReviewUpdateResponse;
 import com.dentallink.domain.review.entity.Review;
 import com.dentallink.domain.review.exception.ReviewErrorCode;
 import com.dentallink.domain.review.repository.ReviewRepository;
@@ -38,11 +40,15 @@ public class ReviewService {
 
     // 리뷰 등록
     @Transactional
-    public ReviewCreateResponse createReview(ReviewCreateRequest reviewCreateRequest) {
-        Review review = new Review(
-                reviewCreateRequest.reservationId(),
-                reviewCreateRequest.hospitalId(),
-                reviewCreateRequest.userId(),
+    public ReviewCreateResponse createReview(
+            Long reservationId,
+            Long hospitalId,
+            Long userId,
+            ReviewCreateRequest reviewCreateRequest) {
+        Review review = Review.of(
+                reservationId,
+                hospitalId,
+                userId,
                 reviewCreateRequest.point(),
                 reviewCreateRequest.content()
         );
@@ -50,5 +56,25 @@ public class ReviewService {
         Review createReview = reviewRepository.save(review);
 
         return ReviewCreateResponse.of(createReview);
+    }
+
+    // 리뷰 수정
+    @Transactional
+    public ReviewUpdateResponse updateReview(
+            Long id,
+            Long userId,
+            ReviewUpdateRequest reviewUpdateRequest
+    ) {
+        Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new GlobalException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        if(!review.getUserId().equals(userId)) {
+            throw new GlobalException(ReviewErrorCode.NOT_REVIEW_OWNER);
+        }
+
+        review.update(reviewUpdateRequest.point(), reviewUpdateRequest.content());
+        Review updateReview = reviewRepository.save(review);
+
+        return  ReviewUpdateResponse.of(updateReview);
     }
 }

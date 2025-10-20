@@ -1,9 +1,11 @@
 package com.dentallink.domain.review.controller;
 
 import com.dentallink.domain.review.dto.request.ReviewCreateRequest;
+import com.dentallink.domain.review.dto.request.ReviewUpdateRequest;
 import com.dentallink.domain.review.dto.response.ReviewCreateResponse;
 import com.dentallink.domain.review.dto.response.ReviewDetailResponse;
 import com.dentallink.domain.review.dto.response.ReviewListResponse;
+import com.dentallink.domain.review.dto.response.ReviewUpdateResponse;
 import com.dentallink.domain.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -40,9 +42,22 @@ public class ReviewController {
     // 리뷰 등록
     @PostMapping
     public ResponseEntity<ReviewCreateResponse> createReview(
+            @RequestParam Long reservationId,
+            @RequestParam Long hospitalId,
+            @RequestParam Long userId,
             @RequestBody ReviewCreateRequest reviewCreateRequest
     ) {
-        return ResponseEntity.ok(reviewService.createReview(reviewCreateRequest));
+        return ResponseEntity.ok(reviewService.createReview(reservationId, hospitalId, userId, reviewCreateRequest));
     }
 
+    // 리뷰 수정
+    @PatchMapping("/{id}")
+    public ResponseEntity<ReviewUpdateResponse> updateReview(
+            @PathVariable Long id,
+            @RequestParam Long userId,
+            @RequestBody ReviewUpdateRequest reviewUpdateRequest
+    ) {
+        ReviewUpdateResponse review = reviewService.updateReview(id, userId, reviewUpdateRequest);
+        return ResponseEntity.ok(review);
+    }
 }

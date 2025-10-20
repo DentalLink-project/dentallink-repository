@@ -25,7 +25,7 @@ public class Review extends BaseEntity {
     private Integer point;
     private String content;
 
-    public Review(
+    private Review(
             Long reservationId,
             Long hospitalId,
             Long userId,
@@ -35,6 +35,27 @@ public class Review extends BaseEntity {
         this.reservationId = reservationId;
         this.hospitalId = hospitalId;
         this.userId = userId;
+        this.point = point;
+        this.content = content;
+    }
+
+    public static Review of(
+            Long reservationId,
+            Long hospitalId,
+            Long userId,
+            Integer point,
+            String content
+    ) {
+        return new Review(
+                reservationId,
+                hospitalId,
+                userId,
+                point,
+                content
+        );
+    }
+
+    public void update(Integer point, String content) {
         this.point = point;
         this.content = content;
     }
