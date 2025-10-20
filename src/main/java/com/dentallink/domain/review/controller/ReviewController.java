@@ -2,10 +2,7 @@ package com.dentallink.domain.review.controller;
 
 import com.dentallink.domain.review.dto.request.ReviewCreateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateRequest;
-import com.dentallink.domain.review.dto.response.ReviewCreateResponse;
-import com.dentallink.domain.review.dto.response.ReviewDetailResponse;
-import com.dentallink.domain.review.dto.response.ReviewListResponse;
-import com.dentallink.domain.review.dto.response.ReviewUpdateResponse;
+import com.dentallink.domain.review.dto.response.*;
 import com.dentallink.domain.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -58,6 +55,16 @@ public class ReviewController {
             @RequestBody ReviewUpdateRequest reviewUpdateRequest
     ) {
         ReviewUpdateResponse review = reviewService.updateReview(id, userId, reviewUpdateRequest);
+        return ResponseEntity.ok(review);
+    }
+
+    // 리뷰 삭제
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ReviewDeleteResponse> deleteReviewById(
+            @PathVariable Long id,
+            @RequestParam Long userId
+    ) {
+        ReviewDeleteResponse review = reviewService.deleteReview(id, userId);
         return ResponseEntity.ok(review);
     }
 }

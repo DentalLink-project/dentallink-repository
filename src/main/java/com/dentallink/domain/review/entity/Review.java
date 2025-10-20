@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Getter
 @NoArgsConstructor
@@ -24,6 +26,10 @@ public class Review extends BaseEntity {
 
     private Integer point;
     private String content;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
 
     private Review(
             Long reservationId,
@@ -58,5 +64,14 @@ public class Review extends BaseEntity {
     public void update(Integer point, String content) {
         this.point = point;
         this.content = content;
+    }
+
+    public void delete() {
+        this.updatedAt = LocalDateTime.now();
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
     }
 }
