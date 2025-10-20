@@ -1,5 +1,7 @@
 package com.dentallink.domain.hospital.dto.response;
 
+import com.dentallink.domain.hospital.entity.Hospital;
+import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import lombok.Getter;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -11,7 +13,7 @@ public class HospitalCreateResponse {
     private final String hospitalDescription;
     private final String hospitalAddress;
     private final Boolean isOpen;
-    private final String image;
+    private final String doctorName;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final LocalTime openTime;
@@ -25,7 +27,7 @@ public class HospitalCreateResponse {
             String hospitalDescription,
             String hospitalAddress,
             Boolean isOpen,
-            String image,
+            String doctorName,
             LocalDateTime createdAt,
             LocalDateTime updatedAt,
             LocalTime openTime,
@@ -38,12 +40,29 @@ public class HospitalCreateResponse {
         this.hospitalDescription = hospitalDescription;
         this.hospitalAddress = hospitalAddress;
         this.isOpen = isOpen;
-        this.image = image;
+        this.doctorName = doctorName;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.openTime = openTime;
         this.closeTime = closeTime;
         this.breakStart = breakStart;
         this.breakEnd = breakEnd;
+    }
+
+    public static HospitalCreateResponse of(Hospital hospital, HospitalSchedule  hospitalSchedule) {
+        return new HospitalCreateResponse(
+                hospital.getId(),
+                hospital.getHospitalName(),
+                hospital.getHospitalDescription(),
+                hospital.getHospitalAddress(),
+                hospital.getHospitalIsOpen(),
+                hospital.getDoctorName(),
+                hospital.getCreatedAt(),
+                hospital.getUpdatedAt(),
+                hospitalSchedule.getOpenTime(),
+                hospitalSchedule.getCloseTime(),
+                hospitalSchedule.getBreakStart(),
+                hospitalSchedule.getCloseTime()
+        );
     }
 }
