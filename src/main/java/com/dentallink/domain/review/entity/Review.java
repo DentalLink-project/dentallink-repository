@@ -1,6 +1,7 @@
 package com.dentallink.domain.review.entity;
 
 import com.dentallink.common.entity.BaseEntity;
+import com.dentallink.domain.review.enums.ReviewStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,26 +25,16 @@ public class Review extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ReviewStatus status = ReviewStatus.PENDING;
+
     private Integer point;
     private String content;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
-
-    private Review(
-            Long reservationId,
-            Long hospitalId,
-            Long userId,
-            Integer point,
-            String content
-    ) {
-        this.reservationId = reservationId;
-        this.hospitalId = hospitalId;
-        this.userId = userId;
-        this.point = point;
-        this.content = content;
-    }
 
     public static Review of(
             Long reservationId,
@@ -52,13 +43,26 @@ public class Review extends BaseEntity {
             Integer point,
             String content
     ) {
-        return new Review(
-                reservationId,
-                hospitalId,
-                userId,
-                point,
-                content
-        );
+        Review review = new Review();
+        review.reservationId = reservationId;
+        review.hospitalId = hospitalId;
+        review.userId = userId;
+        review.point = point;
+        review.content = content;
+        review.status = ReviewStatus.PENDING;
+        review.createdAt = LocalDateTime.now();
+        review.updatedAt = LocalDateTime.now();
+        return review;
+    }
+
+    public void approve() {
+        this.status = ReviewStatus.APPROVED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void reject() {
+        this.status = ReviewStatus.REJECTED;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void update(Integer point, String content) {
