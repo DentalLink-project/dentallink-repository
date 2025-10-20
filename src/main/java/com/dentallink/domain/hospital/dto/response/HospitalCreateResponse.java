@@ -49,7 +49,7 @@ public class HospitalCreateResponse {
         this.breakEnd = breakEnd;
     }
 
-    public static HospitalCreateResponse of(Hospital hospital, HospitalSchedule  hospitalSchedule) {
+    public static HospitalCreateResponse of(Hospital hospital, HospitalSchedule hospitalSchedule) {
         return new HospitalCreateResponse(
                 hospital.getId(),
                 hospital.getHospitalName(),
