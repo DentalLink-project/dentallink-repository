@@ -29,7 +29,7 @@ public class ReviewController {
     }
 
     // 리뷰 상세 조회
-    @GetMapping("/{id}")
+    @GetMapping("/reviews/{id}")
     public ResponseEntity<ReviewDetailResponse> getReviewById(
             @PathVariable Long id
     ) {

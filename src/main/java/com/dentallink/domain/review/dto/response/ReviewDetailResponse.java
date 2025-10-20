@@ -19,7 +19,7 @@ public record ReviewDetailResponse (
                 review.getId(),
                 review.getHospitalId(),
                 review.getUserId(),
-                review.getHospitalId(),
+                review.getReservationId(),
                 review.getPoint(),
                 review.getContent(),
                 review.getCreatedAt(),
