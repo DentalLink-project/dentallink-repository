@@ -1,5 +1,6 @@
 package com.dentallink.domain.hospital.repository;
 
+import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -13,4 +14,6 @@ public interface HospitalScheduleRepository extends JpaRepository<HospitalSchedu
     @Query("SELECT hs FROM HospitalSchedule hs " +
             "WHERE hs.hospital.id = :hospitalId")
     Optional<HospitalSchedule> findByHospitalId(@Param("hospitalId") Long hospitalId);
+
+    void deleteByHospital(Hospital hospital);
 }

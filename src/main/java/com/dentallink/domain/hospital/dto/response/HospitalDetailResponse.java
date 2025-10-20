@@ -2,23 +2,24 @@ package com.dentallink.domain.hospital.dto.response;
 
 import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
+import lombok.AllArgsConstructor;
 
 import java.time.LocalTime;
 
-public record HospitalUpdateResponse (
+public record HospitalDetailResponse (
         Long id,
         String hospitalName,
         String hospitalDescription,
         String hospitalAddress,
-        Boolean hospitalIsOpen,
+        Boolean isOpen,
         String doctorName,
         LocalTime openTime,
         LocalTime closeTime,
         LocalTime breakStart,
         LocalTime breakEnd
 ) {
-    public static HospitalUpdateResponse of(Hospital hospital, HospitalSchedule schedule) {
-        return new HospitalUpdateResponse(
+    public static HospitalDetailResponse of(Hospital hospital, HospitalSchedule schedule) {
+        return new HospitalDetailResponse(
                 hospital.getId(),
                 hospital.getHospitalName(),
                 hospital.getHospitalDescription(),
