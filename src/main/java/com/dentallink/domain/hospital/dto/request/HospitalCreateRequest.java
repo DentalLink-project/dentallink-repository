@@ -10,7 +10,7 @@ public class HospitalCreateRequest {
     private String hospitalDescription;
     private String hospitalAddress;
     private Boolean hospitalIsOpen;
-    private String hospitalImage;
+    private String doctorName;
     private LocalTime openTime;
     private LocalTime closeTime;
     private LocalTime breakStart;
