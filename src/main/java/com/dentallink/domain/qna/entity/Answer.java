@@ -1,6 +1,8 @@
 package com.dentallink.domain.qna.entity;
 
 import com.dentallink.common.entity.BaseEntity;
+import com.dentallink.domain.qna.exception.QnaErrorCode;
+import com.dentallink.domain.qna.exception.QnaException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -23,7 +25,7 @@ public class Answer extends BaseEntity {
     @Column(name = "responder_id", nullable = false)
     private Long responderId;
 
-    @Column(length = 255, nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
     // 생성 팩토리 메서드
@@ -40,8 +42,16 @@ public class Answer extends BaseEntity {
         this.content = content;
     }
 
-    // 답변 삭제 메서드 (soft delete)
+    // 답변 삭제 메서드 (soft delete) + 검증 로직
+    // todo 검증 로직 추가
     public void deleteAnswer() {
         this.delete();
+    }
+
+    // 동일한 ID 검증 로직
+    public void validateResponder(Long responderId) {
+        if (!this.getResponderId().equals(responderId)) {
+            throw new QnaException(QnaErrorCode.ANSWER_ACCESS_DENIED);
+        }
     }
 }
