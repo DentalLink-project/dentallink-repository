@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -39,7 +40,7 @@ public class Question extends BaseEntity {
      * 새로 생성된 Question 객체의 answerList에 요소를 추가하려고 하면 UnsupportedOperationException이 발생할 수 있습니다.
      * 안전하게 가변 리스트인 new ArrayList<>()로 초기화하는 것이 좋습니다.
      * */
-    private List<Answer> answerList = List.of();
+    private List<Answer> answerList = new ArrayList<>();
 
     // 질문 생성 메서드
     public static Question of(Long userId, Long hospitalId, String title, String content) {
