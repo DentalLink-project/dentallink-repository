@@ -14,9 +14,11 @@ import com.dentallink.domain.user.repository.UserRepository;
 import com.dentallink.domain.user.service.query.UserQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserCommandServiceImpl implements UserCommandService {
 
     private final AuthServiceImpl authService;
@@ -63,7 +65,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     public Void withdraw(UserDeleteRequest request, AuthUser authUser) {
         User user = userQueryService.getUserById(authUser.getUserId());
         authService.passwordCheck(request.password(), user.getId());
-        userRepository.deleteById(user.getId());
+        user.delete();
         return null;
     }
 }
