@@ -2,14 +2,20 @@ package com.dentallink.domain.reservation.service;
 
 
 import com.dentallink.common.exception.GlobalException;
+import com.dentallink.domain.reservation.dto.AvailableTimeSlotResponse;
+import com.dentallink.domain.reservation.dto.ReservationCountDto;
+import com.dentallink.domain.reservation.dto.ReservationCreateRequest;
+import com.dentallink.domain.reservation.dto.ReservationResponse;
+import com.dentallink.domain.reservation.dto.ReservationUpdateStatusRequest;
+import com.dentallink.domain.reservation.entity.Reservation;
+import com.dentallink.domain.reservation.execption.ReservationErrorCode;
+import com.dentallink.domain.reservation.repository.ReservationRepository;
 import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
-import com.dentallink.domain.reservation.dto.*;
-import com.dentallink.domain.reservation.entity.Reservation;
-import com.dentallink.domain.reservation.execption.ReservationErrorCode;
-import com.dentallink.domain.reservation.repository.ReservationRepository;
+import com.dentallink.domain.user.entity.User;
+import com.dentallink.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,6 +38,7 @@ public class ReservationInternalService {
     private final ReservationRepository reservationRepository;
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
+    private final UserRepository userRepository;
 
     private static final int MAX_RESERVATION_PER_MAN = 3;
     private static final int TIME_PERIOD = 30;
@@ -75,8 +82,8 @@ public class ReservationInternalService {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 
-        // 병원 관리자 권한 확인
-        validateHospitalAdmin(reservation.getHospitalId(), hospitalAdminId);
+        // 병원 관리자 권한 확인 - 연관 객체 직접 접근
+        validateHospitalAdmin(reservation.getHospital().getId(), hospitalAdminId);
 
         // 상태 변경
         switch (request.status()) {
@@ -95,7 +102,7 @@ public class ReservationInternalService {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 
-        // 예약 소유자 확인
+        // 예약 소유자 확인 - 행위 중심 메서드 사용
         validateReservationOwner(reservation, userId);
 
         // 예약 시간 확인 (과거 예약 취소 불가)
@@ -125,9 +132,13 @@ public class ReservationInternalService {
 
         validateDuplicateUserReservation(userId, request.appointmentDate());
 
+        // User 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
+
         Reservation reservation = Reservation.create(
-                request.hospitalId(),
-                userId,
+                hospital,
+                user,
                 request.appointmentDate()
         );
 
@@ -200,17 +211,18 @@ public class ReservationInternalService {
     private void validateBusinessHours(LocalDateTime appointmentDate, HospitalSchedule schedule) {
         LocalTime appointmentTime = appointmentDate.toLocalTime();
 
+        // 마감 시간은 초과하면 안 됨 (closeTime 이상이면 예외)
         if (appointmentTime.isBefore(schedule.getOpenTime()) ||
-                appointmentTime.isAfter(schedule.getCloseTime())) {
+                !appointmentTime.isBefore(schedule.getCloseTime())) {
             throw new GlobalException(ReservationErrorCode.OUTSIDE_BUSINESS_HOURS);
         }
 
+        // 휴게시간 체크
         if (schedule.getBreakStart() != null && schedule.getBreakEnd() != null) {
             if (!appointmentTime.isBefore(schedule.getBreakStart()) &&
                     appointmentTime.isBefore(schedule.getBreakEnd())) {
                 throw new GlobalException(ReservationErrorCode.BREAK_TIME);
             }
-
         }
     }
 
@@ -238,8 +250,11 @@ public class ReservationInternalService {
         List<LocalDateTime> timePeriod = new ArrayList<>();
         LocalTime currentTime = schedule.getOpenTime();
 
-        while (currentTime.isBefore(schedule.getCloseTime())) {
-            // 점심시간이 아닌 경우에만 추가
+        // 마감 시간 30분 전까지만 예약 가능
+        LocalTime lastSlot = schedule.getCloseTime().minusMinutes(TIME_PERIOD);
+
+        while (!currentTime.isAfter(lastSlot)) {
+            // 휴게시간이 아닌 경우에만 추가
             if (schedule.getBreakStart() == null || schedule.getBreakEnd() == null ||
                     currentTime.isBefore(schedule.getBreakStart()) ||
                     !currentTime.isBefore(schedule.getBreakEnd())) {
@@ -266,14 +281,14 @@ public class ReservationInternalService {
         }
     }
 
-    //소유자 확인
+    // 소유자 확인 - 행위 중심 메서드 사용 (Tell, Don't Ask 원칙)
     private void validateReservationOwner(Reservation reservation, Long userId) {
-        if (!reservation.getUserId().equals(userId)) {
+        if (!reservation.isOwnedBy(userId)) {
             throw new GlobalException(ReservationErrorCode.NOT_RESERVATION_OWNER);
         }
     }
 
-    //시간
+    // 시간 검증 - 객체에 직접 질문
     private void validateAppointmentTime(Reservation reservation) {
         if (reservation.getAppointmentDate().isBefore(LocalDateTime.now())) {
             throw new GlobalException(ReservationErrorCode.PAST_APPOINTMENT_TIME);
