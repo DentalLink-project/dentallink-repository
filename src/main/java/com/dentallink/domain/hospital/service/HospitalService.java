@@ -12,13 +12,11 @@ import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import com.dentallink.domain.hospital.exception.HospitalErrorCode;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
-import com.dentallink.domain.reservation.execption.ReservationErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -59,12 +57,9 @@ public class HospitalService {
      * 병원 전체 조회
      */
     @Transactional(readOnly = true)
-    public List<HospitalListResponse> findAllHospitals() {
-        List<Hospital> hospitals = hospitalRepository.findAll();
-
-        return hospitals.stream()
-                .map(HospitalListResponse::from)
-                .collect(Collectors.toList());
+    public Page<HospitalListResponse> findAllHospitals(Pageable pageable) {
+        return hospitalRepository.findAll(pageable)
+                .map(HospitalListResponse::from);
     }
 
     /**

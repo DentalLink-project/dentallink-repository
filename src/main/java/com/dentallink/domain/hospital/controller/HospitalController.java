@@ -8,36 +8,37 @@ import com.dentallink.domain.hospital.dto.response.HospitalListResponse;
 import com.dentallink.domain.hospital.dto.response.HospitalUpdateResponse;
 import com.dentallink.domain.hospital.service.HospitalService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/hospital")
 public class HospitalController {
     private final HospitalService hospitalService;
 
-    @PostMapping("/hospital")
+    @PostMapping
     public ResponseEntity<HospitalCreateResponse> createHospital(
             @RequestBody HospitalCreateRequest hospitalCreateRequest
     ){
         return ResponseEntity.ok(hospitalService.createHospital(hospitalCreateRequest));
     }
 
-    @GetMapping("/hospital")
-    public ResponseEntity<List<HospitalListResponse>> getAllHospitals() {
-        List<HospitalListResponse> hospitals = hospitalService.findAllHospitals();
+    @GetMapping
+    public ResponseEntity<Page<HospitalListResponse>> getAllHospitals(Pageable pageable) {
+        Page<HospitalListResponse> hospitals = hospitalService.findAllHospitals(pageable);
         return ResponseEntity.ok(hospitals);
     }
 
-    @GetMapping("/hospital/{id}")
+    @GetMapping("/{id}")
     public ResponseEntity<HospitalDetailResponse> getHospitalById(@PathVariable Long id) {
         HospitalDetailResponse hospital = hospitalService.findHospitalById(id);
         return ResponseEntity.ok(hospital);
     }
 
-    @PatchMapping("/hospital/{id}")
+    @PatchMapping("/{id}")
     public ResponseEntity<HospitalUpdateResponse> updateHospital(
             @PathVariable Long id,
             @RequestBody HospitalUpdateRequest hospitalUpdateRequest
@@ -46,7 +47,7 @@ public class HospitalController {
         return ResponseEntity.ok(hospital);
     }
 
-    @DeleteMapping("/hospital/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteHospital(@PathVariable Long id) {
         hospitalService.deleteHospital(id);
         return ResponseEntity.noContent().build();
