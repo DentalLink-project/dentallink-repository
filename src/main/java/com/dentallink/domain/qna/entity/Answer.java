@@ -34,6 +34,7 @@ public class Answer extends BaseEntity {
         answer.question = question;
         answer.responderId = responderId;
         answer.content = content;
+        question.getAnswerList().add(answer); // Answer of() 생성자에서 양방향 연관관계 설정
         return answer;
     }
 
