@@ -44,7 +44,9 @@ public class UserCommandServiceImpl implements UserCommandService {
         User user = userQueryService.getUserById(authUser.getUserId());
         if (request.password() == null) throw new GlobalException(UserErrorCode.USER_BAD_REQUEST);
         authService.passwordCheck(request.password(), user.getId());
-
+        if (request.email() != null && !user.getEmail().equals(request.email()) && userQueryService.existsUserByEmail(request.email())) {
+            throw new GlobalException(UserErrorCode.EMAIL_DUPLICATED);
+        }
         user.update(request.username(), request.email());
 
         User savedUser = userRepository.save(user);
