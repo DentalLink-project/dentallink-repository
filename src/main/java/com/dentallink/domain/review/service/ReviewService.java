@@ -99,9 +99,9 @@ public class ReviewService {
         }
 
         review.update(reviewUpdateRequest.point(), reviewUpdateRequest.content());
-        Review updateReview = reviewRepository.save(review);
+        reviewRepository.save(review);
 
-        return ReviewUpdateResponse.of(updateReview);
+        return ReviewUpdateResponse.of(review);
     }
 
     // 리뷰 삭제
@@ -119,8 +119,8 @@ public class ReviewService {
         }
 
         review.delete();
-        Review deleteReview = reviewRepository.save(review);
+        reviewRepository.save(review);
 
-        return ReviewDeleteResponse.of(deleteReview);
+        return ReviewDeleteResponse.of(review);
     }
 }
