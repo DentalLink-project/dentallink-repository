@@ -42,11 +42,28 @@ public class Answer extends BaseEntity {
         this.content = content;
     }
 
+    /// 일반 사용자 삭제 메서드 - Only 본인 답변
     // 답변 삭제 메서드 (soft delete) + 검증 로직
     // todo 검증 로직 추가
-    public void deleteAnswer() {
-        this.delete();
+    public void deleteAnswer(Long responderId) {
+        validateResponder(responderId);
+        super.delete(); // soft delete - BaseEntity의 delete 메서드 호출
     }
+    /**
+     * 설명
+     * 답변 작성자 (responderId) 본인이 직접 삭제할 때 사용하는 메서드
+     * "내가 작성한 답변을 내가 삭제할 수 있다."는 비즈니스 규칙을 구현
+     * 검증 로직은 validateResponder 메서드에서 수행
+     * 삭제 주체의 권한 검증을 우회하는 로직이 필요할 경우 이 메서드를 수정하거나 별도의 메서드를 추가해야 함
+     * */
+
+    /// 문의글 삭제 시 답변 일괄 삭제 메서드 - 검증 우회용 메서드
+    // todo 삭제 주체의 권한 검증을 우회하는 로직
+    // 답변 강제 삭제 메서드 (soft delete) - 질문 삭제 시 사용 또는 관리자 권한 등 특별한 경우에 사용
+    protected void forceDeleteAnswer() {
+        super.delete(); // soft delete - BaseEntity의 delete 메서드 호출
+    }
+    // protected로 설정하여 Answer 외부에서 직접 호출하지 못하게 함
 
     // 동일한 ID 검증 로직
     public void validateResponder(Long responderId) {

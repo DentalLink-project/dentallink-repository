@@ -47,6 +47,6 @@ public class AnswerService {
         Answer answer = get(answerId);
         // 본인 답변만 삭제 가능
         answer.validateResponder(responderId);
-        answer.deleteAnswer(); // soft delete
+        answer.deleteAnswer(responderId); // soft delete
     }
 }
