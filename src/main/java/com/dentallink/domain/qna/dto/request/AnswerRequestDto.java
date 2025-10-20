@@ -12,5 +12,7 @@ public class AnswerRequestDto {
     ) {}
 
     // 답변 수정 요청 DTO answer update request dto
-    public record AnswerUpdateRequest(String content) {}
+    public record AnswerUpdateRequest(
+            @NotBlank String content
+    ) {}
 }

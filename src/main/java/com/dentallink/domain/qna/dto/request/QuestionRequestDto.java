@@ -13,5 +13,8 @@ public class QuestionRequestDto {
     ) {}
 
     // 질문 수정 요청 DTO question update request dto
-    public record QuestionUpdateRequest(String title, String content) {}
+    public record QuestionUpdateRequest(
+            @NotBlank String title,
+            @NotBlank String content
+    ) {}
 }
