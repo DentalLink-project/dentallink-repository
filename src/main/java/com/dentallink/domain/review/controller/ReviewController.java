@@ -2,6 +2,7 @@ package com.dentallink.domain.review.controller;
 
 import com.dentallink.domain.review.dto.request.ReviewCreateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateRequest;
+import com.dentallink.domain.review.dto.request.ReviewUpdateStatusRequest;
 import com.dentallink.domain.review.dto.response.*;
 import com.dentallink.domain.review.service.ReviewService;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,17 @@ public class ReviewController {
             @RequestBody ReviewCreateRequest reviewCreateRequest
     ) {
         return ResponseEntity.ok(reviewService.createReview(reservationId, hospitalId, userId, reviewCreateRequest));
+    }
+
+    // 리뷰 상태 변경
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ReviewStatusResponse> updateReviewStatus(
+            @PathVariable Long id,
+            @RequestBody ReviewUpdateStatusRequest request,
+            @RequestParam Long hospitalAdminId
+    ) {
+        ReviewStatusResponse response = reviewService.updateReviewStatus(id, request, hospitalAdminId);
+        return ResponseEntity.ok(response);
     }
 
     // 리뷰 수정

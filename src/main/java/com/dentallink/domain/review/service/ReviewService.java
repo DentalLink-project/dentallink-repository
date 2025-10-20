@@ -3,6 +3,7 @@ package com.dentallink.domain.review.service;
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.domain.review.dto.request.ReviewCreateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateRequest;
+import com.dentallink.domain.review.dto.request.ReviewUpdateStatusRequest;
 import com.dentallink.domain.review.dto.response.*;
 import com.dentallink.domain.review.entity.Review;
 import com.dentallink.domain.review.exception.ReviewErrorCode;
@@ -53,6 +54,34 @@ public class ReviewService {
         Review createReview = reviewRepository.save(review);
 
         return ReviewCreateResponse.of(createReview);
+    }
+
+    // 리뷰 상태 변경
+    @Transactional
+    public ReviewStatusResponse updateReviewStatus(
+            Long reviewId,
+            ReviewUpdateStatusRequest request,
+            Long hospitalAdminId
+    ) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new GlobalException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        // 병원 관리자 권한 확인
+        validateHospitalAdmin(review.getHospitalId(), hospitalAdminId);
+
+        // 상태 변경
+        switch (request.status()) {
+            case APPROVED -> review.approve();
+            case REJECTED -> review.reject();
+            default -> throw new GlobalException(ReviewErrorCode.INVALID_STATUS_TRANSITION);
+        }
+
+        Review updatedReview = reviewRepository.save(review);
+        return ReviewStatusResponse.of(updatedReview);
+    }
+
+    // TODO: 병원 관리자 검증 로직 구현
+    private void validateHospitalAdmin(Long hospitalId, Long hospitalAdminId) {
     }
 
     // 리뷰 수정
