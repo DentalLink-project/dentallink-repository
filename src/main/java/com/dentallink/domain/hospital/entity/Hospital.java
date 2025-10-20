@@ -1,11 +1,7 @@
 package com.dentallink.domain.hospital.entity;
 
 import com.dentallink.common.entity.BaseEntity;
-import com.dentallink.domain.hospital.dto.request.HospitalUpdateRequest;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -17,6 +13,9 @@ public class Hospital extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
     private String hospitalName;
     private String hospitalDescription;
     private String hospitalAddress;
@@ -24,12 +23,14 @@ public class Hospital extends BaseEntity {
     private String doctorName;
 
     public Hospital(
+            Long userId,
             String hospitalName,
             String hospitalDescription,
             String hospitalAddress,
             Boolean hospitalIsOpen,
             String doctorName
     ) {
+        this.userId = userId;
         this.hospitalName = hospitalName;
         this.hospitalDescription = hospitalDescription;
         this.hospitalAddress = hospitalAddress;
