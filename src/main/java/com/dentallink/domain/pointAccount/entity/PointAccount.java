@@ -1,6 +1,7 @@
 package com.dentallink.domain.pointAccount.entity;
 
 import com.dentallink.common.entity.BaseEntity;
+import com.dentallink.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -17,12 +18,18 @@ public class PointAccount extends BaseEntity {
     @Column(nullable = false)
     private Long balance;
 
-    private PointAccount(Long balance) {
+    // 유저와 포인트계좌는 1대1 관계이다.
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
+
+    private PointAccount(User user, Long balance) {
+        this.user = user;
         this.balance = balance;
     }
 
-    public static PointAccount create(Long balance) {
-        return new PointAccount(balance);
+    public static PointAccount create(User user, Long balance) {
+        return new PointAccount(user, balance);
     }
 
     // 현금 -> 포인트
