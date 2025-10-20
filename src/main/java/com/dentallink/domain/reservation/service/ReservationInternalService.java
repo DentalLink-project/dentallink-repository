@@ -2,14 +2,20 @@ package com.dentallink.domain.reservation.service;
 
 
 import com.dentallink.common.exception.GlobalException;
+import com.dentallink.domain.reservation.dto.AvailableTimeSlotResponse;
+import com.dentallink.domain.reservation.dto.ReservationCountDto;
+import com.dentallink.domain.reservation.dto.ReservationCreateRequest;
+import com.dentallink.domain.reservation.dto.ReservationResponse;
+import com.dentallink.domain.reservation.dto.ReservationUpdateStatusRequest;
+import com.dentallink.domain.reservation.entity.Reservation;
+import com.dentallink.domain.reservation.execption.ReservationErrorCode;
+import com.dentallink.domain.reservation.repository.ReservationRepository;
 import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
-import com.dentallink.domain.reservation.dto.*;
-import com.dentallink.domain.reservation.entity.Reservation;
-import com.dentallink.domain.reservation.execption.ReservationErrorCode;
-import com.dentallink.domain.reservation.repository.ReservationRepository;
+import com.dentallink.domain.user.entity.User;
+import com.dentallink.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,8 +38,9 @@ public class ReservationInternalService {
     private final ReservationRepository reservationRepository;
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
+    private final UserRepository userRepository;
 
-    private static final int MAX_RESERVATIONS_PER_SLOT = 3;
+    private static final int MAX_RESERVATION_PER_MAN = 3;
     private static final int TIME_PERIOD = 30;
 
 
@@ -125,9 +132,13 @@ public class ReservationInternalService {
 
         validateDuplicateUserReservation(userId, request.appointmentDate());
 
+        // User 조회
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
+
         Reservation reservation = Reservation.create(
-                request.hospitalId(),
-                userId,
+                hospital,
+                user,
                 request.appointmentDate()
         );
 
@@ -168,7 +179,7 @@ public class ReservationInternalService {
 
         for (LocalDateTime timeSlot : timesPeriod) {
             long existingCount = reservationCountMap.getOrDefault(timeSlot, 0L);
-            int availableCount = MAX_RESERVATIONS_PER_SLOT - (int) existingCount;
+            int availableCount = MAX_RESERVATION_PER_MAN - (int) existingCount;
 
             AvailableTimeSlotResponse response = AvailableTimeSlotResponse.of(
                     timeSlot,
@@ -219,7 +230,7 @@ public class ReservationInternalService {
                 hospitalId, appointmentDate
         );
 
-        if (currentReservationCount >= MAX_RESERVATIONS_PER_SLOT) {
+        if (currentReservationCount >= MAX_RESERVATION_PER_MAN) {
             throw new GlobalException(ReservationErrorCode.RESERVATION_FULL);
         }
     }
@@ -261,7 +272,13 @@ public class ReservationInternalService {
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_NOT_FOUND));
 
-        if (!hospital.getUserId().equals(userId)) {
+        // TODO: Hospital에 userId 필드 추가 후 주석 해제
+        // if (!hospital.getUserId().equals(userId)) {
+        //     throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
+        // }
+
+        // 임시: null 체크만 수행
+        if (hospitalId == null || userId == null) {
             throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
         }
     }

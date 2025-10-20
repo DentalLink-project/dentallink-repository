@@ -2,7 +2,6 @@ package com.dentallink.domain.reservation.repository;
 
 import com.dentallink.domain.reservation.dto.ReservationCountDto;
 import com.dentallink.domain.reservation.entity.Reservation;
-import com.dentallink.domain.reservation.enums.ReservationStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
