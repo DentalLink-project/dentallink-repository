@@ -211,17 +211,18 @@ public class ReservationInternalService {
     private void validateBusinessHours(LocalDateTime appointmentDate, HospitalSchedule schedule) {
         LocalTime appointmentTime = appointmentDate.toLocalTime();
 
+        // 마감 시간은 초과하면 안 됨 (closeTime 이상이면 예외)
         if (appointmentTime.isBefore(schedule.getOpenTime()) ||
-                appointmentTime.isAfter(schedule.getCloseTime())) {
+                !appointmentTime.isBefore(schedule.getCloseTime())) {
             throw new GlobalException(ReservationErrorCode.OUTSIDE_BUSINESS_HOURS);
         }
 
+        // 휴게시간 체크
         if (schedule.getBreakStart() != null && schedule.getBreakEnd() != null) {
             if (!appointmentTime.isBefore(schedule.getBreakStart()) &&
                     appointmentTime.isBefore(schedule.getBreakEnd())) {
                 throw new GlobalException(ReservationErrorCode.BREAK_TIME);
             }
-
         }
     }
 
@@ -249,8 +250,11 @@ public class ReservationInternalService {
         List<LocalDateTime> timePeriod = new ArrayList<>();
         LocalTime currentTime = schedule.getOpenTime();
 
-        while (currentTime.isBefore(schedule.getCloseTime())) {
-            // 점심시간이 아닌 경우에만 추가
+        // 마감 시간 30분 전까지만 예약 가능
+        LocalTime lastSlot = schedule.getCloseTime().minusMinutes(TIME_PERIOD);
+
+        while (!currentTime.isAfter(lastSlot)) {
+            // 휴게시간이 아닌 경우에만 추가
             if (schedule.getBreakStart() == null || schedule.getBreakEnd() == null ||
                     currentTime.isBefore(schedule.getBreakStart()) ||
                     !currentTime.isBefore(schedule.getBreakEnd())) {
@@ -272,13 +276,7 @@ public class ReservationInternalService {
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_NOT_FOUND));
 
-        // TODO: Hospital에 userId 필드 추가 후 주석 해제
-        // if (!hospital.getUserId().equals(userId)) {
-        //     throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
-        // }
-
-        // 임시: null 체크만 수행
-        if (hospitalId == null || userId == null) {
+        if (!hospital.getUserId().equals(userId)) {
             throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
         }
     }
