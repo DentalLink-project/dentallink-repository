@@ -38,7 +38,7 @@ public class SecurityConfig {
         // 요청 권한 설정
         http.authorizeHttpRequests((authorizeHttpRequests) ->
                 authorizeHttpRequests
-                        .requestMatchers("/api/user/signup", "/api/auth/login").permitAll() // 회원가입/인만 가능
+                        .requestMatchers("/api/users/signup", "/api/auth/login").permitAll() // 회원가입/로그인만 허용
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 처리
         );
 
