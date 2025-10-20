@@ -2,46 +2,25 @@ package com.dentallink.domain.hospital.dto.response;
 
 import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.time.LocalTime;
 
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class HospitalUpdateResponse {
-    private Long id;
-    private String hospitalName;
-    private String hospitalDescription;
-    private String hospitalAddress;
-    private Boolean hospitalIsOpen;
-    private String doctorName;
-    private LocalTime openTime;
-    private LocalTime closeTime;
-    private LocalTime breakStart;
-    private LocalTime breakEnd;
-
-    public HospitalUpdateResponse(
-            Long id,
-            String hospitalName,
-            String hospitalDescription,
-            String hospitalAddress,
-            Boolean hospitalIsOpen,
-            String doctorName,
-            LocalTime openTime,
-            LocalTime closeTime,
-            LocalTime breakStart,
-            LocalTime breakEnd
-    ) {
-        this.id = id;
-        this.hospitalName = hospitalName;
-        this.hospitalDescription = hospitalDescription;
-        this.hospitalAddress = hospitalAddress;
-        this.hospitalIsOpen = hospitalIsOpen;
-        this.doctorName = doctorName;
-        this.openTime = openTime;
-        this.closeTime = closeTime;
-        this.breakStart = breakStart;
-        this.breakEnd = breakEnd;
-    }
+    private final Long id;
+    private final String hospitalName;
+    private final String hospitalDescription;
+    private final String hospitalAddress;
+    private final Boolean hospitalIsOpen;
+    private final String doctorName;
+    private final LocalTime openTime;
+    private final LocalTime closeTime;
+    private final LocalTime breakStart;
+    private final LocalTime breakEnd;
 
     public static HospitalUpdateResponse of(Hospital hospital, HospitalSchedule schedule) {
         return new HospitalUpdateResponse(
