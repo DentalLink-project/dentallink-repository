@@ -45,8 +45,6 @@ public class AnswerService {
     // 비즈니스 로직 작성 delete
     public void delete(Long answerId, Long responderId) {
         Answer answer = get(answerId);
-        // 본인 답변만 삭제 가능
-        answer.validateResponder(responderId);
         answer.deleteAnswer(responderId); // soft delete
     }
 }
