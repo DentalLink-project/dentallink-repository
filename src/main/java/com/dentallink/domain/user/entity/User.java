@@ -2,12 +2,12 @@ package com.dentallink.domain.user.entity;
 
 
 import com.dentallink.common.entity.BaseEntity;
+import com.dentallink.domain.user.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import com.dentallink.domain.user.enums.UserRole;
 
 @Entity
 @Getter
