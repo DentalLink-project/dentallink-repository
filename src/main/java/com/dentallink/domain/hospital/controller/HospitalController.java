@@ -25,19 +25,19 @@ public class HospitalController {
         return ResponseEntity.ok(hospitalService.createHospital(hospitalCreateRequest));
     }
 
-    @GetMapping
+    @GetMapping("/hospital")
     public ResponseEntity<List<HospitalListResponse>> getAllHospitals() {
         List<HospitalListResponse> hospitals = hospitalService.findAllHospitals();
         return ResponseEntity.ok(hospitals);
     }
 
-    @GetMapping
+    @GetMapping("/hospital/{id}")
     public ResponseEntity<HospitalDetailResponse> getHospitalById(@PathVariable Long id) {
         HospitalDetailResponse hospital = hospitalService.findHospitalById(id);
         return ResponseEntity.ok(hospital);
     }
 
-    @PatchMapping("hospital/{id}")
+    @PatchMapping("/hospital/{id}")
     public ResponseEntity<HospitalUpdateResponse> updateHospital(
             @PathVariable Long id,
             @RequestBody HospitalUpdateRequest hospitalUpdateRequest
@@ -46,7 +46,7 @@ public class HospitalController {
         return ResponseEntity.ok(hospitalService.updateHospital(id, hospitalUpdateRequest));
     }
 
-    @DeleteMapping
+    @DeleteMapping("/hospital/{id}")
     public ResponseEntity<Void> deleteHospital(@PathVariable Long id) {
         hospitalService.deleteHospital(id);
         return ResponseEntity.noContent().build();
