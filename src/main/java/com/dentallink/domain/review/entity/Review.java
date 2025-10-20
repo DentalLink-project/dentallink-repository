@@ -24,4 +24,18 @@ public class Review extends BaseEntity {
 
     private Integer point;
     private String content;
+
+    public Review(
+            Long reservationId,
+            Long hospitalId,
+            Long userId,
+            Integer point,
+            String content
+    ) {
+        this.reservationId = reservationId;
+        this.hospitalId = hospitalId;
+        this.userId = userId;
+        this.point = point;
+        this.content = content;
+    }
 }
