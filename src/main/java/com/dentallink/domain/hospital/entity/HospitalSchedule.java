@@ -36,4 +36,16 @@ public class HospitalSchedule {
         this.breakEnd = breakEnd;
         this.hospital = hospital;
     }
+
+    public void updateSchedule(
+            LocalTime openTime,
+            LocalTime closeTime,
+            LocalTime breakStart,
+            LocalTime breakEnd
+    ) {
+        this.openTime = openTime;
+        this.closeTime = closeTime;
+        this.breakStart = breakStart;
+        this.breakEnd = breakEnd;
+    }
 }

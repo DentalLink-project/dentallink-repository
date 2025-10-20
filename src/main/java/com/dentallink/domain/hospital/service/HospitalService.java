@@ -1,14 +1,20 @@
 package com.dentallink.domain.hospital.service;
 
+import com.dentallink.common.exception.GlobalException;
 import com.dentallink.domain.hospital.dto.request.HospitalCreateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalUpdateRequest;
 import com.dentallink.domain.hospital.dto.response.HospitalCreateResponse;
+import com.dentallink.domain.hospital.dto.response.HospitalDetailResponse;
+import com.dentallink.domain.hospital.dto.response.HospitalListResponse;
 import com.dentallink.domain.hospital.dto.response.HospitalUpdateResponse;
 import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
+import com.dentallink.domain.hospital.exception.HospitalErrorCode;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,56 +26,94 @@ public class HospitalService {
 
     /**
      * 병원 등록
-     *
-     * @param hospitalCreateRequest 병원 생성 요청 DTO
-     * @return 생성된 병원 및 스케줄 정보를 담은 응답 DTO
      */
     @Transactional
     public HospitalCreateResponse createHospital(HospitalCreateRequest hospitalCreateRequest)
     {
        Hospital hospital = new Hospital(
-               hospitalCreateRequest.getHospitalName(),
-               hospitalCreateRequest.getHospitalDescription(),
-               hospitalCreateRequest.getHospitalAddress(),
-               hospitalCreateRequest.getHospitalIsOpen(),
-               hospitalCreateRequest.getHospitalImage()
+               hospitalCreateRequest.hospitalName(),
+               hospitalCreateRequest.hospitalDescription(),
+               hospitalCreateRequest.hospitalAddress(),
+               hospitalCreateRequest.hospitalIsOpen(),
+               hospitalCreateRequest.doctorName()
        );
 
        Hospital createHospital = hospitalRepository.save(hospital);
 
        HospitalSchedule hospitalSchedule = new HospitalSchedule(
-               hospitalCreateRequest.getOpenTime(),
-               hospitalCreateRequest.getCloseTime(),
-               hospitalCreateRequest.getBreakStart(),
-               hospitalCreateRequest.getBreakEnd(),
-               hospital
+               hospitalCreateRequest.openTime(),
+               hospitalCreateRequest.closeTime(),
+               hospitalCreateRequest.breakStart(),
+               hospitalCreateRequest.breakEnd(),
+               createHospital
        );
 
        HospitalSchedule createHospitalSchedule = hospitalScheduleRepository.save(hospitalSchedule);
 
-       return new HospitalCreateResponse(
-               createHospital.getId(),
-               createHospital.getHospitalName(),
-               createHospital.getHospitalDescription(),
-               createHospital.getHospitalAddress(),
-               createHospital.getHospitalIsOpen(),
-               createHospital.getHospitalImage(),
-               createHospital.getCreatedAt(),
-               createHospital.getUpdatedAt(),
-               createHospitalSchedule.getOpenTime(),
-               createHospitalSchedule.getCloseTime(),
-               createHospitalSchedule.getBreakStart(),
-               createHospitalSchedule.getBreakEnd()
-       );
+       return HospitalCreateResponse.of(createHospital, createHospitalSchedule);
     }
 
+    /**
+     * 병원 전체 조회
+     */
+    @Transactional(readOnly = true)
+    public Page<HospitalListResponse> findAllHospitals(Pageable pageable) {
+        return hospitalRepository.findAll(pageable)
+                .map(HospitalListResponse::from);
+    }
 
+    /**
+     * 병원 단건 조회
+     */
+    @Transactional(readOnly = true)
+    public HospitalDetailResponse findHospitalById(Long id) {
+        Hospital hospital = hospitalRepository.findById(id)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
+
+        HospitalSchedule schedule = hospitalScheduleRepository.findByHospitalId(id)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND));
+
+        return HospitalDetailResponse.of(hospital, schedule);
+    }
+
+    /**
+     * 병원 정보 수정
+     */
     @Transactional
-    public HospitalUpdateResponse updateHospital(Long id, HospitalUpdateRequest hospitalUpdateRequest){
+    public HospitalUpdateResponse updateHospital(Long id, HospitalUpdateRequest hospitalUpdateRequest) {
+        Hospital hospital = hospitalRepository.findById(id)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
 
-
-        return  new HospitalUpdateResponse(
-
+        hospital.updateHospital(
+                hospitalUpdateRequest.hospitalName(),
+                hospitalUpdateRequest.hospitalDescription(),
+                hospitalUpdateRequest.hospitalAddress(),
+                hospitalUpdateRequest.hospitalIsOpen(),
+                hospitalUpdateRequest.doctorName()
         );
+
+        HospitalSchedule schedule = hospitalScheduleRepository.findByHospitalId(id)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND));
+
+        schedule.updateSchedule(
+                hospitalUpdateRequest.openTime(),
+                hospitalUpdateRequest.closeTime(),
+                hospitalUpdateRequest.breakStart(),
+                hospitalUpdateRequest.breakEnd()
+        );
+
+        return HospitalUpdateResponse.of(hospital, schedule);
+    }
+
+    /**
+     * 병원 삭제
+     */
+    @Transactional
+    public void deleteHospital(Long id) {
+        Hospital hospital = hospitalRepository.findById(id)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
+
+        hospitalScheduleRepository.deleteByHospital(hospital);
+        hospitalRepository.delete(hospital);
     }
 }
