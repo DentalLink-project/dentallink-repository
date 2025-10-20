@@ -2,17 +2,14 @@ package com.dentallink.domain.reservation.service;
 
 
 import com.dentallink.common.exception.GlobalException;
-import com.dentallink.domain.reservation.dto.AvailableTimeSlotResponse;
-import com.dentallink.domain.reservation.dto.ReservationCreateRequest;
-import com.dentallink.domain.reservation.dto.ReservationResponse;
-import com.dentallink.domain.reservation.dto.ReservationUpdateStatusRequest;
-import com.dentallink.domain.reservation.entity.Reservation;
-import com.dentallink.domain.reservation.execption.ReservationErrorCode;
-import com.dentallink.domain.reservation.repository.ReservationRepository;
 import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
+import com.dentallink.domain.reservation.dto.*;
+import com.dentallink.domain.reservation.entity.Reservation;
+import com.dentallink.domain.reservation.execption.ReservationErrorCode;
+import com.dentallink.domain.reservation.repository.ReservationRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,9 +20,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(readOnly = true)
@@ -36,7 +33,7 @@ public class ReservationInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
 
-    private static final int MAX_RESERVATIONS_PER_SLOT = 3;
+    private static final int MAX_RESERVATION_PER_MAN = 3;
     private static final int TIME_PERIOD = 30;
 
 
@@ -109,7 +106,6 @@ public class ReservationInternalService {
     }
 
     //예약 생성
-
     @Transactional
     public ReservationResponse createReservation(ReservationCreateRequest request, Long userId) {
 
@@ -141,7 +137,6 @@ public class ReservationInternalService {
     }
 
     //예약 가능한 시간대 조회
-
     public List<AvailableTimeSlotResponse> getAvailableTimePeriod(Long hospitalId, LocalDate date) {
 
         Hospital hospital = hospitalRepository.findById(hospitalId)
@@ -156,21 +151,24 @@ public class ReservationInternalService {
 
         LocalDateTime startDay = date.atStartOfDay();
         LocalDateTime endDay = date.atTime(LocalTime.MAX);
-        List<Reservation> existingReservations = reservationRepository.findByHospitalIdAndDateRange(hospitalId, startDay, endDay);
+
+        // DB에서 GROUP BY로 시간대별 예약 개수 조회
+        List<ReservationCountDto> reservationCounts = reservationRepository.countReservationsByTimeSlot(
+                hospitalId, startDay, endDay
+        );
+
+        // Map으로 변환
+        Map<LocalDateTime, Long> reservationCountMap = reservationCounts.stream()
+                .collect(Collectors.toMap(
+                        ReservationCountDto::getTimeSlot,
+                        ReservationCountDto::getCount
+                ));
 
         List<AvailableTimeSlotResponse> availableTimeSlots = new ArrayList<>();
 
-        Map<LocalDateTime, Long> reservationCountMap = new HashMap<>();
-
-        for (Reservation reservation : existingReservations) {
-            LocalDateTime appointmentDate = reservation.getAppointmentDate();
-            Long currentCount = reservationCountMap.getOrDefault(appointmentDate, 0L);
-            reservationCountMap.put(appointmentDate, currentCount + 1);
-        }
-
         for (LocalDateTime timeSlot : timesPeriod) {
             long existingCount = reservationCountMap.getOrDefault(timeSlot, 0L);
-            int availableCount = MAX_RESERVATIONS_PER_SLOT - (int) existingCount;
+            int availableCount = MAX_RESERVATION_PER_MAN - (int) existingCount;
 
             AvailableTimeSlotResponse response = AvailableTimeSlotResponse.of(
                     timeSlot,
@@ -221,7 +219,7 @@ public class ReservationInternalService {
                 hospitalId, appointmentDate
         );
 
-        if (currentReservationCount >= MAX_RESERVATIONS_PER_SLOT) {
+        if (currentReservationCount >= MAX_RESERVATION_PER_MAN) {
             throw new GlobalException(ReservationErrorCode.RESERVATION_FULL);
         }
     }
@@ -259,21 +257,16 @@ public class ReservationInternalService {
         return timePeriod;
     }
 
-    private void validateHospitalAdmin(Long hospitalId, Long hospitalAdminId) {
-        // TODO: Hospital 도메인 완성 후 구현
-        // Hospital hospital = hospitalRepository.findById(hospitalId);
-        // if (!hospital.getUserId().equals(hospitalAdminId)) {
-        //     throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
-        // }
+    private void validateHospitalAdmin(Long hospitalId, Long userId) {
+        Hospital hospital = hospitalRepository.findById(hospitalId)
+                .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_NOT_FOUND));
 
-        // 임시: hospitalId와 hospitalAdminId가 유효한지만 체크
-        if (hospitalId == null || hospitalAdminId == null) {
+        if (!hospital.getUserId().equals(userId)) {
             throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
         }
     }
 
     //소유자 확인
-
     private void validateReservationOwner(Reservation reservation, Long userId) {
         if (!reservation.getUserId().equals(userId)) {
             throw new GlobalException(ReservationErrorCode.NOT_RESERVATION_OWNER);
