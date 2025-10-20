@@ -1,18 +1,15 @@
 package com.dentallink.domain.hospital.dto.request;
 
-import lombok.Getter;
-
 import java.time.LocalTime;
 
-@Getter
-public class HospitalCreateRequest {
-    private String hospitalName;
-    private String hospitalDescription;
-    private String hospitalAddress;
-    private Boolean hospitalIsOpen;
-    private String doctorName;
-    private LocalTime openTime;
-    private LocalTime closeTime;
-    private LocalTime breakStart;
-    private LocalTime breakEnd;
-}
+public record HospitalCreateRequest (
+    String hospitalName,
+    String hospitalDescription,
+    String hospitalAddress,
+    Boolean hospitalIsOpen,
+    String doctorName,
+    LocalTime openTime,
+    LocalTime closeTime,
+    LocalTime breakStart,
+    LocalTime breakEnd
+) {}
