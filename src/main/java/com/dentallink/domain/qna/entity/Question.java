@@ -1,6 +1,8 @@
 package com.dentallink.domain.qna.entity;
 
 import com.dentallink.common.entity.BaseEntity;
+import com.dentallink.domain.qna.exception.QnaErrorCode;
+import com.dentallink.domain.qna.exception.QnaException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -58,11 +60,19 @@ public class Question extends BaseEntity {
         this.content = content;
     }
 
-    // 질문 삭제 메서드 (soft delete)
+    // 질문 삭제 메서드 (soft delete) + 검증 로직
+    // todo 검증 로직 추가
     public void deleteQuestion() {
         this.delete();
         if (answerList != null) {
             answerList.forEach(Answer::deleteAnswer);
+        }
+    }
+
+    // 동일한 ID 검증 로직
+    public void validateOwner(Long userId) {
+        if (!this.getUserId().equals(userId)) {
+            throw new QnaException(QnaErrorCode.QUESTION_ACCESS_DENIED);
         }
     }
 }
