@@ -3,10 +3,7 @@ package com.dentallink.domain.review.service;
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.domain.review.dto.request.ReviewCreateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateRequest;
-import com.dentallink.domain.review.dto.response.ReviewCreateResponse;
-import com.dentallink.domain.review.dto.response.ReviewDetailResponse;
-import com.dentallink.domain.review.dto.response.ReviewListResponse;
-import com.dentallink.domain.review.dto.response.ReviewUpdateResponse;
+import com.dentallink.domain.review.dto.response.*;
 import com.dentallink.domain.review.entity.Review;
 import com.dentallink.domain.review.exception.ReviewErrorCode;
 import com.dentallink.domain.review.repository.ReviewRepository;
@@ -75,6 +72,26 @@ public class ReviewService {
         review.update(reviewUpdateRequest.point(), reviewUpdateRequest.content());
         Review updateReview = reviewRepository.save(review);
 
-        return  ReviewUpdateResponse.of(updateReview);
+        return ReviewUpdateResponse.of(updateReview);
+    }
+
+    // 리뷰 삭제
+    @Transactional
+    public ReviewDeleteResponse deleteReview(Long id, Long userId) {
+        Review review = reviewRepository.findById(id)
+                .orElseThrow(() -> new GlobalException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        if(!review.getUserId().equals(userId)) {
+            throw new GlobalException(ReviewErrorCode.NOT_REVIEW_OWNER);
+        }
+
+        if(review.isDeleted()) {
+            throw new GlobalException((ReviewErrorCode.ALREADY_DELETED));
+        }
+
+        review.delete();
+        Review deleteReview = reviewRepository.save(review);
+
+        return ReviewDeleteResponse.of(deleteReview);
     }
 }
