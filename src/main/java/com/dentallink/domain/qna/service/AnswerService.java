@@ -38,9 +38,7 @@ public class AnswerService {
     public void update(Long answerId, Long responderId, String content) {
         Answer answer = get(answerId);
         // 본인 답변만 수정 가능
-        if (!answer.getResponderId().equals(responderId)) {
-            throw new QnaException(QnaErrorCode.ANSWER_ACCESS_DENIED);
-        }
+        validateResponder(answer, responderId);
         answer.updateAnswer(content);
     }
 
@@ -48,9 +46,14 @@ public class AnswerService {
     public void delete(Long answerId, Long responderId) {
         Answer answer = get(answerId);
         // 본인 답변만 삭제 가능
+        validateResponder(answer, responderId);
+        answer.deleteAnswer(); // soft delete
+    }
+
+    // 동일한 ID 검증 로직
+    private void validateResponder(Answer answer, Long responderId) {
         if (!answer.getResponderId().equals(responderId)) {
             throw new QnaException(QnaErrorCode.ANSWER_ACCESS_DENIED);
         }
-        answer.deleteAnswer(); // soft delete
     }
 }
