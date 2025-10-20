@@ -11,13 +11,16 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Payment extends BaseEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "point_account_id", nullable = false, unique = true)
+    @JoinColumn(name = "point_account_id", nullable = false)
     private PointAccount pointAccount;
 
+    @Column(nullable = false)
     private Long amount;
 
     private Payment(PointAccount pointAccount, Long amount) {
@@ -28,5 +31,4 @@ public class Payment extends BaseEntity {
     public static Payment create(PointAccount pointAccount, Long amount) {
         return new Payment(pointAccount, amount);
     }
-
 }
