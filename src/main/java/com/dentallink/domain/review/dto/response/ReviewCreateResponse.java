@@ -11,7 +11,8 @@ public record ReviewCreateResponse (
     Long userId,
     Integer point,
     String content,
-    LocalDateTime createdAt
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt
 ) {
     public static ReviewCreateResponse of(Review review) {
         return new ReviewCreateResponse(
@@ -21,7 +22,8 @@ public record ReviewCreateResponse (
                 review.getUserId(),
                 review.getPoint(),
                 review.getContent(),
-                review.getCreatedAt()
+                review.getCreatedAt(),
+                review.getUpdatedAt()
         );
     }
 }
