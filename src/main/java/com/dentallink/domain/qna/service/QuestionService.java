@@ -40,18 +40,14 @@ public class QuestionService {
     public void update(Long questionId, Long userId, String title, String content) {
         Question question = get(questionId);
         // 본인 질문만 수정 가능
-        if (!question.getUserId().equals(userId)) {
-            throw new QnaException(QnaErrorCode.QUESTION_ACCESS_DENIED);
-        }
+        question.validateOwner(userId);
         question.updateQuestion(title, content);
     }
 
     // 비즈니스 로직 작성 delete
     public void delete(Long questionId, Long userId) {
         Question question = getWithAnswers(questionId);
-        if (!question.getUserId().equals(userId)) {
-            throw new QnaException(QnaErrorCode.QUESTION_ACCESS_DENIED);
-        }
+        question.validateOwner(userId);
         question.deleteQuestion(); // soft delete
     }
 }
