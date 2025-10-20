@@ -48,6 +48,6 @@ public class QuestionService {
     public void delete(Long questionId, Long userId) {
         Question question = getWithAnswers(questionId);
         question.validateOwner(userId);
-        question.deleteQuestion(); // soft delete
+        question.deleteQuestion(userId); // soft delete
     }
 }
