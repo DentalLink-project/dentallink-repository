@@ -1,7 +1,9 @@
 package com.dentallink.domain.reservation.entity;
 
 import com.dentallink.common.entity.BaseEntity;
+import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.reservation.enums.ReservationStatus;
+import com.dentallink.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -15,26 +17,17 @@ import java.time.LocalDateTime;
 @Table(name = "reservations")
 public class Reservation extends BaseEntity {
 
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    //TODO: 병원 엔티티 생성 후 주석 해제 및 병원아이디 삭제
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "hospital_id", nullable = false)
-//    private Hospital hospital;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "hospital_id", nullable = false)
+    private Hospital hospital;
 
-    @Column(name = "hospital_id", nullable = false)
-    private Long hospitalId;
-
-    //TODO: User Entity 새성 후 주석 해제하고 userId 제거
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "user_id", nullable = false)
-//    private User user;
-
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @Column(name = "appointment_date", nullable = false)
     private LocalDateTime appointmentDate;
@@ -43,25 +36,14 @@ public class Reservation extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private ReservationStatus status;
 
-    public static Reservation create(Long hospitalId, Long userId, LocalDateTime appointmentDate) {
+    public static Reservation create(Hospital hospital, User user, LocalDateTime appointmentDate) {
         Reservation reservation = new Reservation();
-        reservation.hospitalId = hospitalId;
-        reservation.userId = userId;
+        reservation.hospital = hospital;
+        reservation.user = user;
         reservation.appointmentDate = appointmentDate;
         reservation.status = ReservationStatus.PENDING;
         return reservation;
     }
-
-    //TODO: 병원, 유저 엔티티 생성 하고 하면 위 create 삭제하고 아래 주석 해제
-//    public static Reservation create(Hospital hospital, User user, LocalDateTime appointmentDate) {
-//        Reservation reservation = new Reservation();
-//        reservation.hospital = hospital;
-//        reservation.user = user;
-//        reservation.appointmentDate = appointmentDate;
-//        reservation.status = ReservationStatus.PENDING;
-//        return reservation;
-//    }
-
 
     public void approve() {
         validateNotDeleted();
@@ -88,7 +70,14 @@ public class Reservation extends BaseEntity {
         this.status = ReservationStatus.COMPLETED;
     }
 
+    // 행위 중심 메서드 - 객체지향적 접근
+    public boolean isOwnedBy(Long userId) {
+        return this.user.getId().equals(userId);
+    }
 
+    public boolean belongsToHospital(Long hospitalId) {
+        return this.hospital.getId().equals(hospitalId);
+    }
 
     private void validateNotDeleted() {
         if (this.isDeleted()) {
@@ -121,5 +110,4 @@ public class Reservation extends BaseEntity {
             throw new IllegalStateException("승인된 예약만 완료할 수 있습니다");
         }
     }
-
 }
