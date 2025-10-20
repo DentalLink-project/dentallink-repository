@@ -33,7 +33,7 @@ public class AuthServiceImpl implements AuthService{
     // 비밀번호를 확인하는 메서드입니다.
     @Override
     public void passwordCheck(String password, Long userId) {
-        if (userQueryService.getUserById(userId).getPassword().equals(passwordEncoder.encode(password))) {
+        if (!passwordEncoder.matches(password, userQueryService.getUserById(userId).getPassword())) {
             throw new GlobalException(AuthErrorCode.LOGIN_FAILED);
         }
     }
