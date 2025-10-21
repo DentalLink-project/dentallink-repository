@@ -1,6 +1,7 @@
 package com.dentallink.domain.qna.entity;
 
 import com.dentallink.common.entity.BaseEntity;
+import com.dentallink.domain.qna.enums.QuestionStatus;
 import com.dentallink.domain.qna.exception.QnaErrorCode;
 import com.dentallink.domain.qna.exception.QnaException;
 import jakarta.persistence.*;
