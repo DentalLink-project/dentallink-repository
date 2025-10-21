@@ -37,6 +37,22 @@ public class HospitalSchedule {
         this.hospital = hospital;
     }
 
+    public static HospitalSchedule create(
+            Hospital hospital,
+            LocalTime openTime,
+            LocalTime closeTime,
+            LocalTime breakStart,
+            LocalTime breakEnd
+    ) {
+        HospitalSchedule schedule = new HospitalSchedule();
+        schedule.hospital = hospital;
+        schedule.openTime = openTime;
+        schedule.closeTime = closeTime;
+        schedule.breakStart = breakStart;
+        schedule.breakEnd = breakEnd;
+        return schedule;
+    }
+
     public void updateSchedule(
             LocalTime openTime,
             LocalTime closeTime,
