@@ -5,6 +5,8 @@ import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.exception.InvalidPointAccountException;
 import com.dentallink.domain.pointAccount.exception.PointAccountErrorCode;
 import com.dentallink.domain.pointAccount.repository.PointAccountRepository;
+import com.dentallink.domain.pointLog.enums.PointLogType;
+import com.dentallink.domain.pointLog.service.PointLogExternalService;
 import com.dentallink.domain.user.entity.User;
 import com.dentallink.domain.user.service.query.UserQueryService;
 import lombok.AccessLevel;
@@ -17,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PointAccountInternalService {
     public final PointAccountRepository pointAccountRepository;
     private final UserQueryService userQueryService;
+    private final PointLogExternalService pointLogExternalService;
 
     // 계좌 생성하기
     @Transactional
@@ -39,8 +42,7 @@ public class PointAccountInternalService {
         return PointAccountGetResponse.from(account);
     }
 
-    /*
-    // 현금을 포인트로 바꾸는 메서드
+    // 관계자가 특정 포인트 계좌에 포인트를 충전하는 메서드
     @Transactional
     public PointAccountDepositResponse depositPointAccount(Long accountId, Long amount){
         PointAccount account = pointAccountRepository.findById(accountId)
@@ -51,7 +53,7 @@ public class PointAccountInternalService {
         return PointAccountDepositResponse.from(account, amount);
     }
 
-    // 포인트를 현금으로 바꾸는 메서드(payment 도메인 사용)
+    // 포인트를 현금으로 바꾸는 메서드
     @Transactional
     public PointAccountWithdrawResponse withdrawPointAccount(Long accountId, Long amount){
         PointAccount account = pointAccountRepository.findById(accountId)
@@ -61,24 +63,5 @@ public class PointAccountInternalService {
         return PointAccountWithdrawResponse.from(account, amount);
     }
 
-    // 포인트를 통해 상품 구매(reservation 도메인에서 사용)
-    @Transactional
-    public PointAccountSpendResponse spendPointAccount(Long accountId, Long amount){
-        PointAccount account = pointAccountRepository.findById(accountId)
-                .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
-        account.spend(amount);
-        pointLogExternalService.createLog(account, PointLogType.SPEND, amount);
-        return PointAccountSpendResponse.from(account, amount);
-    }
 
-    // 상품 구매 취소를 통해 포인트 복구(reservation 도메인에서 사용)
-    @Transactional
-    public PointAccountRefundResponse refundPointAccount(Long accountId, Long amount){
-        PointAccount account = pointAccountRepository.findById(accountId)
-                .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
-        account.refund(amount);
-        pointLogExternalService.createLog(account, PointLogType.REFUND, amount);
-        return PointAccountRefundResponse.from(account, amount);
-    }
-     */
 }
