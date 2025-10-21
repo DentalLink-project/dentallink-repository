@@ -29,15 +29,7 @@ public class HospitalController {
             @PathVariable Long hospitalId,
             @RequestBody HospitalScheduleCreateRequest request
     ) {
-        HospitalScheduleCreateRequest finalRequest = new HospitalScheduleCreateRequest(
-                hospitalId,
-                request.openTime(),
-                request.closeTime(),
-                request.breakStart(),
-                request.breakEnd()
-        );
-
-        HospitalScheduleCreateResponse response = hospitalService.createHospitalSchedule(finalRequest);
+        HospitalScheduleCreateResponse response = hospitalService.createHospitalSchedule(hospitalId, request);
         return ResponseEntity.ok(response);
     }
 

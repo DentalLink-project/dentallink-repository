@@ -57,19 +57,16 @@ public class HospitalService {
 
     // 병원 일정 등록
     @Transactional
-    public HospitalScheduleCreateResponse createHospitalSchedule(HospitalScheduleCreateRequest hospitalScheduleCreateRequest) {
-        Hospital hospital = getHospitalById(hospitalScheduleCreateRequest.hospitalId());
-
+    public HospitalScheduleCreateResponse createHospitalSchedule(Long hospitalId, HospitalScheduleCreateRequest request) {
+        Hospital hospital = getHospitalById(hospitalId);
         HospitalSchedule hospitalSchedule = new HospitalSchedule(
-                hospitalScheduleCreateRequest.openTime(),
-                hospitalScheduleCreateRequest.closeTime(),
-                hospitalScheduleCreateRequest.breakStart(),
-                hospitalScheduleCreateRequest.breakEnd(),
+                request.openTime(),
+                request.closeTime(),
+                request.breakStart(),
+                request.breakEnd(),
                 hospital
         );
-
         HospitalSchedule savedSchedule = hospitalScheduleRepository.save(hospitalSchedule);
-
         return HospitalScheduleCreateResponse.of(savedSchedule);
     }
 
