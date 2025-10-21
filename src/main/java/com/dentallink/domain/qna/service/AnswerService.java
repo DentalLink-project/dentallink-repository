@@ -23,6 +23,20 @@ public class AnswerService {
     public AnswerResponseDto.AnswerResponse create(Long questionId, Long responderId, String content) {
         Question question = questionRepository.findByIdAndDeletedFalse(questionId)
                          .orElseThrow(() -> new QnaException(QnaErrorCode.QUESTION_NOT_FOUND));
+
+        // 하나의 문의에는 하나의 답변만 작성 가능
+        // ver1
+        if (answerRepository.existsByQuestionAndDeletedFalse(questionId)) {
+            throw new QnaException(QnaErrorCode.ANSWER_DUPLICATE);
+        }
+
+        // ver2
+        // boolean existsAnswer = answerRepository.findByQuestionAndDeletedFalse(questionId);
+        // if (existsAnswer) {
+        //     throw new QnaException(QnaErrorCode.ANSWER_DUPLICATE);
+        // }
+
+        // 답변 생성
         Answer saved = answerRepository.save(Answer.of(question, responderId, content));
 
         // 문의 상태 변경 : Awaiting(기본값, 답변 대기 중) -> Answered (답변완료)

@@ -64,7 +64,8 @@ public class Question extends BaseEntity {
         this.questionStatus = QuestionStatus.ANSWERED;
     }
 
-    // 문의 상태 변경 메서드 - 재문의
+    //todo 추후에 확장할 것
+    // 문의 상태 변경 메서드 - 재문의(답변 요청)
     public void requestedMark() {
         this.questionStatus = QuestionStatus.REQUESTED;
     }
@@ -75,7 +76,7 @@ public class Question extends BaseEntity {
         this.content = content;
     }
 
-    /// 문의글 삭제 시 자신의 문의글 및 답변 일괄 삭제 메서드 - 본인 검증 포함
+    // 문의글 삭제 시 자신의 문의글 및 답변 일괄 삭제 메서드 - 본인 검증 포함
     public void deleteQuestion(Long userId) {
         validateOwner(userId);
         super.delete();     // 자기 자신 문의 삭제 처리 - soft delete
