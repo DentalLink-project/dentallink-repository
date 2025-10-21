@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -47,6 +48,7 @@ public class ReviewController {
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody ReviewCreateRequest reviewCreateRequest
     ) {
+        if(authUser == null) {return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();}
         return ResponseEntity.ok(reviewService.createReview(reservationId, hospitalId, authUser.getUserId(), reviewCreateRequest));
     }
 
@@ -68,6 +70,7 @@ public class ReviewController {
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody ReviewUpdateRequest reviewUpdateRequest
     ) {
+        if(authUser == null) {return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();}
         ReviewUpdateResponse review = reviewService.updateReview(id, authUser.getUserId(), reviewUpdateRequest);
         return ResponseEntity.ok(review);
     }
@@ -78,6 +81,7 @@ public class ReviewController {
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser
     ) {
+        if(authUser == null) {return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();}
         ReviewDeleteResponse review = reviewService.deleteReview(id, authUser.getUserId());
         return ResponseEntity.ok(review);
     }
