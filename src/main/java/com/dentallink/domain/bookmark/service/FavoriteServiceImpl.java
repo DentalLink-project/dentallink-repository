@@ -1,6 +1,7 @@
 package com.dentallink.domain.bookmark.service;
 
 import com.dentallink.domain.bookmark.entity.Favorite;
+import com.dentallink.domain.bookmark.enums.FavoriteAction;
 import com.dentallink.domain.bookmark.repository.FavoriteRepository;
 import com.dentallink.domain.hospital.service.HospitalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
@@ -25,7 +26,7 @@ public class FavoriteServiceImpl implements FavoriteService {
         Optional<Favorite> favorite = favoriteRepository.findByHospitalIdAndUserId(hospitalId, authUser.getUserId());
         if (favorite.isPresent()) {
             favoriteRepository.delete(favorite.get());
-            return "삭제";
+            return FavoriteAction.REMOVED.getMessage();
         }
         favoriteRepository.save(
                 Favorite.of(
@@ -33,6 +34,6 @@ public class FavoriteServiceImpl implements FavoriteService {
                         hospitalService.getHospitalById(hospitalId)
                 )
         );
-        return "추가";
+        return FavoriteAction.REMOVED.getMessage();
     }
 }
