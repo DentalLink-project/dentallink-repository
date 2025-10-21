@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,6 +35,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.*;
+import static org.mockito.Mockito.inOrder;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReservationInternalService - 단위 테스트")
@@ -62,6 +64,8 @@ class ReservationInternalServiceTest {
     private HospitalSchedule schedule;
     private PointAccount pointAccount;
     private LocalDateTime appointmentDate;
+
+    private static final LocalDateTime FIXED_NOW = LocalDateTime.of(2025, 10, 22, 10, 0, 0);
 
     @BeforeEach
     void setUp() {
@@ -97,13 +101,11 @@ class ReservationInternalServiceTest {
         pointAccount = PointAccount.create(user, 5000L);
         ReflectionTestUtils.setField(pointAccount, "id", 1L);
 
-        // 예약 시간 (미래)
-        appointmentDate = LocalDateTime.now().plusDays(1)
-                .withHour(14).withMinute(0).withSecond(0).withNano(0);
+        appointmentDate = FIXED_NOW.plusDays(1).withHour(14).withMinute(0).withSecond(0).withNano(0);
     }
 
     @Test
-    @DisplayName("예약 생성 성공 - 포인트 차감")
+    @DisplayName("예약 생성 성공 - 포인트 차감 후 예약 저장 순서 검증")
     void createReservation_Success() {
         // given
         ReservationCreateRequest request = new ReservationCreateRequest(1L, appointmentDate);
@@ -125,11 +127,9 @@ class ReservationInternalServiceTest {
         assertThat(response).isNotNull();
         assertThat(response.usedPoints()).isEqualTo(1000L);
 
-        // 포인트 차감이 예약 저장보다 먼저 호출되었는지 확인
-        then(pointAccountExternalService).should(times(1))
-                .spendPointAccount(eq(1L), eq(1000L));
-        then(reservationRepository).should(times(1))
-                .save(any(Reservation.class));
+        InOrder inOrder = inOrder(pointAccountExternalService, reservationRepository);
+        then(pointAccountExternalService).should(inOrder).spendPointAccount(eq(1L), eq(1000L));
+        then(reservationRepository).should(inOrder).save(any(Reservation.class));
     }
 
     @Test
@@ -145,17 +145,15 @@ class ReservationInternalServiceTest {
         given(reservationRepository.existsByUserIdAndAppointmentDate(1L, appointmentDate)).willReturn(false);
         given(pointAccountExternalService.getPointAccountByUser(user)).willReturn(pointAccount);
 
-        // 포인트 차감 시 예외 발생
         willThrow(new IllegalStateException("잔액이 부족합니다."))
                 .given(pointAccountExternalService)
                 .spendPointAccount(eq(1L), eq(1000L));
 
-        // when & then
+        // when, then
         assertThatThrownBy(() -> reservationInternalService.createReservation(request, 1L))
                 .isInstanceOf(GlobalException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.INSUFFICIENT_POINTS);
 
-        // 포인트 차감 실패 시 예약이 저장되지 않아야 함
         then(reservationRepository).should(never()).save(any(Reservation.class));
     }
 
@@ -189,7 +187,7 @@ class ReservationInternalServiceTest {
 
         given(reservationRepository.findByIdAndNotDeleted(1L)).willReturn(Optional.of(reservation));
 
-        // when & then
+        // when, then
         assertThatThrownBy(() -> reservationInternalService.cancelReservation(1L, 1L))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("완료/취소/거부된 예약은 취소할 수 없습니다");
@@ -206,7 +204,7 @@ class ReservationInternalServiceTest {
 
         given(reservationRepository.findByIdAndNotDeleted(1L)).willReturn(Optional.of(reservation));
 
-        // when & then
+        // when, then
         assertThatThrownBy(() -> reservationInternalService.cancelReservation(1L, 999L))
                 .isInstanceOf(GlobalException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.NOT_RESERVATION_OWNER);
@@ -218,12 +216,12 @@ class ReservationInternalServiceTest {
     @DisplayName("예약 생성 실패 - 과거 시간")
     void createReservation_PastDateTime() {
         // given
-        LocalDateTime pastDate = LocalDateTime.now().minusDays(1);
+        LocalDateTime pastDate = FIXED_NOW.minusDays(1);
         ReservationCreateRequest request = new ReservationCreateRequest(1L, pastDate);
 
         given(hospitalRepository.findById(1L)).willReturn(Optional.of(hospital));
 
-        // when & then
+        // when, then
         assertThatThrownBy(() -> reservationInternalService.createReservation(request, 1L))
                 .isInstanceOf(GlobalException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.PAST_APPOINTMENT_TIME);
@@ -238,7 +236,7 @@ class ReservationInternalServiceTest {
 
         given(hospitalRepository.findById(1L)).willReturn(Optional.of(closedHospital));
 
-        // when & then
+        // when, then
         assertThatThrownBy(() -> reservationInternalService.createReservation(request, 1L))
                 .isInstanceOf(GlobalException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.HOSPITAL_CLOSED);
@@ -254,7 +252,7 @@ class ReservationInternalServiceTest {
         given(hospitalScheduleRepository.findByHospitalId(1L)).willReturn(Optional.of(schedule));
         given(reservationRepository.countByHospitalIdAndAppointmentDate(1L, appointmentDate)).willReturn(3);
 
-        // when & then
+        // when, then
         assertThatThrownBy(() -> reservationInternalService.createReservation(request, 1L))
                 .isInstanceOf(GlobalException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.RESERVATION_FULL);
@@ -271,7 +269,7 @@ class ReservationInternalServiceTest {
         given(reservationRepository.countByHospitalIdAndAppointmentDate(1L, appointmentDate)).willReturn(0);
         given(reservationRepository.existsByUserIdAndAppointmentDate(1L, appointmentDate)).willReturn(true);
 
-        // when & then
+        // when, then
         assertThatThrownBy(() -> reservationInternalService.createReservation(request, 1L))
                 .isInstanceOf(GlobalException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.DUPLICATE_RESERVATION);
