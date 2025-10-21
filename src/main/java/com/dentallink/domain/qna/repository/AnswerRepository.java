@@ -11,8 +11,8 @@ public interface AnswerRepository extends JpaRepository<Answer,Long> {
     // 삭제되지 않은 답변 조회
     Optional<Answer> findByIdAndDeletedFalse(Long id);
 
-    // 1개의 문의에는 1개의 답변만 허용
-    boolean existsByQuestionAndDeletedFalse(Long questionId);
+    // 1개의 문의에는 1개의 답변만 허용 - 석호 수정 복위 후 확인 요망
+    boolean existsByQuestionIdAndDeletedFalse(Long questionId);
 
     // 특정 문의글에 달린 삭제되지 않은 답변들 조회
     List<Answer> findByQuestion_IdAndDeletedFalse(Long questionId);

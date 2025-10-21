@@ -29,7 +29,9 @@ public enum ReservationErrorCode implements ErrorCode {
     RESERVATION_FULL(HttpStatus.CONFLICT, "해당 시간대 예약이 마감되었습니다"),
     DUPLICATE_RESERVATION(HttpStatus.CONFLICT, "이미 해당 시간에 예약이 존재합니다"),
     ALREADY_CANCELLED(HttpStatus.CONFLICT, "이미 취소된 예약입니다"),
-    ALREADY_COMPLETED(HttpStatus.CONFLICT, "이미 완료된 예약입니다");
+    ALREADY_COMPLETED(HttpStatus.CONFLICT, "이미 완료된 예약입니다"),
+
+    INSUFFICIENT_POINTS(HttpStatus.BAD_REQUEST, "포인트가 부족합니다");
 
 
 
