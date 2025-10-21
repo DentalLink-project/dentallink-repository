@@ -90,7 +90,7 @@ public class ReservationInternalService {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 
-        // 병원 관리자 권한 확인 - 연관 객체 직접 접근
+        // 병원 관리자 권한 확인
         validateHospitalAdmin(reservation.getHospital().getId(), hospitalAdminId);
 
         // 상태 변경
@@ -112,7 +112,7 @@ public class ReservationInternalService {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 
-        // 예약 소유자 확인 - 행위 중심 메서드 사용
+        // 예약 소유자 확인
         validateReservationOwner(reservation, userId);
 
         // 예약 시간 확인 (과거 예약 취소 불가)
@@ -157,7 +157,14 @@ public class ReservationInternalService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
 
-        // 예약 생성
+        try {
+            PointAccount pointAccount = pointAccountExternalService.getPointAccountByUser(user);
+            pointAccountExternalService.spendPointAccount(pointAccount.getId(), RESERVATION_COST_POINTS);
+        } catch (IllegalStateException e) {
+            // PointAccount.spend()에서 발생하는 "잔액이 부족합니다" 예외를 비즈니스 예외로 변환
+            throw new GlobalException(ReservationErrorCode.INSUFFICIENT_POINTS);
+        }
+
         Reservation reservation = Reservation.create(
                 hospital,
                 user,
@@ -166,16 +173,6 @@ public class ReservationInternalService {
         );
 
         Reservation savedReservation = reservationRepository.save(reservation);
-
-        // 포인트 차감 (원자적 연산)
-        // spendPointAccount 내부에서 잔액 검증 및 차감을 원자적으로 처리
-        try {
-            PointAccount pointAccount = pointAccountExternalService.getPointAccountByUser(user);
-            pointAccountExternalService.spendPointAccount(pointAccount.getId(), RESERVATION_COST_POINTS);
-        } catch (IllegalStateException e) {
-            // PointAccount.spend()에서 발생하는 "잔액이 부족합니다" 예외를 비즈니스 예외로 변환
-            throw new GlobalException(ReservationErrorCode.INSUFFICIENT_POINTS);
-        }
 
         return ReservationResponse.from(savedReservation);
     }
@@ -314,7 +311,7 @@ public class ReservationInternalService {
         }
     }
 
-    // 소유자 확인 - 행위 중심 메서드 사용
+    // 소유자 확인
     private void validateReservationOwner(Reservation reservation, Long userId) {
         if (!reservation.isOwnedBy(userId)) {
             throw new GlobalException(ReservationErrorCode.NOT_RESERVATION_OWNER);
