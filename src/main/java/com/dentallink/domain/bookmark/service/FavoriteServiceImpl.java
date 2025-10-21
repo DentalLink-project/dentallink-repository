@@ -34,6 +34,6 @@ public class FavoriteServiceImpl implements FavoriteService {
                         hospitalService.getHospitalById(hospitalId)
                 )
         );
-        return FavoriteAction.REMOVED.getMessage();
+        return FavoriteAction.ADDED.getMessage();
     }
 }
