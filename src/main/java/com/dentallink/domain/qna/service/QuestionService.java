@@ -39,7 +39,7 @@ public class QuestionService {
     // 비즈니스 로직 작성 update
     public void update(Long questionId, Long userId, String title, String content) {
         Question question = get(questionId);
-        // 본인 질문만 수정 가능
+        // 본인 문의만 수정 가능
         question.validateOwner(userId);
         question.updateQuestion(title, content);
     }
@@ -47,7 +47,6 @@ public class QuestionService {
     // 비즈니스 로직 작성 delete
     public void delete(Long questionId, Long userId) {
         Question question = getWithAnswers(questionId);
-        question.validateOwner(userId);
         question.deleteQuestion(userId); // soft delete
     }
 }

@@ -34,6 +34,7 @@ public class Answer extends BaseEntity {
         answer.question = question;
         answer.responderId = responderId;
         answer.content = content;
+        question.getAnswerList().add(answer); // Answer of() 생성자에서 양방향 연관관계 설정
         return answer;
     }
 
@@ -43,8 +44,6 @@ public class Answer extends BaseEntity {
     }
 
     /// 일반 사용자 삭제 메서드 - Only 본인 답변
-    // 답변 삭제 메서드 (soft delete) + 검증 로직
-    // todo 검증 로직 추가
     public void deleteAnswer(Long responderId) {
         validateResponder(responderId);
         super.delete(); // soft delete - BaseEntity의 delete 메서드 호출
@@ -58,8 +57,7 @@ public class Answer extends BaseEntity {
      * */
 
     /// 문의글 삭제 시 답변 일괄 삭제 메서드 - 검증 우회용 메서드
-    // todo 삭제 주체의 권한 검증을 우회하는 로직
-    // 답변 강제 삭제 메서드 (soft delete) - 질문 삭제 시 사용 또는 관리자 권한 등 특별한 경우에 사용
+    // 문의 삭제 시 사용 또는 관리자 권한 등 특별한 경우에 사용
     protected void forceDeleteAnswer() {
         super.delete(); // soft delete - BaseEntity의 delete 메서드 호출
     }
