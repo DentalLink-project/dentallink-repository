@@ -314,7 +314,7 @@ public class ReservationInternalService {
         }
     }
 
-    // 소유자 확인 - 행위 중심 메서드 사용 (Tell, Don't Ask 원칙)
+    // 소유자 확인 - 행위 중심 메서드 사용
     private void validateReservationOwner(Reservation reservation, Long userId) {
         if (!reservation.isOwnedBy(userId)) {
             throw new GlobalException(ReservationErrorCode.NOT_RESERVATION_OWNER);
