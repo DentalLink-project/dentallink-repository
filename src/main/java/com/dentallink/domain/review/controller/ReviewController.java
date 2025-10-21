@@ -5,11 +5,13 @@ import com.dentallink.domain.review.dto.request.ReviewUpdateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateStatusRequest;
 import com.dentallink.domain.review.dto.response.*;
 import com.dentallink.domain.review.service.ReviewService;
+import com.dentallink.domain.user.dto.security.AuthUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -42,10 +44,10 @@ public class ReviewController {
     public ResponseEntity<ReviewCreateResponse> createReview(
             @RequestParam Long reservationId,
             @RequestParam Long hospitalId,
-            @RequestParam Long userId,
+            @AuthenticationPrincipal AuthUser authUser,
             @RequestBody ReviewCreateRequest reviewCreateRequest
     ) {
-        return ResponseEntity.ok(reviewService.createReview(reservationId, hospitalId, userId, reviewCreateRequest));
+        return ResponseEntity.ok(reviewService.createReview(reservationId, hospitalId, authUser.getUserId(), reviewCreateRequest));
     }
 
     // 리뷰 상태 변경
@@ -63,10 +65,10 @@ public class ReviewController {
     @PatchMapping("/{id}")
     public ResponseEntity<ReviewUpdateResponse> updateReview(
             @PathVariable Long id,
-            @RequestParam Long userId,
+            @AuthenticationPrincipal AuthUser authUser,
             @RequestBody ReviewUpdateRequest reviewUpdateRequest
     ) {
-        ReviewUpdateResponse review = reviewService.updateReview(id, userId, reviewUpdateRequest);
+        ReviewUpdateResponse review = reviewService.updateReview(id, authUser.getUserId(), reviewUpdateRequest);
         return ResponseEntity.ok(review);
     }
 
@@ -74,9 +76,9 @@ public class ReviewController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ReviewDeleteResponse> deleteReviewById(
             @PathVariable Long id,
-            @RequestParam Long userId
+            @AuthenticationPrincipal AuthUser authUser
     ) {
-        ReviewDeleteResponse review = reviewService.deleteReview(id, userId);
+        ReviewDeleteResponse review = reviewService.deleteReview(id, authUser.getUserId());
         return ResponseEntity.ok(review);
     }
 }
