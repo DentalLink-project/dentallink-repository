@@ -1,6 +1,7 @@
 package com.dentallink.domain.bookmark.controller;
 
 import com.dentallink.common.response.ApiResponse;
+import com.dentallink.domain.bookmark.enums.FavoriteAction;
 import com.dentallink.domain.bookmark.service.FavoriteService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import lombok.RequiredArgsConstructor;
@@ -21,13 +22,14 @@ public class FavoriteController {
     private final FavoriteService favoriteService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> toggleFavorite(
+    public ResponseEntity<ApiResponse<Boolean>> toggleFavorite(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser
     ) {
+        FavoriteAction action = favoriteService.toggleFavorite(hospitalId, authUser);
         return success(
-                null,
-                favoriteService.toggleFavorite(hospitalId, authUser)
+                action.getIsFavorite(),
+                action.getMessage()
         );
     }
 }

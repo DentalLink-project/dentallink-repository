@@ -22,11 +22,11 @@ public class FavoriteServiceImpl implements FavoriteService {
 
     @Transactional
     @Override
-    public String toggleFavorite(Long hospitalId, AuthUser authUser) {
+    public FavoriteAction toggleFavorite(Long hospitalId, AuthUser authUser) {
         Optional<Favorite> favorite = favoriteRepository.findByHospitalIdAndUserId(hospitalId, authUser.getUserId());
         if (favorite.isPresent()) {
             favoriteRepository.delete(favorite.get());
-            return FavoriteAction.REMOVED.getMessage();
+            return FavoriteAction.REMOVED;
         }
         favoriteRepository.save(
                 Favorite.of(
@@ -34,6 +34,6 @@ public class FavoriteServiceImpl implements FavoriteService {
                         hospitalService.getHospitalById(hospitalId)
                 )
         );
-        return FavoriteAction.ADDED.getMessage();
+        return FavoriteAction.ADDED;
     }
 }
