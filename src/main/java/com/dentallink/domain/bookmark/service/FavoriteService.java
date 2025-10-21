@@ -1,9 +1,7 @@
 package com.dentallink.domain.bookmark.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import com.dentallink.domain.user.dto.security.AuthUser;
 
-@Service
-@RequiredArgsConstructor
-public class FavoriteService {
+public interface FavoriteService {
+    String toggleFavorite(Long hospitalId, AuthUser authUser);
 }
