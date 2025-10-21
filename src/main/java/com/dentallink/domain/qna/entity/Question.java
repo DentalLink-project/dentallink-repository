@@ -33,22 +33,42 @@ public class Question extends BaseEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    // 질문 삭제 시 해당 질문에 달린 답변들도 함께 삭제
-    @OneToMany(mappedBy = "question", fetch = FetchType.LAZY)
+    // 문의 상태 관리
+    @Enumerated(EnumType.STRING)
+    @Column(name = "question_status", nullable = false)
+    private QuestionStatus questionStatus = QuestionStatus.AWAITING;    // 기본값 설정_ "답변 대기중"
 
+    // 문의 삭제 시 해당 문의에 달린 답변들도 함께 삭제
+    @OneToMany(mappedBy = "question", fetch = FetchType.LAZY)
     private List<Answer> answerList = new ArrayList<>();
 
-    // 질문 생성 메서드
+    // 문의 생성 메서드
     public static Question of(Long userId, Long hospitalId, String title, String content) {
         Question question = new Question();
         question.userId = userId;
         question.hospitalId = hospitalId;
         question.title = title;
         question.content = content;
+        question.questionStatus = QuestionStatus.AWAITING;
         return question;
     }
 
-    // 질문 수정 메서드
+    // 문의 상태 변경 메서드 - 답변 대기중
+    public void awaitingMark() {
+        this.questionStatus = QuestionStatus.AWAITING;
+    }
+
+    // 문의 상태 변경 메서드 - 답변 완료
+    public void answeredMark() {
+        this.questionStatus = QuestionStatus.ANSWERED;
+    }
+
+    // 문의 상태 변경 메서드 - 재문의
+    public void requestedMark() {
+        this.questionStatus = QuestionStatus.REQUESTED;
+    }
+
+    // 문의 수정 메서드
     public void updateQuestion(String title, String content) {
         this.title = title;
         this.content = content;
