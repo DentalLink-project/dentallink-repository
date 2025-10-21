@@ -57,14 +57,10 @@ public class Question extends BaseEntity {
     /// 문의글 삭제 시 자신의 문의글 및 답변 일괄 삭제 메서드 - 본인 검증 포함
     public void deleteQuestion(Long userId) {
         validateOwner(userId);
-
-        // 자기 자신 질문 삭제 처리 - soft delete
-        super.delete();
-
-        // 해당 질문에 달린 답변들도 함께 강제 삭제 처리
-        answerList.forEach(Answer::forceDeleteAnswer);
+        super.delete();     // 자기 자신 문의 삭제 처리 - soft delete
+        answerList.forEach(Answer::forceDeleteAnswer);      // 해당 문의에 달린 답변들도 함께 강제 삭제 처리
         /**
-         * 질문 작성자가 자신의 질문을 삭제할 때 사용하는 메서드.
+         * 문의 작성자가 자신의 문의를 삭제할 때 사용하는 메서드.
          * - 작성자 본인 여부 검증
          * - soft delete 처리
          * - 관련 답변 모두 강제 삭제

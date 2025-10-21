@@ -19,7 +19,7 @@ public class QuestionController {
 
     private final QuestionService questionService;
 
-    // 질문 등록 API question create api
+    // 문의 등록 API question create api
     @PostMapping
     public ResponseEntity<ApiResponse<QuestionResponseDto.QuestionResponse>> createQuestion(
             @AuthenticationPrincipal AuthUser authUser,
@@ -32,7 +32,7 @@ public class QuestionController {
         );
     }
 
-    // 질문 조회 APi question read api
+    // 문의 조회 APi question read api
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<QuestionResponseDto.QuestionResponse>> getQuestion(
             @PathVariable Long id
@@ -43,7 +43,7 @@ public class QuestionController {
         );
     }
 
-    // 질문 수정 API question update api
+    // 문의 수정 API question update api
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> updateQuestion(
             // todo 보안 취약점 확인
@@ -56,7 +56,7 @@ public class QuestionController {
         return ApiResponse.success(null, "문의 수정 완료");
     }
 
-    // 질문 삭제 API question delete api
+    // 문의 삭제 API question delete api
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteQuestion(
             // todo 보안 취약점 확인

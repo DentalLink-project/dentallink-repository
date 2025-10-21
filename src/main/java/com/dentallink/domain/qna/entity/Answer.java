@@ -57,7 +57,7 @@ public class Answer extends BaseEntity {
      * */
 
     /// 문의글 삭제 시 답변 일괄 삭제 메서드 - 검증 우회용 메서드
-    // 질문 삭제 시 사용 또는 관리자 권한 등 특별한 경우에 사용
+    // 문의 삭제 시 사용 또는 관리자 권한 등 특별한 경우에 사용
     protected void forceDeleteAnswer() {
         super.delete(); // soft delete - BaseEntity의 delete 메서드 호출
     }
