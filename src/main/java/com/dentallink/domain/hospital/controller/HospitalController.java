@@ -1,11 +1,9 @@
 package com.dentallink.domain.hospital.controller;
 
 import com.dentallink.domain.hospital.dto.request.HospitalCreateRequest;
+import com.dentallink.domain.hospital.dto.request.HospitalScheduleCreateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalUpdateRequest;
-import com.dentallink.domain.hospital.dto.response.HospitalCreateResponse;
-import com.dentallink.domain.hospital.dto.response.HospitalDetailResponse;
-import com.dentallink.domain.hospital.dto.response.HospitalListResponse;
-import com.dentallink.domain.hospital.dto.response.HospitalUpdateResponse;
+import com.dentallink.domain.hospital.dto.response.*;
 import com.dentallink.domain.hospital.service.HospitalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,6 +22,23 @@ public class HospitalController {
             @RequestBody HospitalCreateRequest hospitalCreateRequest
     ){
         return ResponseEntity.ok(hospitalService.createHospital(hospitalCreateRequest));
+    }
+
+    @PostMapping("/{hospitalId}/schedules")
+    public ResponseEntity<HospitalScheduleCreateResponse> createHospitalSchedule(
+            @PathVariable Long hospitalId,
+            @RequestBody HospitalScheduleCreateRequest request
+    ) {
+        HospitalScheduleCreateRequest finalRequest = new HospitalScheduleCreateRequest(
+                hospitalId,
+                request.openTime(),
+                request.closeTime(),
+                request.breakStart(),
+                request.breakEnd()
+        );
+
+        HospitalScheduleCreateResponse response = hospitalService.createHospitalSchedule(finalRequest);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
