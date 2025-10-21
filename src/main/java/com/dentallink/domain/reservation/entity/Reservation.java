@@ -36,11 +36,20 @@ public class Reservation extends BaseEntity {
     @Column(name = "status", nullable = false, length = 20)
     private ReservationStatus status;
 
-    public static Reservation create(Hospital hospital, User user, LocalDateTime appointmentDate) {
+    // 포인트 사용 내역
+    @Column(name = "used_points", nullable = false)
+    private Long usedPoints;
+
+    public static Reservation create(
+            Hospital hospital,
+            User user,
+            LocalDateTime appointmentDate,
+            Long usedPoints) {
         Reservation reservation = new Reservation();
         reservation.hospital = hospital;
         reservation.user = user;
         reservation.appointmentDate = appointmentDate;
+        reservation.usedPoints = usedPoints;
         reservation.status = ReservationStatus.PENDING;
         return reservation;
     }
@@ -70,13 +79,24 @@ public class Reservation extends BaseEntity {
         this.status = ReservationStatus.COMPLETED;
     }
 
-    // 행위 중심 메서드 - 객체지향적 접근
     public boolean isOwnedBy(Long userId) {
         return this.user.getId().equals(userId);
     }
 
     public boolean belongsToHospital(Long hospitalId) {
         return this.hospital.getId().equals(hospitalId);
+    }
+
+    public boolean isRefundable() {
+        // 완료된 예약은 환불 불가
+        return this.status != ReservationStatus.COMPLETED;
+    }
+
+    public Long getRefundablePoints() {
+        if (!isRefundable()) {
+            return 0L;
+        }
+        return this.usedPoints;
     }
 
     private void validateNotDeleted() {

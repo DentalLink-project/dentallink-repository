@@ -26,7 +26,7 @@ public class AnswerService {
 
         // 하나의 문의에는 하나의 답변만 작성 가능
         // ver1
-        if (answerRepository.existsByQuestionAndDeletedFalse(questionId)) {
+        if (answerRepository.existsByQuestionIdAndDeletedFalse(questionId)) {
             throw new QnaException(QnaErrorCode.ANSWER_DUPLICATE);
         }
 
