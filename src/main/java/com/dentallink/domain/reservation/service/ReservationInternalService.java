@@ -2,6 +2,8 @@ package com.dentallink.domain.reservation.service;
 
 
 import com.dentallink.common.exception.GlobalException;
+import com.dentallink.domain.pointAccount.entity.PointAccount;
+import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
 import com.dentallink.domain.reservation.dto.AvailableTimeSlotResponse;
 import com.dentallink.domain.reservation.dto.ReservationCountDto;
 import com.dentallink.domain.reservation.dto.ReservationCreateRequest;
@@ -39,9 +41,15 @@ public class ReservationInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
     private final UserRepository userRepository;
+    private final PointAccountExternalService pointAccountExternalService;
 
-    private static final int MAX_RESERVATION_PER_MAN = 3;
+    private static final int MAX_RESERVATIONS_PER_TIME_SLOT = 3;
     private static final int TIME_PERIOD = 30;
+
+    // TODO: 향후 개선 - Payment 도메인과 연동하여 실제 결제 금액 기반으로 포인트 차감
+    // TODO: 또는 Hospital 엔티티에 consultationFee 필드 추가하여 병원별 진료비 관리
+    // 현재는 테스트용으로 1000 포인트 고정
+    private static final Long RESERVATION_COST_POINTS = 1000L;
 
 
     //예약 조회 (단건)
@@ -96,7 +104,9 @@ public class ReservationInternalService {
         return ReservationResponse.from(reservation);
     }
 
-    //예약 취소
+    /**
+     * 예약 취소 - 포인트 환불 포함
+     */
     @Transactional
     public void cancelReservation(Long id, Long userId) {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
@@ -108,11 +118,22 @@ public class ReservationInternalService {
         // 예약 시간 확인 (과거 예약 취소 불가)
         validateAppointmentTime(reservation);
 
-        // 취소 처리
+        // 환불할 포인트 계산 (완료된 예약은 환불 불가)
+        Long refundablePoints = reservation.getRefundablePoints();
+
+        // 예약 취소
         reservation.cancel();
+
+        // 포인트 환불 (환불 가능한 경우만)
+        if (refundablePoints > 0) {
+            PointAccount pointAccount = pointAccountExternalService.getPointAccountByUser(reservation.getUser());
+            pointAccountExternalService.refundPointAccount(pointAccount.getId(), refundablePoints);
+        }
     }
 
-    //예약 생성
+    /**
+     * 예약 생성 - 포인트 차감 포함
+     */
     @Transactional
     public ReservationResponse createReservation(ReservationCreateRequest request, Long userId) {
 
@@ -136,15 +157,27 @@ public class ReservationInternalService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
 
+        // 예약 생성
         Reservation reservation = Reservation.create(
                 hospital,
                 user,
-                request.appointmentDate()
+                request.appointmentDate(),
+                RESERVATION_COST_POINTS
         );
 
-        Reservation saveReservation = reservationRepository.save(reservation);
-        return ReservationResponse.from(saveReservation);
+        Reservation savedReservation = reservationRepository.save(reservation);
 
+        // 포인트 차감 (원자적 연산)
+        // spendPointAccount 내부에서 잔액 검증 및 차감을 원자적으로 처리
+        try {
+            PointAccount pointAccount = pointAccountExternalService.getPointAccountByUser(user);
+            pointAccountExternalService.spendPointAccount(pointAccount.getId(), RESERVATION_COST_POINTS);
+        } catch (IllegalStateException e) {
+            // PointAccount.spend()에서 발생하는 "잔액이 부족합니다" 예외를 비즈니스 예외로 변환
+            throw new GlobalException(ReservationErrorCode.INSUFFICIENT_POINTS);
+        }
+
+        return ReservationResponse.from(savedReservation);
     }
 
     //예약 가능한 시간대 조회
@@ -179,7 +212,7 @@ public class ReservationInternalService {
 
         for (LocalDateTime timeSlot : timesPeriod) {
             long existingCount = reservationCountMap.getOrDefault(timeSlot, 0L);
-            int availableCount = MAX_RESERVATION_PER_MAN - (int) existingCount;
+            int availableCount = MAX_RESERVATIONS_PER_TIME_SLOT - (int) existingCount;
 
             AvailableTimeSlotResponse response = AvailableTimeSlotResponse.of(
                     timeSlot,
@@ -231,7 +264,7 @@ public class ReservationInternalService {
                 hospitalId, appointmentDate
         );
 
-        if (currentReservationCount >= MAX_RESERVATION_PER_MAN) {
+        if (currentReservationCount >= MAX_RESERVATIONS_PER_TIME_SLOT) {
             throw new GlobalException(ReservationErrorCode.RESERVATION_FULL);
         }
     }
@@ -288,7 +321,7 @@ public class ReservationInternalService {
         }
     }
 
-    // 시간 검증 - 객체에 직접 질문
+    // 시간 검증
     private void validateAppointmentTime(Reservation reservation) {
         if (reservation.getAppointmentDate().isBefore(LocalDateTime.now())) {
             throw new GlobalException(ReservationErrorCode.PAST_APPOINTMENT_TIME);
