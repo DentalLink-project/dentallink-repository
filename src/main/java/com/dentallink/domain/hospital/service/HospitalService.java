@@ -24,6 +24,12 @@ public class HospitalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
 
+    @Transactional
+    public Hospital getHospitalById(Long id) {
+        return hospitalRepository.findById(id)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
+    }
+
     /**
      * 병원 등록
      */
@@ -68,8 +74,7 @@ public class HospitalService {
      */
     @Transactional(readOnly = true)
     public HospitalDetailResponse findHospitalById(Long id) {
-        Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
+        Hospital hospital = getHospitalById(id);
 
         HospitalSchedule schedule = hospitalScheduleRepository.findByHospitalId(id)
                 .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND));
@@ -82,8 +87,7 @@ public class HospitalService {
      */
     @Transactional
     public HospitalUpdateResponse updateHospital(Long id, HospitalUpdateRequest hospitalUpdateRequest) {
-        Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
+        Hospital hospital = getHospitalById(id);
 
         hospital.updateHospital(
                 hospitalUpdateRequest.hospitalName(),
@@ -111,8 +115,7 @@ public class HospitalService {
      */
     @Transactional
     public void deleteHospital(Long id) {
-        Hospital hospital = hospitalRepository.findById(id)
-                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
+        Hospital hospital = getHospitalById(id);
 
         hospitalScheduleRepository.deleteByHospital(hospital);
         hospitalRepository.delete(hospital);
