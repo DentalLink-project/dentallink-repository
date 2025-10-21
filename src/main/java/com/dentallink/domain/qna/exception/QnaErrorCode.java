@@ -18,6 +18,9 @@ public enum QnaErrorCode implements ErrorCode {
     ANSWER_NOT_FOUND(HttpStatus.NOT_FOUND, "답변글을 찾을 수 없습니다."),
     ANSWER_ACCESS_DENIED(HttpStatus.FORBIDDEN, "본인 답변글만 수정하거나 삭제할 수 있습니다."),
 
+    // 1개 문의에는 1개 답변만 허용
+    ANSWER_DUPLICATE(HttpStatus.BAD_REQUEST, "하나의 문의에는 하나의 답변만 작성할 수 있습니다."),
+
     // ====== Validation ======
     INVALID_QNA_INPUT(HttpStatus.BAD_REQUEST, "잘못된 QnA 요청입니다.");
 
