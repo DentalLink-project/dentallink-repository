@@ -1,4 +1,81 @@
 package com.dentallink.domain.review.entity;
 
-public class Review {
+import com.dentallink.common.entity.BaseEntity;
+import com.dentallink.domain.review.enums.ReviewStatus;
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Getter
+@NoArgsConstructor
+public class Review extends BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "reservation_id", nullable = false)
+    private Long reservationId;
+
+    @Column(name = "hospital_id", nullable = false)
+    private Long hospitalId;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ReviewStatus status = ReviewStatus.PENDING;
+
+    private Integer point;
+    private String content;
+
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime deletedAt;
+
+    public static Review of(
+            Long reservationId,
+            Long hospitalId,
+            Long userId,
+            Integer point,
+            String content
+    ) {
+        Review review = new Review();
+        review.reservationId = reservationId;
+        review.hospitalId = hospitalId;
+        review.userId = userId;
+        review.point = point;
+        review.content = content;
+        review.status = ReviewStatus.PENDING;
+        review.createdAt = LocalDateTime.now();
+        review.updatedAt = LocalDateTime.now();
+        return review;
+    }
+
+    public void approve() {
+        this.status = ReviewStatus.APPROVED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void reject() {
+        this.status = ReviewStatus.REJECTED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void update(Integer point, String content) {
+        this.point = point;
+        this.content = content;
+    }
+
+    public void delete() {
+        this.updatedAt = LocalDateTime.now();
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isDeleted() {
+        return this.deletedAt != null;
+    }
 }
