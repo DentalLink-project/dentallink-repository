@@ -22,8 +22,8 @@ public record ReservationResponse(
     public static ReservationResponse from(Reservation reservation) {
         return new ReservationResponse(
                 reservation.getId(),
-                reservation.getHospitalId(),
-                reservation.getUserId(),
+                reservation.getHospital().getId(),
+                reservation.getUser().getId(),
                 reservation.getAppointmentDate(),
                 reservation.getStatus(),
                 reservation.getCreatedAt()
