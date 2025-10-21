@@ -42,15 +42,6 @@ public class PointAccountExternalService {
         pointLogExternalService.createLog(account, PointLogType.DEPOSIT, amount);
     }
 
-    // 포인트를 현금으로 바꾸는 메서드(payment 도메인 사용)
-    @Transactional
-    public void withdrawPointAccount(Long accountId, Long amount){
-        PointAccount account = pointAccountRepository.findById(accountId)
-                .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
-        account.withdraw(amount);
-        pointLogExternalService.createLog(account, PointLogType.WITHDRAW, amount);
-    }
-
     // 포인트를 통해 상품 구매(reservation 도메인에서 사용)
     @Transactional
     public void spendPointAccount(Long accountId, Long amount){
