@@ -40,6 +40,10 @@ public class Favorite {
     private Favorite (User user, Hospital hospital) {
         this.user = user;
         this.hospital = hospital;
+    }
+
+    @PrePersist
+    private void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
 
