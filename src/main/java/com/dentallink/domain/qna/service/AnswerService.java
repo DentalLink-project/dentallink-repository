@@ -24,6 +24,9 @@ public class AnswerService {
         Question question = questionRepository.findByIdAndDeletedFalse(questionId)
                          .orElseThrow(() -> new QnaException(QnaErrorCode.QUESTION_NOT_FOUND));
         Answer saved = answerRepository.save(Answer.of(question, responderId, content));
+
+        // 문의 상태 변경 : Awaiting(기본값, 답변 대기 중) -> Answered (답변완료)
+        question.answeredMark();
         return AnswerResponseDto.AnswerResponse.from(saved);
     }
 
@@ -46,5 +49,9 @@ public class AnswerService {
     public void delete(Long answerId, Long responderId) {
         Answer answer = get(answerId);
         answer.deleteAnswer(responderId); // soft delete
+
+        // 답변 삭제 시 문의 상태 변경 : Answered -> Awaiting
+        Question question = answer.getQuestion();
+        question.awaitingMark();
     }
 }
