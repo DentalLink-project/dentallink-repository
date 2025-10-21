@@ -2,30 +2,30 @@ package com.dentallink.domain.reservation.dto;
 
 import com.dentallink.domain.reservation.entity.Reservation;
 import com.dentallink.domain.reservation.enums.ReservationStatus;
-import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;
 
 public record ReservationResponse(
         Long id,
         Long hospitalId,
+        String hospitalName,
         Long userId,
-
-        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+        String username,
         LocalDateTime appointmentDate,
-
         ReservationStatus status,
-
-        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+        Long usedPoints,  // 사용한 포인트
         LocalDateTime createdAt
 ) {
     public static ReservationResponse from(Reservation reservation) {
         return new ReservationResponse(
                 reservation.getId(),
                 reservation.getHospital().getId(),
+                reservation.getHospital().getHospitalName(),
                 reservation.getUser().getId(),
+                reservation.getUser().getUsername(),
                 reservation.getAppointmentDate(),
                 reservation.getStatus(),
+                reservation.getUsedPoints(),
                 reservation.getCreatedAt()
         );
     }
