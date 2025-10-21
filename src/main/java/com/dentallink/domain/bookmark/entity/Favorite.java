@@ -15,7 +15,10 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Table(name = "favorites")
+@Table(
+        name = "favorites",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "hospital_id"})
+)
 public class Favorite {
 
     @Id
