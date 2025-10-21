@@ -27,7 +27,7 @@ public class FavoriteController {
     ) {
         return success(
                 null,
-                "즐겨찾기 "+favoriteService.toggleFavorite(hospitalId, authUser)+"되었습니다."
+                favoriteService.toggleFavorite(hospitalId, authUser)
         );
     }
 }
