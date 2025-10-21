@@ -12,6 +12,7 @@ public enum ReservationErrorCode implements ErrorCode {
     RESERVATION_NOT_FOUND(HttpStatus.NOT_FOUND, "예약을 찾을 수 없습니다"),
     HOSPITAL_NOT_FOUND(HttpStatus.NOT_FOUND, "병원을 찾을 수 없습니다"),
     HOSPITAL_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "병원 스케줄을 찾을 수 없습니다"),
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND,"없는 유저입니다."),
 
     INVALID_APPOINTMENT_DATE(HttpStatus.BAD_REQUEST, "유효하지 않은 예약 시간입니다"),
     PAST_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, "과거 시간으로 예약할 수 없습니다"),
@@ -29,6 +30,7 @@ public enum ReservationErrorCode implements ErrorCode {
     DUPLICATE_RESERVATION(HttpStatus.CONFLICT, "이미 해당 시간에 예약이 존재합니다"),
     ALREADY_CANCELLED(HttpStatus.CONFLICT, "이미 취소된 예약입니다"),
     ALREADY_COMPLETED(HttpStatus.CONFLICT, "이미 완료된 예약입니다");
+
 
 
     private final HttpStatus httpStatus;

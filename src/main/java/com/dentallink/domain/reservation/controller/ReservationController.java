@@ -8,6 +8,7 @@ import com.dentallink.domain.reservation.dto.ReservationCreateRequest;
 import com.dentallink.domain.reservation.dto.ReservationResponse;
 import com.dentallink.domain.reservation.dto.ReservationUpdateStatusRequest;
 import com.dentallink.domain.reservation.service.ReservationInternalService;
+import com.dentallink.domain.user.dto.security.AuthUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,10 +37,10 @@ public class ReservationController {
     @PostMapping
     public ResponseEntity<ApiResponse<ReservationResponse>> createReservation(
             @RequestBody @Valid ReservationCreateRequest request,
-            @RequestParam @Min(1) Long userId) {
+            @AuthenticationPrincipal AuthUser authUser) {
 
-        ReservationResponse response = reservationService.createReservation(request, userId);
-        return ApiResponse.success(response, "예약 성공");
+        ReservationResponse response = reservationService.createReservation(request, authUser.getUserId());
+        return ApiResponse.success(response, "예약 생성 성공");
     }
 
     //예약 가능 시간 조회
@@ -63,11 +65,11 @@ public class ReservationController {
     //내 예약 목록 조회
     @GetMapping("/my")
     public ResponseEntity<ApiResponse<PageResponse<ReservationResponse>>> getMyReservations(
-            @RequestParam @Min(1) Long userId,
+            @AuthenticationPrincipal AuthUser authUser,
             @PageableDefault(size = 10, sort = "appointmentDate", direction = Sort.Direction.DESC)
             Pageable pageable) {
 
-        Page<ReservationResponse> reservations = reservationService.getMyReservations(userId, pageable);
+        Page<ReservationResponse> reservations = reservationService.getMyReservations(authUser.getUserId(), pageable);
         return ApiResponse.pageSuccess(reservations, "내 예약 목록 조회 성공");
     }
 
@@ -75,13 +77,13 @@ public class ReservationController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ReservationResponse>>> getHospitalReservations(
             @RequestParam Long hospitalId,
-            @RequestParam Long hospitalAdminId,
+            @AuthenticationPrincipal AuthUser authUser,
             @PageableDefault(size = 10, sort = "appointmentDate", direction = Sort.Direction.DESC)
             Pageable pageable) {
 
         Page<ReservationResponse> reservations = reservationService.getHospitalReservations(
                 hospitalId,
-                hospitalAdminId,
+                authUser.getUserId(),
                 pageable
         );
         return ApiResponse.pageSuccess(reservations, "병원 예약 목록 조회 성공");
@@ -92,12 +94,12 @@ public class ReservationController {
     public ResponseEntity<ApiResponse<ReservationResponse>> updateReservationStatus(
             @PathVariable @Min(1) Long id,
             @RequestBody @Valid ReservationUpdateStatusRequest request,
-            @RequestParam @Min(1) Long hospitalAdminId) {
+            @AuthenticationPrincipal AuthUser authUser) {
 
         ReservationResponse response = reservationService.updateReservationStatus(
                 id,
                 request,
-                hospitalAdminId
+                authUser.getUserId()
         );
         return ApiResponse.success(response, "예약 상태 변경 성공");
     }
@@ -106,9 +108,9 @@ public class ReservationController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> cancelReservation(
             @PathVariable @Min(1) Long id,
-            @RequestParam @Min(1) Long userId) {
+            @AuthenticationPrincipal AuthUser authUser) {
 
-        reservationService.cancelReservation(id, userId);
+        reservationService.cancelReservation(id, authUser.getUserId());
         return ApiResponse.deleteSuccess("예약 취소 성공");
     }
 }
