@@ -1,4 +1,4 @@
-package com.dentallink.domain.bookmark.entity;
+package com.dentallink.domain.favorite.entity;
 
 import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.user.entity.User;
