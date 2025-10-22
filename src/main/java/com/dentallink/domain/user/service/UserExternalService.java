@@ -26,11 +26,11 @@ public class UserExternalService {
     private final UserRepository userRepository;
 
     // 내 프로필 조회
+    @Transactional(readOnly = true)
     public UserResponse getUser(AuthUser authUser) {
         User user = userInternalService.getUserById(authUser.getUserId());
         return UserResponse.from(user);
     }
-
 
     public UserResponse signup(UserSignupRequest request) {
         if(userInternalService.existsUserByEmail(request.email())) {
