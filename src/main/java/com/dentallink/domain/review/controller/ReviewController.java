@@ -29,8 +29,6 @@ public class ReviewController {
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody ReviewCreateRequest reviewCreateRequest
     ) {
-        if(authUser == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
         ReviewCreateResponse response = reviewExternalService.createReview(
                 reservationId, hospitalId, authUser.getUserId(), reviewCreateRequest
         );
@@ -64,7 +62,6 @@ public class ReviewController {
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody ReviewUpdateRequest reviewUpdateRequest
     ) {
-        if(authUser == null) {return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();}
         ReviewUpdateResponse review = reviewExternalService.updateReview(id, authUser.getUserId(), reviewUpdateRequest);
         return ResponseEntity.ok(review);
     }
@@ -75,7 +72,6 @@ public class ReviewController {
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser
     ) {
-        if(authUser == null) {return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();}
         ReviewDeleteResponse review = reviewExternalService.deleteReview(id, authUser.getUserId());
         return ResponseEntity.ok(review);
     }
@@ -87,8 +83,6 @@ public class ReviewController {
             @RequestBody ReviewUpdateStatusRequest request,
             @AuthenticationPrincipal AuthUser authUser // 관리자 인증정보
     ) {
-        if(authUser == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
         ReviewStatusResponse response = reviewExternalService.updateReviewStatus(
                 id, request, authUser.getUserId() // ExternalService에서 관리자 권한 확인
         );

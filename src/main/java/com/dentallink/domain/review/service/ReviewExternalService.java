@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 @Service
 @RequiredArgsConstructor
 public class ReviewExternalService {
@@ -52,15 +54,7 @@ public class ReviewExternalService {
     // 리뷰 수정
     @Transactional
     public ReviewUpdateResponse updateReview(Long reviewId, Long userId, ReviewUpdateRequest request) {
-        Review review = reviewInternalService.getReviewById(reviewId);
-
-        if (!review.getUserId().equals(userId)) {
-            throw new GlobalException(ReviewErrorCode.NOT_REVIEW_OWNER);
-        }
-
-        if (review.isDeleted()) {
-            throw new GlobalException(ReviewErrorCode.ALREADY_DELETED);
-        }
+        Review review = validateReviewOwner(reviewId, userId);
 
         review.update(request.point(), request.content());
         Review updated = reviewInternalService.saveReview(review);
@@ -71,32 +65,20 @@ public class ReviewExternalService {
     // 리뷰 삭제
     @Transactional
     public ReviewDeleteResponse deleteReview(Long reviewId, Long userId) {
-        Review review = reviewInternalService.getReviewById(reviewId);
+        Review review = validateReviewOwner(reviewId, userId);
 
-        if (!review.getUserId().equals(userId)) {
-            throw new GlobalException(ReviewErrorCode.NOT_REVIEW_OWNER);
-        }
-
-        if (review.isDeleted()) {
-            throw new GlobalException(ReviewErrorCode.ALREADY_DELETED);
-        }
-
-        review.delete();
-        reviewInternalService.deleteReview(review);
+        review.delete(); // soft delete 상태 변경
+        reviewInternalService.saveReview(review);
 
         return ReviewDeleteResponse.of(review);
     }
 
     // 리뷰 상태 변경
     @Transactional
-    public ReviewStatusResponse updateReviewStatus(
-            Long reviewId,
-            ReviewUpdateStatusRequest request,
-            Long hospitalAdminId) {
-
+    public ReviewStatusResponse updateReviewStatus(Long reviewId, ReviewUpdateStatusRequest request, Long hospitalAdminId) {
         Review review = reviewInternalService.getReviewById(reviewId);
 
-//        validateHospitalAdmin(review.getHospitalId(), hospitalAdminId);
+        validateHospitalAdmin(review.getHospitalId(), hospitalAdminId);
 
         switch (request.status()) {
             case APPROVED -> review.approve();
@@ -108,10 +90,26 @@ public class ReviewExternalService {
         return ReviewStatusResponse.of(updated);
     }
 
+    // 리뷰 소유자 검증 및 삭제 여부 확인
+    private Review validateReviewOwner(Long reviewId, Long userId) {
+        Review review = reviewInternalService.findOptionalById(reviewId)
+                .orElseThrow(() -> new GlobalException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        if (!Objects.equals(review.getUserId(), userId)) {
+            throw new GlobalException(ReviewErrorCode.NOT_REVIEW_OWNER);
+        }
+
+        if (review.isDeleted()) {
+            throw new GlobalException(ReviewErrorCode.ALREADY_DELETED);
+        }
+
+        return review;
+    }
+
     // TODO: 병원 관리자 검증 로직
-//    private void validateHospitalAdmin(Long hospitalId, Long adminId) {
-//        if (!reviewInternalService.isAdmin(hospitalId, adminId)) {
-//            throw new GlobalException(ReviewErrorCode.NOT_HOSPITAL_ADMIN);
-//        }
-//    }
+    private void validateHospitalAdmin(Long hospitalId, Long adminId) {
+        if (!reviewInternalService.isAdmin(hospitalId, adminId)) {
+            throw new GlobalException(ReviewErrorCode.NOT_HOSPITAL_ADMIN);
+        }
+    }
 }
