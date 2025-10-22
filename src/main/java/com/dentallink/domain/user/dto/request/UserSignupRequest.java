@@ -1,6 +1,5 @@
 package com.dentallink.domain.user.dto.request;
 
-import com.dentallink.domain.user.enums.UserRole;
 import jakarta.validation.constraints.*;
 
 public record UserSignupRequest (
