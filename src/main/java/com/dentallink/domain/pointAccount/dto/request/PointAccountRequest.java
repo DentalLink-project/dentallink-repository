@@ -1,7 +1,10 @@
 package com.dentallink.domain.pointAccount.dto.request;
 
-import lombok.NonNull;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 
 public record PointAccountRequest(
-        @NonNull Long amount
+        @NotNull(message = "금액을 입력해주세요.")
+        @Min(value = 1000, message = "최소 금액은 1000원입니다.")
+        Long amount
 ) {}
