@@ -4,7 +4,7 @@ import com.dentallink.domain.review.dto.request.ReviewCreateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateStatusRequest;
 import com.dentallink.domain.review.dto.response.*;
-import com.dentallink.domain.review.service.ReviewService;
+import com.dentallink.domain.review.service.ReviewExternalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,17 +17,34 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/review")
+@RequestMapping("/api")
 public class ReviewController {
-    private final ReviewService reviewService;
+    private final ReviewExternalService reviewExternalService;
+
+    // 리뷰 등록
+    @PostMapping("/hospitals/{hospitalId}/reviews")
+    public ResponseEntity<ReviewCreateResponse> createReview(
+            @PathVariable Long hospitalId,
+            @RequestParam Long reservationId,
+            @AuthenticationPrincipal AuthUser authUser,
+            @RequestBody ReviewCreateRequest reviewCreateRequest
+    ) {
+        if(authUser == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        ReviewCreateResponse response = reviewExternalService.createReview(
+                reservationId, hospitalId, authUser.getUserId(), reviewCreateRequest
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 
     // 병원 별 리뷰 목록 조회
-    @GetMapping("/{hospitalId}")
+    @GetMapping("/hospitals/{hospitalId}/reviews")
     public ResponseEntity<Page<ReviewListResponse>> getAllReviews(
             @PathVariable Long hospitalId,
             @PageableDefault Pageable pageable
     ) {
-        Page<ReviewListResponse> reviews = reviewService.findAllReviews(hospitalId, pageable);
+        Page<ReviewListResponse> reviews = reviewExternalService.findAllReviews(hospitalId, pageable);
         return ResponseEntity.ok(reviews);
     }
 
@@ -36,53 +53,46 @@ public class ReviewController {
     public ResponseEntity<ReviewDetailResponse> getReviewById(
             @PathVariable Long id
     ) {
-        ReviewDetailResponse review = reviewService.findReviewById(id);
+        ReviewDetailResponse review = reviewExternalService.findReviewById(id);
         return ResponseEntity.ok(review);
     }
 
-    // 리뷰 등록
-    @PostMapping
-    public ResponseEntity<ReviewCreateResponse> createReview(
-            @RequestParam Long reservationId,
-            @RequestParam Long hospitalId,
-            @AuthenticationPrincipal AuthUser authUser,
-            @RequestBody ReviewCreateRequest reviewCreateRequest
-    ) {
-        if(authUser == null) {return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();}
-        return ResponseEntity.ok(reviewService.createReview(reservationId, hospitalId, authUser.getUserId(), reviewCreateRequest));
-    }
-
-    // 리뷰 상태 변경
-    @PatchMapping("/{id}/status")
-    public ResponseEntity<ReviewStatusResponse> updateReviewStatus(
-            @PathVariable Long id,
-            @RequestBody ReviewUpdateStatusRequest request,
-            @RequestParam Long hospitalAdminId
-    ) {
-        ReviewStatusResponse response = reviewService.updateReviewStatus(id, request, hospitalAdminId);
-        return ResponseEntity.ok(response);
-    }
-
     // 리뷰 수정
-    @PatchMapping("/{id}")
+    @PatchMapping("/reviews/{id}")
     public ResponseEntity<ReviewUpdateResponse> updateReview(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody ReviewUpdateRequest reviewUpdateRequest
     ) {
         if(authUser == null) {return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();}
-        ReviewUpdateResponse review = reviewService.updateReview(id, authUser.getUserId(), reviewUpdateRequest);
+        ReviewUpdateResponse review = reviewExternalService.updateReview(id, authUser.getUserId(), reviewUpdateRequest);
         return ResponseEntity.ok(review);
     }
 
     // 리뷰 삭제
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/reviews/{id}")
     public ResponseEntity<ReviewDeleteResponse> deleteReviewById(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser
     ) {
         if(authUser == null) {return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();}
-        ReviewDeleteResponse review = reviewService.deleteReview(id, authUser.getUserId());
+        ReviewDeleteResponse review = reviewExternalService.deleteReview(id, authUser.getUserId());
         return ResponseEntity.ok(review);
+    }
+
+    // 리뷰 상태 변경
+    @PatchMapping("/reviews/{id}/status")
+    public ResponseEntity<ReviewStatusResponse> updateReviewStatus(
+            @PathVariable Long id,
+            @RequestBody ReviewUpdateStatusRequest request,
+            @AuthenticationPrincipal AuthUser authUser // 관리자 인증정보
+    ) {
+        if(authUser == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        ReviewStatusResponse response = reviewExternalService.updateReviewStatus(
+                id, request, authUser.getUserId() // ExternalService에서 관리자 권한 확인
+        );
+
+        return ResponseEntity.ok(response);
     }
 }
