@@ -17,6 +17,7 @@ import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import com.dentallink.domain.user.entity.User;
+import com.dentallink.domain.user.enums.UserRole;
 import com.dentallink.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -305,6 +306,13 @@ public class ReservationInternalService {
     private void validateHospitalAdmin(Long hospitalId, Long userId) {
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_NOT_FOUND));
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
+
+        if (user.getUserRole() == UserRole.ROLE_ADMIN) {
+            return;
+        }
 
         if (!hospital.getUserId().equals(userId)) {
             throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
