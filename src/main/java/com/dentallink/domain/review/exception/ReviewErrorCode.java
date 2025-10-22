@@ -15,6 +15,7 @@ public enum ReviewErrorCode implements ErrorCode {
 
     NOT_REVIEW_OWNER(HttpStatus.FORBIDDEN, "작성자만 수정할 수 있습니다."),
 
+    DUPLICATE_REVIEW(HttpStatus.CONFLICT, "이미 해당 시간에 예약이 존재합니다"),
     ALREADY_DELETED(HttpStatus.CONFLICT, "이미 삭제된 리뷰입니다.");
 
     private final HttpStatus httpStatus;
