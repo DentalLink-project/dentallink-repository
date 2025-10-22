@@ -109,9 +109,9 @@ public class ReviewExternalService {
     }
 
     // TODO: 병원 관리자 검증 로직
-    private void validateHospitalAdmin(Long hospitalId, Long adminId) {
+//    private void validateHospitalAdmin(Long hospitalId, Long adminId) {
 //        if (!reviewInternalService.isAdmin(hospitalId, adminId)) {
 //            throw new GlobalException(ReviewErrorCode.NOT_HOSPITAL_ADMIN);
 //        }
-    }
+//    }
 }
