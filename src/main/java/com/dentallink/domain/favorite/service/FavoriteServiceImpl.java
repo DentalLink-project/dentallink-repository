@@ -1,8 +1,8 @@
-package com.dentallink.domain.bookmark.service;
+package com.dentallink.domain.favorite.service;
 
-import com.dentallink.domain.bookmark.entity.Favorite;
-import com.dentallink.domain.bookmark.enums.FavoriteAction;
-import com.dentallink.domain.bookmark.repository.FavoriteRepository;
+import com.dentallink.domain.favorite.entity.Favorite;
+import com.dentallink.domain.favorite.enums.FavoriteAction;
+import com.dentallink.domain.favorite.repository.FavoriteRepository;
 import com.dentallink.domain.hospital.service.HospitalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import com.dentallink.domain.user.service.query.UserQueryService;

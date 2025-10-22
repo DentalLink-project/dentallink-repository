@@ -1,8 +1,8 @@
-package com.dentallink.domain.bookmark.controller;
+package com.dentallink.domain.favorite.controller;
 
 import com.dentallink.common.response.ApiResponse;
-import com.dentallink.domain.bookmark.enums.FavoriteAction;
-import com.dentallink.domain.bookmark.service.FavoriteService;
+import com.dentallink.domain.favorite.enums.FavoriteAction;
+import com.dentallink.domain.favorite.service.FavoriteService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
