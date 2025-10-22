@@ -59,9 +59,6 @@ public class PointAccount extends BaseEntity {
     // 상품 구매 취소 -> 포인트 복구
     public void refund(Long amount) {
         validatePositive(amount);
-        if (this.balance < amount) {
-            throw new IllegalStateException("잔액이 부족합니다.");
-        }
         this.balance += amount;
     }
 
