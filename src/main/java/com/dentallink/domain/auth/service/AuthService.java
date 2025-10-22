@@ -6,7 +6,7 @@ import com.dentallink.domain.auth.dto.response.TokenResponse;
 public interface AuthService {
 
     void passwordCheck(String password, Long userId);
-
+    String passwordEncode(String password);
     TokenResponse login(LoginRequest request);
     void logout(String accessToken);
 }
