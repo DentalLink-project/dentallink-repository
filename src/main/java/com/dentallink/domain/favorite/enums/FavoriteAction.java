@@ -1,4 +1,4 @@
-package com.dentallink.domain.bookmark.enums;
+package com.dentallink.domain.favorite.enums;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
