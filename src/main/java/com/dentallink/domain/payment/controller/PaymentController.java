@@ -20,9 +20,9 @@ public class PaymentController {
     @PostMapping("/deposit")
     public ResponseEntity<ApiResponse<PaymentResponse>> depositPoint(
             @AuthenticationPrincipal AuthUser authUser,
-            @RequestParam Long amount
+            @RequestBody PaymentRequest request
     ) {
-        PaymentResponse response = paymentInternalService.depositPoint(authUser.getUserId(), amount);
+        PaymentResponse response = paymentInternalService.depositPoint(authUser.getUserId(), request.amount());
         return ApiResponse.created(response, "포인트 충전(결제) 성공");
     }
 }
