@@ -48,6 +48,9 @@ public class HospitalExternalService {
     // 병원 일정 등록
     @Transactional
     public HospitalScheduleCreateResponse createHospitalSchedule(Long hospitalId, HospitalScheduleCreateRequest req) {
+        // userId check 메서드 호출 부분 추가
+        // 원래 병원 일정이 있는지에 대한 체크 추가
+
         Hospital hospital = hospitalInternalService.getHospitalById(hospitalId);
 
         HospitalSchedule schedule = new HospitalSchedule(
@@ -72,9 +75,8 @@ public class HospitalExternalService {
     // 병원 단건 조회
     @Transactional(readOnly = true)
     public HospitalDetailResponse findHospitalById(Long id) {
-        Hospital hospital = hospitalInternalService.getHospitalById(id);
-        HospitalSchedule schedule = hospitalInternalService.getScheduleByHospitalId(id);
-        return HospitalDetailResponse.of(hospital, schedule);
+        Hospital hospital = hospitalInternalService.getHospitalWithScheduleById(id);
+        return HospitalDetailResponse.of(hospital, hospital.getHospitalSchedule());
     }
 
     // 병원 수정
@@ -82,9 +84,7 @@ public class HospitalExternalService {
     public HospitalUpdateResponse updateHospital(Long id, Long userId, HospitalUpdateRequest req) {
         Hospital hospital = hospitalInternalService.getHospitalById(id);
 
-        if (!hospital.getUserId().equals(userId)) {
-            throw new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER);
-        }
+        checkHospitalOwner(hospital, userId);
 
         hospital.updateHospital(
                 req.hospitalName(),
@@ -110,10 +110,15 @@ public class HospitalExternalService {
     public void deleteHospital(Long id, Long userId) {
         Hospital hospital = hospitalInternalService.getHospitalById(id);
 
+        checkHospitalOwner(hospital, userId);
+
+        hospitalInternalService.deleteHospitalAndSchedule(hospital);
+    }
+
+    // 병원 소유권 확인
+    private void checkHospitalOwner(Hospital hospital, Long userId) {
         if (!hospital.getUserId().equals(userId)) {
             throw new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER);
         }
-
-        hospitalInternalService.deleteHospitalAndSchedule(hospital);
     }
 }
