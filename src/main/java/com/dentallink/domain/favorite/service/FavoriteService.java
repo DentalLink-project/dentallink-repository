@@ -1,6 +1,6 @@
-package com.dentallink.domain.bookmark.service;
+package com.dentallink.domain.favorite.service;
 
-import com.dentallink.domain.bookmark.enums.FavoriteAction;
+import com.dentallink.domain.favorite.enums.FavoriteAction;
 import com.dentallink.domain.user.dto.security.AuthUser;
 
 public interface FavoriteService {
