@@ -21,6 +21,11 @@ public class HospitalExternalService {
     private final HospitalInternalService hospitalInternalService;
     private final HospitalRepository hospitalRepository;
 
+    @Transactional(readOnly = true)
+    public Hospital getHospitalById(Long id) {
+        return hospitalInternalService.getHospitalById(id);
+    }
+
     // 병원 등록
     @Transactional
     public HospitalCreateResponse createHospital(Long userId, HospitalCreateRequest req) {
