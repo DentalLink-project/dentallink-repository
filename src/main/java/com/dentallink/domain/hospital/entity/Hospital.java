@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Getter
 @NoArgsConstructor
@@ -21,6 +23,9 @@ public class Hospital extends BaseEntity {
     private String hospitalAddress;
     private Boolean hospitalIsOpen;
     private String doctorName;
+
+    @OneToOne(mappedBy = "hospital", cascade = CascadeType.ALL, orphanRemoval = true)
+    private HospitalSchedule hospitalSchedule;
 
     public Hospital(
             Long userId,

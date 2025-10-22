@@ -32,6 +32,12 @@ public class HospitalInternalService {
     }
 
     @Transactional(readOnly = true)
+    public Hospital getHospitalWithScheduleById(Long id) {
+        return hospitalRepository.findById(id)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
     public Page<Hospital> findAllHospitals(Pageable pageable) {
         return hospitalRepository.findAll(pageable);
     }
@@ -48,7 +54,6 @@ public class HospitalInternalService {
 
     @Transactional
     public void deleteHospitalAndSchedule(Hospital hospital) {
-        hospitalScheduleRepository.deleteByHospital(hospital);
         hospitalRepository.delete(hospital);
     }
 }
