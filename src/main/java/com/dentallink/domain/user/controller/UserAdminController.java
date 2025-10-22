@@ -2,6 +2,7 @@ package com.dentallink.domain.user.controller;
 
 import com.dentallink.common.response.PageResponse;
 import com.dentallink.common.response.ApiResponse;
+import com.dentallink.domain.user.dto.request.UserSignupRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.service.UserInternalService;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,7 @@ import static com.dentallink.common.response.ApiResponse.success;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/users")
+@RequestMapping("/api")
 public class UserAdminController {
 
     private final UserInternalService userInternalService;
@@ -23,7 +24,7 @@ public class UserAdminController {
     // Query Service
     // 특정 유저 열람
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/{userId}")
+    @GetMapping("/users/{userId}")
     public ResponseEntity<ApiResponse<UserResponse>> getOneUser(
             @PathVariable("userId") Long userId
     ) {
@@ -35,7 +36,7 @@ public class UserAdminController {
 
     // 모든 유저 열람
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping
+    @GetMapping("/users")
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getUsers(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
@@ -43,6 +44,25 @@ public class UserAdminController {
         return  success(
                 userInternalService.getUsers(page, size),
                 "회원 목록이 조회되었습니다."
+        );
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping("/admin/hospitals/signup")
+    public ResponseEntity<ApiResponse<UserResponse>> signup(
+            @RequestBody UserSignupRequest request
+    ) {
+        return success(
+                userInternalService.hospitalSignup(request),
+                "병원 관리자 가입 완료되었습니다."
+        );
+    }
+
+    @PostMapping("/admin")
+    public ResponseEntity<ApiResponse<UserResponse>> createTestAdmin(){
+        return success(
+                userInternalService.createTestAdmin(),
+                "테스트용 관리자 계정이 생성되었습니다."
         );
     }
 }
