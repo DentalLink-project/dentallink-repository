@@ -1,6 +1,7 @@
 package com.dentallink.domain.pointAccount.controller;
 
 import com.dentallink.common.response.ApiResponse;
+import com.dentallink.domain.pointAccount.dto.request.PointAccountRequest;
 import com.dentallink.domain.pointAccount.dto.response.*;
 import com.dentallink.domain.pointAccount.service.PointAccountInternalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
@@ -29,52 +30,30 @@ public class PointAccountController {
     @GetMapping("/account")
     public ResponseEntity<ApiResponse<PointAccountGetResponse>> getPointAccount(
             @AuthenticationPrincipal AuthUser authUser
-    ){
+    ) {
         PointAccountGetResponse response = pointAccountInternalService.getPointAccount(authUser.getUserId());
         return ApiResponse.success(response, "잔액을 확인하였습니다.");
     }
 
-    /*
-    // 현금 -> 포인트
+    // 관계자가 특정 포인트 계좌에 포인트를 충전하는 메서드
     @PostMapping("/deposit")
     public ResponseEntity<ApiResponse<PointAccountDepositResponse>> chargePointAccount(
-            @PathVariable Long userId, // 수정 필요
+            @AuthenticationPrincipal AuthUser authUser,
             @RequestBody PointAccountRequest request
     ){
-        PointAccountDepositResponse response = pointAccountInternalService.depositPointAccount(userId, request.amount());
+        PointAccountDepositResponse response = pointAccountInternalService.depositPointAccount(authUser.getUserId(), request.amount());
         return ApiResponse.success(response, "포인트 충전에 성공했습니다.");
     }
 
-    // 포인트 -> 현금
+    // 포인트를 현금으로 전환(지금은 그냥 point의 balance 값을 줄이는 용도)
     @PostMapping("/withdraw")
     public ResponseEntity<ApiResponse<PointAccountWithdrawResponse>> withdrawPointAccount(
-            @PathVariable Long userId,
+            @AuthenticationPrincipal AuthUser authUser,
             @RequestBody PointAccountRequest request
     ){
-        PointAccountWithdrawResponse response = pointAccountInternalService.withdrawPointAccount(userId, request.amount());
+        PointAccountWithdrawResponse response = pointAccountInternalService.withdrawPointAccount(authUser.getUserId(), request.amount());
         return ApiResponse.success(response, "포인트를 현금으로 전환했습니다.");
     }
-
-    // 포인트 -> 상품 구매
-    @PostMapping("/use")
-    public ResponseEntity<ApiResponse<PointAccountSpendResponse>> spendPointAccount(
-            @PathVariable Long userId, // 수정 필요
-            @RequestBody PointAccountRequest request
-    ){
-        PointAccountSpendResponse response = pointAccountInternalService.spendPointAccount(userId, request.amount());
-        return ApiResponse.success(response, "포인트를 사용하였습니다.");
-    }
-
-    // 포인트 환불하기
-    @PostMapping("/refund")
-    public ResponseEntity<ApiResponse<PointAccountRefundResponse>> refundPointAccount(
-            @PathVariable Long userId, // 수정 필요,
-            @RequestBody PointAccountRequest request
-    ){
-        PointAccountRefundResponse response = pointAccountInternalService.refundPointAccount(userId, request.amount());
-        return ApiResponse.success(response, "환불에 성공했습니다.");
-    }
-*/
 
 }
 
