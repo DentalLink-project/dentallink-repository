@@ -5,6 +5,7 @@ import com.dentallink.domain.pointAccount.dto.request.PointAccountRequest;
 import com.dentallink.domain.pointAccount.dto.response.*;
 import com.dentallink.domain.pointAccount.service.PointAccountInternalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -39,7 +40,7 @@ public class PointAccountController {
     @PostMapping("/deposit")
     public ResponseEntity<ApiResponse<PointAccountDepositResponse>> chargePointAccount(
             @AuthenticationPrincipal AuthUser authUser,
-            @RequestBody PointAccountRequest request
+            @Valid @RequestBody PointAccountRequest request
     ){
         PointAccountDepositResponse response = pointAccountInternalService.depositPointAccount(authUser.getUserId(), request.amount());
         return ApiResponse.success(response, "포인트 충전에 성공했습니다.");
@@ -49,7 +50,7 @@ public class PointAccountController {
     @PostMapping("/withdraw")
     public ResponseEntity<ApiResponse<PointAccountWithdrawResponse>> withdrawPointAccount(
             @AuthenticationPrincipal AuthUser authUser,
-            @RequestBody PointAccountRequest request
+            @Valid @RequestBody PointAccountRequest request
     ){
         PointAccountWithdrawResponse response = pointAccountInternalService.withdrawPointAccount(authUser.getUserId(), request.amount());
         return ApiResponse.success(response, "포인트를 현금으로 전환했습니다.");
