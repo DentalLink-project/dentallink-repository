@@ -64,6 +64,10 @@ public class AnswerService {
         Answer answer = get(answerId);
         answer.deleteAnswer(responderId); // soft delete
 
+        // todo answer.getQuestion() 호출은 Question 엔티티에 대한 LAZY 로딩으로 인해 별도의 SELECT 쿼리를 유발할 수 있습니다.
+        //  이는 N+1 문제로 이어질 수 있는 잠재적인 성능 저하 지점입니다.
+        //  get(answerId) 메서드에서 Answer를 조회할 때 JOIN FETCH나 @EntityGraph를 사용하여 연관된 Question 엔티티를 함께 가져오도록 수정하는 것을 고려해 보세요.
+        //  이렇게 하면 불필요한 추가 쿼리를 방지할 수 있습니다.
         // 답변 삭제 시 문의 상태 변경 : Answered -> Awaiting
         Question question = answer.getQuestion();
         question.awaitingMark();
