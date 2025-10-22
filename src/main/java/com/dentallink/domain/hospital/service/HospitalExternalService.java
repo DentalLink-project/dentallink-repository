@@ -19,6 +19,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class HospitalExternalService {
     private final HospitalInternalService hospitalInternalService;
 
+    @Transactional(readOnly = true)
+    public Hospital getHospitalById(Long id) {
+        return hospitalInternalService.getHospitalById(id);
+    }
+
     // 병원 등록
     @Transactional
     public HospitalCreateResponse createHospital(Long userId, HospitalCreateRequest req) {
