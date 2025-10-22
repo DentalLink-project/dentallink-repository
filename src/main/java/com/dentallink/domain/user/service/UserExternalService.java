@@ -9,6 +9,7 @@ import com.dentallink.domain.user.dto.request.UserUpdateRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import com.dentallink.domain.user.entity.User;
+import com.dentallink.domain.user.enums.UserRole;
 import com.dentallink.domain.user.exception.UserErrorCode;
 import com.dentallink.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,7 @@ public class UserExternalService {
                 request.email(),
                 authService.passwordEncode(request.password()),
                 request.username(),
-                request.userRole()
+                UserRole.ROLE_USER
         ));
         return UserResponse.from(user);
     }
