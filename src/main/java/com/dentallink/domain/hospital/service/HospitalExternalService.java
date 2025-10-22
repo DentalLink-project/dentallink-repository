@@ -3,6 +3,7 @@ package com.dentallink.domain.hospital.service;
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.domain.hospital.dto.request.HospitalCreateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalScheduleCreateRequest;
+import com.dentallink.domain.hospital.dto.request.HospitalScheduleUpdateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalUpdateRequest;
 import com.dentallink.domain.hospital.dto.response.*;
 import com.dentallink.domain.hospital.entity.Hospital;
@@ -48,26 +49,6 @@ public class HospitalExternalService {
         HospitalSchedule savedSchedule = hospitalInternalService.saveHospitalSchedule(schedule);
 
         return HospitalCreateResponse.of(savedHospital, savedSchedule);
-    }
-
-    // 병원 일정 등록
-    @Transactional
-    public HospitalScheduleCreateResponse createHospitalSchedule(Long hospitalId, HospitalScheduleCreateRequest req) {
-        // userId check 메서드 호출 부분 추가
-        // 원래 병원 일정이 있는지에 대한 체크 추가
-
-        Hospital hospital = hospitalInternalService.getHospitalById(hospitalId);
-
-        HospitalSchedule schedule = new HospitalSchedule(
-                req.openTime(),
-                req.closeTime(),
-                req.breakStart(),
-                req.breakEnd(),
-                hospital
-        );
-
-        HospitalSchedule savedSchedule = hospitalInternalService.saveHospitalSchedule(schedule);
-        return HospitalScheduleCreateResponse.of(savedSchedule);
     }
 
     // 병원 전체 조회
@@ -118,6 +99,59 @@ public class HospitalExternalService {
         checkHospitalOwner(hospital, userId);
 
         hospitalInternalService.deleteHospitalAndSchedule(hospital);
+    }
+
+    // 병원 일정 등록
+    @Transactional
+    public HospitalScheduleCreateResponse createHospitalSchedule(Long hospitalId, Long userId, HospitalScheduleCreateRequest req) {
+        Hospital hospital = hospitalInternalService.getHospitalById(hospitalId);
+
+        checkHospitalOwner(hospital, userId);
+
+        hospitalInternalService.findScheduleByHospitalId(hospitalId)
+                .ifPresent(existing -> {
+                    throw new GlobalException(HospitalErrorCode.DUPLICATE_SCHEDULE);
+                });
+
+        HospitalSchedule schedule = new HospitalSchedule(
+                req.openTime(),
+                req.closeTime(),
+                req.breakStart(),
+                req.breakEnd(),
+                hospital
+        );
+
+        HospitalSchedule savedSchedule = hospitalInternalService.saveHospitalSchedule(schedule);
+        return HospitalScheduleCreateResponse.of(savedSchedule);
+    }
+
+    // 병원 일정 수정
+        @Transactional
+        public HospitalScheduleUpdateResponse updateHospitalSchedule(Long hospitalId, Long userId, HospitalScheduleUpdateRequest req) {
+            Hospital hospital = hospitalInternalService.getHospitalById(hospitalId);
+
+            checkHospitalOwner(hospital, userId);
+
+            HospitalSchedule schedule = hospitalInternalService.getScheduleByHospitalId(hospitalId);
+
+            schedule.updateSchedule(
+                    req.openTime(),
+                    req.closeTime(),
+                    req.breakStart(),
+                    req.breakEnd()
+            );
+
+            return HospitalScheduleUpdateResponse.of(schedule);
+        }
+
+    // 병원 일정 삭제
+    @Transactional
+    public void deleteHospitalSchedule(Long hospitalId, Long userId) {
+        Hospital hospital = hospitalInternalService.getHospitalById(hospitalId);
+        checkHospitalOwner(hospital, userId);
+
+        HospitalSchedule schedule = hospitalInternalService.getScheduleByHospitalId(hospitalId);
+        hospitalInternalService.deleteHospitalSchedule(schedule);
     }
 
     // 병원 소유권 확인
