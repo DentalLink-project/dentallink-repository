@@ -1,8 +1,6 @@
 package com.dentallink.domain.review.service;
 
 import com.dentallink.common.exception.GlobalException;
-import com.dentallink.domain.hospital.entity.Hospital;
-import com.dentallink.domain.hospital.exception.HospitalErrorCode;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.review.entity.Review;
 import com.dentallink.domain.review.exception.ReviewErrorCode;
@@ -20,7 +18,6 @@ import java.util.Optional;
 public class ReviewInternalService {
 
     private final ReviewRepository reviewRepository;
-    private final HospitalRepository hospitalRepository;
 
     @Transactional(readOnly = true)
     public Review getReviewById(Long reviewId) {
