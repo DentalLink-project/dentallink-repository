@@ -50,7 +50,6 @@ public class Question extends BaseEntity {
         question.hospitalId = hospitalId;
         question.title = title;
         question.content = content;
-        question.questionStatus = QuestionStatus.AWAITING;
         return question;
     }
 
