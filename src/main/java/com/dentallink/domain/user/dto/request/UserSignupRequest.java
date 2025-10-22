@@ -1,6 +1,5 @@
 package com.dentallink.domain.user.dto.request;
 
-import com.dentallink.domain.user.enums.UserRole;
 import jakarta.validation.constraints.*;
 
 public record UserSignupRequest (
@@ -17,12 +16,9 @@ public record UserSignupRequest (
                 regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,20}$",
                 message = "비밀번호는 8~20글자여야 하며, 대소문자, 숫자, 특수문자를 포함해야 합니다."
         )
-        String password,
-
-        @NotNull
-        UserRole userRole
+        String password
 ) {
-    public static UserSignupRequest of(String username, String email, String password, UserRole userRole) {
-        return new UserSignupRequest(username, email, password, userRole);
+    public static UserSignupRequest of(String username, String email, String password) {
+        return new UserSignupRequest(username, email, password);
     }
 }

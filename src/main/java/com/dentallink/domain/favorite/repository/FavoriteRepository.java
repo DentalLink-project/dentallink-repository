@@ -1,6 +1,6 @@
-package com.dentallink.domain.bookmark.repository;
+package com.dentallink.domain.favorite.repository;
 
-import com.dentallink.domain.bookmark.entity.Favorite;
+import com.dentallink.domain.favorite.entity.Favorite;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
