@@ -7,11 +7,9 @@ import com.dentallink.domain.user.dto.request.UserUpdatePasswordRequest;
 import com.dentallink.domain.user.dto.request.UserUpdateRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.dto.security.AuthUser;
-import com.dentallink.domain.user.service.command.UserCommandService;
-import com.dentallink.domain.user.service.query.UserQueryService;
+import com.dentallink.domain.user.service.UserExternalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -22,21 +20,17 @@ import static com.dentallink.common.response.ApiResponse.success;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
-public class UserExternalController {
+public class UserController {
 
-    private final UserCommandService userCommandService;
-    private final UserQueryService userQueryService;
+    private final UserExternalService userExternalService;
 
-    // 외부 사용자 전용 Controller 입니다.
-
-    // Command
     // 회원가입
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<UserResponse>> signup(
              @RequestBody UserSignupRequest request
     ) {
         return created(
-                userCommandService.signup(request),
+                userExternalService.signup(request),
                 "회원가입이 완료되었습니다."
         );
     }
@@ -47,7 +41,7 @@ public class UserExternalController {
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return success(
-                userCommandService.updateUser(request, authUser),
+                userExternalService.updateUser(request, authUser),
                 "사용자 정보가 수정되었습니다."
         );
     }
@@ -58,7 +52,7 @@ public class UserExternalController {
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return success(
-                userCommandService.changePassword(request, authUser),
+                userExternalService.changePassword(request, authUser),
                 "비밀번호가 성공적으로 변경되었습니다."
         );
     }
@@ -69,7 +63,7 @@ public class UserExternalController {
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return success(
-                userCommandService.withdraw(request, authUser),
+                userExternalService.withdraw(request, authUser),
                 "회원 탈퇴 되었습니다."
         );
     }
@@ -80,7 +74,7 @@ public class UserExternalController {
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return success(
-                userQueryService.getUser(authUser),
+                userExternalService.getUser(authUser),
                 "내 프로필이 조회되었습니다."
         );
     }
