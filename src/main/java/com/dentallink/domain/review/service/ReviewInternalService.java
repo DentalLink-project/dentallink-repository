@@ -16,12 +16,18 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ReviewInternalService {
 
+
     private final ReviewRepository reviewRepository;
 
     @Transactional(readOnly = true)
     public Review getReviewById(Long reviewId) {
         return reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new GlobalException(ReviewErrorCode.REVIEW_NOT_FOUND));
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Review> findOptionalById(Long reviewId) {
+        return reviewRepository.findById(reviewId);
     }
 
     @Transactional(readOnly = true)
@@ -39,20 +45,10 @@ public class ReviewInternalService {
         return reviewRepository.save(review);
     }
 
-    @Transactional
-    public void deleteReview(Review review) {
-        reviewRepository.save(review); // soft delete 처리 시
-    }
-
+    // Optional: 병원 관리자 확인 (ExternalService에서 호출 가능)
     @Transactional(readOnly = true)
-    public Optional<Review> findOptionalById(Long reviewId) {
-        return reviewRepository.findById(reviewId);
+    public boolean isAdmin(Long hospitalId, Long userId) {
+        // TODO: HospitalRepository 등으로 관리자 확인 로직 구현
+        return true; // 임시
     }
-
-//    @Transactional(readOnly = true)
-//    public boolean isAdmin(Long hospitalId, Long userId) {
-//        Hospital hospital = hospitalRepository.findById(hospitalId)
-//                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
-//        return hospital.getUserId().equals(userId); // 병원 소유자가 관리자
-//    }
 }
