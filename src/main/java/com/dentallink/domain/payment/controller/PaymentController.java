@@ -5,6 +5,7 @@ import com.dentallink.domain.payment.dto.request.PaymentRequest;
 import com.dentallink.domain.payment.dto.response.PaymentResponse;
 import com.dentallink.domain.payment.service.PaymentInternalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +21,14 @@ public class PaymentController {
     @PostMapping("/deposit")
     public ResponseEntity<ApiResponse<PaymentResponse>> depositPoint(
             @AuthenticationPrincipal AuthUser authUser,
-            @RequestParam Long amount
+            @Valid @RequestBody PaymentRequest request
     ) {
-        PaymentResponse response = paymentInternalService.depositPoint(authUser.getUserId(), amount);
-        return ApiResponse.created(response, "포인트 충전(결제) 성공");
+        PaymentResponse response = paymentInternalService.depositPoint(
+                authUser.getUserId(),        // 로그인된 사용자 ID
+                request.amount(),            // 요청 금액
+                request.method()             // 결제 수단
+        );
+
+        return ApiResponse.created(response, "포인트 충전에 성공했습니다.");
     }
 }
