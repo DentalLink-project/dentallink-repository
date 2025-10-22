@@ -1,7 +1,6 @@
 package com.dentallink.domain.review.service;
 
 import com.dentallink.common.exception.GlobalException;
-import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.review.entity.Review;
 import com.dentallink.domain.review.exception.ReviewErrorCode;
 import com.dentallink.domain.review.repository.ReviewRepository;
