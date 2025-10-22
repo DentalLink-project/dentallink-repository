@@ -3,9 +3,9 @@ package com.dentallink.domain.favorite.service;
 import com.dentallink.domain.favorite.entity.Favorite;
 import com.dentallink.domain.favorite.enums.FavoriteAction;
 import com.dentallink.domain.favorite.repository.FavoriteRepository;
-import com.dentallink.domain.hospital.service.HospitalService;
+import com.dentallink.domain.hospital.service.HospitalInternalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
-import com.dentallink.domain.user.service.query.UserQueryService;
+import com.dentallink.domain.user.service.UserInternalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,8 +17,8 @@ import java.util.Optional;
 public class FavoriteServiceImpl implements FavoriteService {
 
     private final FavoriteRepository favoriteRepository;
-    private final UserQueryService userQueryService;
-    private final HospitalService hospitalService;
+    private final UserInternalService userInternalService;
+    private final HospitalInternalService hospitalInternalService;
 
     @Transactional
     @Override
@@ -30,8 +30,8 @@ public class FavoriteServiceImpl implements FavoriteService {
         }
         favoriteRepository.save(
                 Favorite.of(
-                        userQueryService.getUserById(authUser.getUserId()),
-                        hospitalService.getHospitalById(hospitalId)
+                        userInternalService.getUserById(authUser.getUserId()),
+                        hospitalInternalService.getHospitalById(hospitalId)
                 )
         );
         return FavoriteAction.ADDED;
