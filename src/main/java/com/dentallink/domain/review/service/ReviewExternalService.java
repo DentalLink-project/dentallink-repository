@@ -96,7 +96,7 @@ public class ReviewExternalService {
 
         Review review = reviewInternalService.getReviewById(reviewId);
 
-        validateHospitalAdmin(review.getHospitalId(), hospitalAdminId);
+//        validateHospitalAdmin(review.getHospitalId(), hospitalAdminId);
 
         switch (request.status()) {
             case APPROVED -> review.approve();
