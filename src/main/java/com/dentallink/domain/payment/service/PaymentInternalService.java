@@ -2,6 +2,8 @@ package com.dentallink.domain.payment.service;
 
 import com.dentallink.domain.payment.dto.response.PaymentResponse;
 import com.dentallink.domain.payment.entity.Payment;
+import com.dentallink.domain.payment.enums.PaymentMethod;
+import com.dentallink.domain.payment.enums.PaymentStatus;
 import com.dentallink.domain.payment.repository.PaymentRepository;
 import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
@@ -19,13 +21,16 @@ public class PaymentInternalService {
     private final UserQueryService userQueryService;
 
     @Transactional
-    public PaymentResponse depositPoint(Long userId, Long amount) {
+    public PaymentResponse depositPoint(Long userId, Long amount, PaymentMethod paymentMethod) {
         User user = userQueryService.getUserById(userId);
         PointAccount account = pointAccountExternalService.getPointAccountByUser(user);
-
-        pointAccountExternalService.depositPointAccount(account.getId(), amount);
-        Payment payment = Payment.create(account, amount);
+        Payment payment = Payment.create(account, amount, paymentMethod);
+        payment.markSuccess();
         paymentRepository.save(payment);
+        pointAccountExternalService.depositPointAccount(account.getId(), amount);
         return PaymentResponse.from(payment);
     }
+
 }
+
+
