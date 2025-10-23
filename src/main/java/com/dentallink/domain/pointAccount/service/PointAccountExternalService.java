@@ -8,7 +8,7 @@ import com.dentallink.domain.pointAccount.repository.PointAccountRepository;
 import com.dentallink.domain.pointLog.enums.PointLogType;
 import com.dentallink.domain.pointLog.service.PointLogExternalService;
 import com.dentallink.domain.user.entity.User;
-import com.dentallink.domain.user.service.query.UserQueryService;
+import com.dentallink.domain.user.service.UserExternalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,8 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PointAccountExternalService {
     private final PointAccountRepository pointAccountRepository;
-    private final UserQueryService userQueryService;
     private final PointLogExternalService pointLogExternalService;
+    private final UserExternalService userExternalService;
 
     // pointAccountId 찾는 메서드
     @Transactional(readOnly = true)
@@ -63,7 +63,7 @@ public class PointAccountExternalService {
     // 계좌 잔액을 보여주기
     @Transactional(readOnly = true)
     public PointAccountGetResponse getPointAccount(Long userId) {
-        User user = userQueryService.getUserById(userId);
+        User user = userExternalService.getUserById(userId);
         PointAccount account = pointAccountRepository.findByUser(user)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         return PointAccountGetResponse.from(account);
@@ -72,7 +72,7 @@ public class PointAccountExternalService {
     // 계좌 잔액을 반환하기
     @Transactional(readOnly = true)
     public Long getPointAccountBalance(Long userId) {
-        User user = userQueryService.getUserById(userId);
+        User user = userExternalService.getUserById(userId);
         PointAccount account = pointAccountRepository.findByUser(user)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         return account.getBalance();
