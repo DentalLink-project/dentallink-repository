@@ -77,15 +77,4 @@ public class PointAccountExternalService {
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         return account.getBalance();
     }
-
-    // 계좌 생성하기
-    @Transactional
-    public void createPointAccount(Long userId) {
-        User user = userExternalService.getUserById(userId);
-        if (pointAccountRepository.findByUser(user).isPresent()) {
-            throw new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_ALREADY_EXISTS);
-        }
-        PointAccount account = PointAccount.create(user, 0L);
-        pointAccountRepository.save(account);
-    }
 }
