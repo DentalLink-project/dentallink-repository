@@ -8,6 +8,7 @@ import com.dentallink.domain.user.dto.request.UserUpdateRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import com.dentallink.domain.user.service.UserExternalService;
+import com.dentallink.domain.user.service.UserInternalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ import static com.dentallink.common.response.ApiResponse.success;
 @RequestMapping("/api/users")
 public class UserController {
 
-    private final UserExternalService userExternalService;
+    private final UserInternalService userInternalService;
 
     // 회원가입
     @PostMapping("/signup")
@@ -30,7 +31,7 @@ public class UserController {
              @Valid @RequestBody UserSignupRequest request
     ) {
         return created(
-                userExternalService.signup(request),
+                userInternalService.signup(request),
                 "회원가입이 완료되었습니다."
         );
     }
@@ -41,7 +42,7 @@ public class UserController {
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return success(
-                userExternalService.updateUser(request, authUser),
+                userInternalService.updateUser(request, authUser),
                 "사용자 정보가 수정되었습니다."
         );
     }
@@ -52,7 +53,7 @@ public class UserController {
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return success(
-                userExternalService.changePassword(request, authUser),
+                userInternalService.changePassword(request, authUser),
                 "비밀번호가 성공적으로 변경되었습니다."
         );
     }
@@ -63,18 +64,17 @@ public class UserController {
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return success(
-                userExternalService.withdraw(request, authUser),
+                userInternalService.withdraw(request, authUser),
                 "회원 탈퇴 되었습니다."
         );
     }
 
-    // Query
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> getUser(
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return success(
-                userExternalService.getUser(authUser),
+                userInternalService.getUser(authUser),
                 "내 프로필이 조회되었습니다."
         );
     }
