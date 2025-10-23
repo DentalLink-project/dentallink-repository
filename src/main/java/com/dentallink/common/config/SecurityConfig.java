@@ -41,6 +41,9 @@ public class SecurityConfig {
         http.authorizeHttpRequests((authorizeHttpRequests) ->
                 authorizeHttpRequests
                         .requestMatchers("/api/users/signup", "/api/auth/login").permitAll() // 회원가입/로그인만 허용
+                        .requestMatchers("/api/hospitals/**").permitAll() //    병원조회는 누구나
+                        .requestMatchers("/api/reservations/available-slots").permitAll() //예약 가능시간조회
+
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 처리
         );
 
