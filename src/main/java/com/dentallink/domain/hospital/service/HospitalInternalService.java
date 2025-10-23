@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class HospitalInternalService {
@@ -38,6 +40,11 @@ public class HospitalInternalService {
     }
 
     @Transactional(readOnly = true)
+    public Optional<HospitalSchedule> findScheduleByHospitalId(Long hospitalId) {
+        return hospitalScheduleRepository.findByHospitalId(hospitalId);
+    }
+
+    @Transactional(readOnly = true)
     public Page<Hospital> findAllHospitals(Pageable pageable) {
         return hospitalRepository.findAll(pageable);
     }
@@ -55,5 +62,10 @@ public class HospitalInternalService {
     @Transactional
     public void deleteHospitalAndSchedule(Hospital hospital) {
         hospitalRepository.delete(hospital);
+    }
+
+    @Transactional
+    public void deleteHospitalSchedule(HospitalSchedule schedule) {
+        hospitalScheduleRepository.delete(schedule);
     }
 }
