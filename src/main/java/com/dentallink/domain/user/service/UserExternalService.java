@@ -1,15 +1,7 @@
 package com.dentallink.domain.user.service;
 
 import com.dentallink.common.exception.GlobalException;
-import com.dentallink.domain.auth.service.AuthService;
-import com.dentallink.domain.user.dto.request.UserDeleteRequest;
-import com.dentallink.domain.user.dto.request.UserSignupRequest;
-import com.dentallink.domain.user.dto.request.UserUpdatePasswordRequest;
-import com.dentallink.domain.user.dto.request.UserUpdateRequest;
-import com.dentallink.domain.user.dto.response.UserResponse;
-import com.dentallink.domain.user.dto.security.AuthUser;
 import com.dentallink.domain.user.entity.User;
-import com.dentallink.domain.user.enums.UserRole;
 import com.dentallink.domain.user.exception.UserErrorCode;
 import com.dentallink.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
