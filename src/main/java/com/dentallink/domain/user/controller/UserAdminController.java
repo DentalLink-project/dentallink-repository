@@ -5,6 +5,7 @@ import com.dentallink.common.response.ApiResponse;
 import com.dentallink.domain.user.dto.request.UserSignupRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.service.UserInternalService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -50,7 +51,7 @@ public class UserAdminController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/hospitals/signup")
     public ResponseEntity<ApiResponse<UserResponse>> signup(
-            @RequestBody UserSignupRequest request
+            @Valid @RequestBody UserSignupRequest request
     ) {
         return success(
                 userInternalService.hospitalSignup(request),
