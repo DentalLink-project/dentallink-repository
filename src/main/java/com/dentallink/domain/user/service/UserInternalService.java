@@ -79,7 +79,7 @@ public class UserInternalService {
         }
         User user = userRepository.save(User.of(
                 "admin@example.com",
-                authService.passwordEncode("password123!"),
+                authService.passwordEncode("passwordA123!"),
                 "관리자",
                 UserRole.ROLE_ADMIN
         ));
