@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -78,6 +79,7 @@ public class ReviewController {
 
     // 리뷰 상태 변경
     @PatchMapping("/reviews/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ReviewStatusResponse> updateReviewStatus(
             @PathVariable Long id,
             @RequestBody ReviewUpdateStatusRequest request,
