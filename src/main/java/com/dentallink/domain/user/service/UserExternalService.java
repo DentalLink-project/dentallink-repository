@@ -21,62 +21,19 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class UserExternalService {
 
-    private final UserInternalService userInternalService;
-    private final AuthService authService;
     private final UserRepository userRepository;
 
     // ID를 기준으로 사용자 조회
     @Transactional(readOnly = true)
-    public User getUserById(Long Id) {
-        return userInternalService.getUserById(Id);
+    public User getUserById(Long id) {
+        return userRepository.findByIdAndDeletedAtIsNull(id).orElseThrow(
+                () -> new GlobalException(UserErrorCode.USER_NOT_FOUND));
     }
-
-    // 내 프로필 조회
+    // email 기준으로 유저 검색
     @Transactional(readOnly = true)
-    public UserResponse getUser(AuthUser authUser) {
-        User user = getUserById(authUser.getUserId());
-        return UserResponse.from(user);
-    }
-
-    public UserResponse signup(UserSignupRequest request) {
-        if(userInternalService.existsUserByEmail(request.email())) {
-            throw new GlobalException(UserErrorCode.EMAIL_DUPLICATED);
-        }
-        User user = userRepository.save(User.of(
-                request.email(),
-                authService.passwordEncode(request.password()),
-                request.username(),
-                UserRole.ROLE_USER
-        ));
-        return UserResponse.from(user);
-    }
-
-    public UserResponse updateUser(UserUpdateRequest request, AuthUser authUser) {
-        User user = getUserById(authUser.getUserId());
-        if (request.password() == null) throw new GlobalException(UserErrorCode.USER_BAD_REQUEST);
-        authService.passwordCheck(request.password(), user.getId());
-        if (request.email() != null && !user.getEmail().equals(request.email()) && userInternalService.existsUserByEmail(request.email())) {
-            throw new GlobalException(UserErrorCode.EMAIL_DUPLICATED);
-        }
-        user.update(request.username(), request.email());
-
-        User savedUser = userRepository.save(user);
-        return UserResponse.from(savedUser);
-    }
-
-    public Void changePassword(UserUpdatePasswordRequest request, AuthUser authUser) {
-        User user = getUserById(authUser.getUserId());
-        authService.passwordCheck(request.oldPassword(), user.getId());
-
-        user.updatePassword(authService.passwordEncode(request.newPassword()));
-        userRepository.save(user);
-        return null;
-    }
-
-    public Void withdraw(UserDeleteRequest request, AuthUser authUser) {
-        User user = getUserById(authUser.getUserId());
-        authService.passwordCheck(request.password(), user.getId());
-        user.delete();
-        return null;
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmailAndDeletedAtIsNull(email).orElseThrow(
+                () -> new GlobalException(UserErrorCode.USER_NOT_FOUND)
+        );
     }
 }
