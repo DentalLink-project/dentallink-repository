@@ -6,7 +6,6 @@ import com.dentallink.domain.favorite.repository.FavoriteRepository;
 import com.dentallink.domain.hospital.service.HospitalInternalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import com.dentallink.domain.user.service.UserExternalService;
-import com.dentallink.domain.user.service.UserInternalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
