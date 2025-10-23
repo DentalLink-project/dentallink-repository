@@ -39,3 +39,9 @@ out/
 ### yml ###
 *.yml
 *.yaml
+
+# IntelliJ HTTP Client
+*.http
+http-client.env.json
+http-client.private.env.json
+.httpRequests/
