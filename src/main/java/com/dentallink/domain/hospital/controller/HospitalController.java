@@ -68,7 +68,7 @@ public class HospitalController {
     }
 
     // 병원 일정 등록
-    @PostMapping("/{hospitalId}/schedules")
+    @PostMapping("/{hospitalId}/schedule")
     public ResponseEntity<HospitalScheduleCreateResponse> createHospitalSchedule(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser,
@@ -84,7 +84,7 @@ public class HospitalController {
     public ResponseEntity<HospitalScheduleUpdateResponse> updateHospitalSchedule(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser,
-            @RequestBody HospitalScheduleUpdateRequest request
+            @Valid @RequestBody HospitalScheduleUpdateRequest request
     ) {
         HospitalScheduleUpdateResponse response = hospitalExternalService.updateHospitalSchedule(hospitalId, authUser.getUserId(), request);
         return ResponseEntity.ok(response);
