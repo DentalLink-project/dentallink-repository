@@ -7,7 +7,6 @@ import com.dentallink.domain.auth.dto.response.TokenResponse;
 import com.dentallink.domain.auth.exception.AuthErrorCode;
 import com.dentallink.domain.user.entity.User;
 import com.dentallink.domain.user.service.UserExternalService;
-import com.dentallink.domain.user.service.UserInternalService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
