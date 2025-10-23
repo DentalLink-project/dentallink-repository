@@ -20,13 +20,14 @@ public class PointAccountController {
     private final PointAccountInternalService pointAccountInternalService;
 
     // 계좌 생성하기
-    @PostMapping("/account")
+    /*@PostMapping("/account")
     public ResponseEntity<ApiResponse<PointAccountCreateResponse>> createPointAccount(
             @AuthenticationPrincipal AuthUser authUser
     ) {
         PointAccountCreateResponse response = pointAccountInternalService.createPointAccount(authUser.getUserId());
         return ApiResponse.created(response, "계좌 생성에 성공했습니다.");
     }
+     */
 
     // 잔액 확인하기
     @GetMapping("/account")
