@@ -4,7 +4,6 @@ import com.dentallink.common.response.ApiResponse;
 import com.dentallink.domain.qna.dto.request.QuestionRequestDto;
 import com.dentallink.domain.qna.dto.response.QuestionResponseDto;
 import com.dentallink.domain.qna.service.QuestionExternalService;
-import com.dentallink.domain.qna.service.QuestionService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -39,7 +38,7 @@ public class QuestionController {
             @PathVariable Long id
     ) {
         return ApiResponse.success(
-                QuestionResponseDto.QuestionResponse.from(questionExternalService.getWithAnswers(id)),
+                QuestionResponseDto.QuestionResponse.from(questionExternalService.getWithAnswers()),
                 "문의 조회 완료"
         );
     }
