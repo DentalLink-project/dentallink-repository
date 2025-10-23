@@ -22,7 +22,6 @@ public class UserAdminController {
 
     // 내부 사용자 전용(role 구분, admin만 가능한 내용)
 
-    // Query Service
     // 특정 유저 열람
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users/{userId}")
