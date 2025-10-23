@@ -40,7 +40,6 @@ public class PointAccountController {
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/deposit")
     public ResponseEntity<ApiResponse<PointAccountDepositResponse>> depositPointAccount(
-            @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody PointAccountRequest request
     ) {
         PointAccountDepositResponse response = pointAccountInternalService.depositPointAccount(
