@@ -25,6 +25,12 @@ public class UserExternalService {
     private final AuthService authService;
     private final UserRepository userRepository;
 
+    // ID를 기준으로 사용자 조회
+    @Transactional(readOnly = true)
+    public User getUserById(Long Id) {
+        return userInternalService.getUserById(Id);
+    }
+
     // 내 프로필 조회
     @Transactional(readOnly = true)
     public UserResponse getUser(AuthUser authUser) {
