@@ -53,12 +53,17 @@ public class ReservationInternalService {
     private static final Long RESERVATION_COST_POINTS = 1000L;
 
 
-    //예약 조회 (단건)
-    public ReservationResponse getReservation(Long id) {
+    //예약 조회 (단건) - 권한 체크 포함
+    public ReservationResponse getReservation(Long id, Long userId) {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
+
+        // 권한 체크: 본인 예약 or 병원 관리자 or 시스템 관리자
+        validateReservationAccess(reservation, userId);
+
         return ReservationResponse.from(reservation);
     }
+
 
     //내 예약 목록 조회
     public Page<ReservationResponse> getMyReservations(Long userId, Pageable pageable) {
@@ -74,8 +79,8 @@ public class ReservationInternalService {
             Long hospitalAdminId,
             Pageable pageable) {
 
-        // 병원 관리자 권한 확인
-        validateHospitalAdmin(hospitalId, hospitalAdminId);
+        // 병원 소유권 확인 (@PreAuthorize로 역할은 체크됨)
+        validateHospitalOwnership(hospitalId, hospitalAdminId);
 
         Page<Reservation> reservations = reservationRepository.findByHospitalIdWithPaging(hospitalId, pageable);
         return reservations.map(ReservationResponse::from);
@@ -91,8 +96,8 @@ public class ReservationInternalService {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 
-        // 병원 관리자 권한 확인
-        validateHospitalAdmin(reservation.getHospital().getId(), hospitalAdminId);
+        // 병원 소유권 확인 (@PreAuthorize로 역할은 체크됨)
+        validateHospitalOwnership(reservation.getHospital().getId(), hospitalAdminId);
 
         // 상태 변경
         switch (request.status()) {
@@ -303,20 +308,56 @@ public class ReservationInternalService {
         return timePeriod;
     }
 
-    private void validateHospitalAdmin(Long hospitalId, Long userId) {
-        Hospital hospital = hospitalRepository.findById(hospitalId)
-                .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_NOT_FOUND));
-
+    /**
+     * 병원 소유권 검증
+     * @PreAuthorize로 역할은 이미 체크되었으므로, 비즈니스 로직만 체크
+     */
+    private void validateHospitalOwnership(Long hospitalId, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
 
+        // ADMIN은 모든 병원 접근 가능 (이미 @PreAuthorize에서 체크됨)
         if (user.getUserRole() == UserRole.ROLE_ADMIN) {
             return;
         }
 
+        // HOSPITAL_OWNER는 자기 병원만 접근 가능 (비즈니스 로직)
+        Hospital hospital = hospitalRepository.findById(hospitalId)
+                .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_NOT_FOUND));
+
         if (!hospital.getUserId().equals(userId)) {
             throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
         }
+    }
+
+    /**
+     * 예약 조회 권한 검증
+     * - 시스템 관리자: 모든 예약 조회 가능
+     * - 예약 소유자: 본인 예약 조회 가능
+     * - 병원 관리자: 자기 병원 예약 조회 가능
+     */
+    private void validateReservationAccess(Reservation reservation, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
+
+        // 1. 시스템 관리자는 모든 예약 조회 가능
+        if (user.getUserRole() == UserRole.ROLE_ADMIN) {
+            return;
+        }
+
+        // 2. 본인 예약은 조회 가능
+        if (reservation.isOwnedBy(userId)) {
+            return;
+        }
+
+        // 3. 해당 병원의 관리자는 조회 가능
+        if (user.getUserRole() == UserRole.ROLE_HOSPITAL
+                && reservation.getHospital().getUserId().equals(userId)) {
+            return;
+        }
+
+        // 4. 그 외는 조회 불가
+        throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
     }
 
     // 소유자 확인
