@@ -27,7 +27,7 @@ public class UserController {
     // 회원가입
     @PostMapping("/signup")
     public ResponseEntity<ApiResponse<UserResponse>> signup(
-             @RequestBody UserSignupRequest request
+             @Valid @RequestBody UserSignupRequest request
     ) {
         return created(
                 userExternalService.signup(request),
@@ -37,7 +37,7 @@ public class UserController {
     // 정보수정
     @PatchMapping("/me")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
-            @RequestBody UserUpdateRequest request,
+            @Valid @RequestBody UserUpdateRequest request,
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return success(
@@ -48,7 +48,7 @@ public class UserController {
     // 비밀번호 수정
     @PutMapping("/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
-            @RequestBody UserUpdatePasswordRequest request,
+            @Valid @RequestBody UserUpdatePasswordRequest request,
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return success(
