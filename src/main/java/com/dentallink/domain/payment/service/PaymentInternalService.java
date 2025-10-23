@@ -3,6 +3,7 @@ package com.dentallink.domain.payment.service;
 import com.dentallink.domain.payment.dto.response.PaymentResponse;
 import com.dentallink.domain.payment.entity.Payment;
 import com.dentallink.domain.payment.enums.PaymentMethod;
+import com.dentallink.domain.payment.enums.PaymentStatus;
 import com.dentallink.domain.payment.repository.PaymentRepository;
 import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
