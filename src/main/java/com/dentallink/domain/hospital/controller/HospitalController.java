@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +24,7 @@ public class HospitalController {
 
     // 병원 등록
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<HospitalCreateResponse> createHospital(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalCreateRequest request
@@ -47,6 +49,7 @@ public class HospitalController {
 
     // 병원 수정
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
     public ResponseEntity<HospitalUpdateResponse> updateHospital(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser,
@@ -59,6 +62,7 @@ public class HospitalController {
 
     // 병원 삭제
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<Void> deleteHospital(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser
@@ -69,6 +73,7 @@ public class HospitalController {
 
     // 병원 일정 등록
     @PostMapping("/{hospitalId}/schedule")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
     public ResponseEntity<HospitalScheduleCreateResponse> createHospitalSchedule(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser,
@@ -81,6 +86,7 @@ public class HospitalController {
 
     // 병원 일정 수정
     @PutMapping("/{hospitalId}/schedule")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
     public ResponseEntity<HospitalScheduleUpdateResponse> updateHospitalSchedule(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser,
@@ -92,6 +98,7 @@ public class HospitalController {
 
     // 병원 일정 삭제
     @DeleteMapping("/{hospitalId}/schedule")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
     public ResponseEntity<Void> deleteHospitalSchedule(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser
