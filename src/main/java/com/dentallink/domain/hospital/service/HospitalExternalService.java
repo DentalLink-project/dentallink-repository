@@ -20,11 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class HospitalExternalService {
     private final HospitalInternalService hospitalInternalService;
 
-    @Transactional(readOnly = true)
-    public Hospital getHospitalById(Long id) {
-        return hospitalInternalService.getHospitalById(id);
-    }
-
     // 병원 등록
     @Transactional
     public HospitalCreateResponse createHospital(Long userId, HospitalCreateRequest req) {
@@ -126,23 +121,23 @@ public class HospitalExternalService {
     }
 
     // 병원 일정 수정
-        @Transactional
-        public HospitalScheduleUpdateResponse updateHospitalSchedule(Long hospitalId, Long userId, HospitalScheduleUpdateRequest req) {
-            Hospital hospital = hospitalInternalService.getHospitalById(hospitalId);
+    @Transactional
+    public HospitalScheduleUpdateResponse updateHospitalSchedule(Long hospitalId, Long userId, HospitalScheduleUpdateRequest req) {
+        Hospital hospital = hospitalInternalService.getHospitalById(hospitalId);
 
-            checkHospitalOwner(hospital, userId);
+        checkHospitalOwner(hospital, userId);
 
-            HospitalSchedule schedule = hospitalInternalService.getScheduleByHospitalId(hospitalId);
+        HospitalSchedule schedule = hospitalInternalService.getScheduleByHospitalId(hospitalId);
 
-            schedule.updateSchedule(
-                    req.openTime(),
-                    req.closeTime(),
-                    req.breakStart(),
-                    req.breakEnd()
-            );
+        schedule.updateSchedule(
+                req.openTime(),
+                req.closeTime(),
+                req.breakStart(),
+                req.breakEnd()
+        );
 
-            return HospitalScheduleUpdateResponse.of(schedule);
-        }
+        return HospitalScheduleUpdateResponse.of(schedule);
+    }
 
     // 병원 일정 삭제
     @Transactional
