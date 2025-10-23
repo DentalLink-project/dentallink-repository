@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,6 +38,7 @@ public class PointAccountController {
     }
 
     // 관계자가 특정 포인트 계좌에 포인트를 충전하는 메서드
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/deposit")
     public ResponseEntity<ApiResponse<PointAccountDepositResponse>> chargePointAccount(
             @AuthenticationPrincipal AuthUser authUser,
