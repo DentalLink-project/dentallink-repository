@@ -5,9 +5,11 @@ import com.dentallink.domain.pointAccount.repository.PointAccountRepository;
 import com.dentallink.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class PointAccountServiceImpl implements PointAccountService {
     private final PointAccountRepository pointAccountRepository;
 
