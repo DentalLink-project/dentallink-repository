@@ -3,6 +3,7 @@ package com.dentallink.domain.qna.controller;
 import com.dentallink.common.response.ApiResponse;
 import com.dentallink.domain.qna.dto.request.QuestionRequestDto;
 import com.dentallink.domain.qna.dto.response.QuestionResponseDto;
+import com.dentallink.domain.qna.service.QuestionExternalService;
 import com.dentallink.domain.qna.service.QuestionService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import jakarta.validation.Valid;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/questions")
 public class QuestionController {
 
-    private final QuestionService questionService;
+    private final QuestionExternalService questionExternalService;
 
     // 문의 등록 API question create api
     @PostMapping
@@ -27,7 +28,7 @@ public class QuestionController {
     ) {
         Long userId = authUser.getUserId();     // 인증된 사용자 ID 사용
         return ApiResponse.created(
-                questionService.create(userId, req.hospitalId(), req.title(), req.content()),
+                questionExternalService.create(userId, req.hospitalId(), req.title(), req.content()),
                 "문의 등록 완료"
         );
     }
@@ -38,7 +39,7 @@ public class QuestionController {
             @PathVariable Long id
     ) {
         return ApiResponse.success(
-                QuestionResponseDto.QuestionResponse.from(questionService.getWithAnswers(id)),
+                QuestionResponseDto.QuestionResponse.from(questionExternalService.getWithAnswers(id)),
                 "문의 조회 완료"
         );
     }
@@ -52,7 +53,7 @@ public class QuestionController {
             @RequestBody QuestionRequestDto.QuestionUpdateRequest req
     ) {
         Long userId = authUser.getUserId();     // 인증된 사용자 ID 사용
-        questionService.update(id, userId, req.title(), req.content());
+        questionExternalService.update(id, userId, req.title(), req.content());
         return ApiResponse.success(null, "문의 수정 완료");
     }
 
@@ -64,7 +65,7 @@ public class QuestionController {
             @AuthenticationPrincipal AuthUser authUser
     ) {
         Long userId = authUser.getUserId();     // 인증된 사용자 ID 사용
-        questionService.delete(id, userId);
+        questionExternalService.delete(id, userId);
         return ApiResponse.deleteSuccess("문의 삭제 완료");
     }
 }

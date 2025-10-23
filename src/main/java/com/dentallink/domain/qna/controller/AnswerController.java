@@ -3,7 +3,7 @@ package com.dentallink.domain.qna.controller;
 import com.dentallink.common.response.ApiResponse;
 import com.dentallink.domain.qna.dto.request.AnswerRequestDto;
 import com.dentallink.domain.qna.dto.response.AnswerResponseDto;
-import com.dentallink.domain.qna.service.AnswerService;
+import com.dentallink.domain.qna.service.AnswerExternalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/answers")
 public class AnswerController {
 
-    private final AnswerService answerService;
+    private final AnswerExternalService answerExternalService;
 
     // 답변 등록 API answer create api
     @PostMapping
@@ -27,7 +27,7 @@ public class AnswerController {
     ) {
         Long responderId = authUser.getUserId();    // 인증된 사용자 ID 사용
         return ApiResponse.created(
-                answerService.create(req.questionId(), responderId, req.content()),
+                answerExternalService.create(req.questionId(), responderId, req.content()),
                 "답변 등록 완료"
         );
     }
@@ -38,7 +38,7 @@ public class AnswerController {
             @PathVariable Long id
     ) {
         return ApiResponse.success(
-                AnswerResponseDto.AnswerResponse.from(answerService.get(id)),
+                AnswerResponseDto.AnswerResponse.from(answerExternalService.get(id)),
                 "답변 조회 완료"
         );
     }
@@ -51,7 +51,7 @@ public class AnswerController {
             @RequestBody AnswerRequestDto.AnswerUpdateRequest req
     ) {
         Long responderId = authUser.getUserId();    // 인증된 사용자 ID 사용
-        answerService.update(id, responderId, req.content());
+        answerExternalService.update(id, responderId, req.content());
         return ApiResponse.success(null, "답변 수정 완료");
     }
 
@@ -62,7 +62,7 @@ public class AnswerController {
             @AuthenticationPrincipal AuthUser authUser
     ) {
         Long responderId = authUser.getUserId();    // 인증된 사용자 ID 사용
-        answerService.delete(id, responderId);
+        answerExternalService.delete(id, responderId);
         return ApiResponse.deleteSuccess("답변 삭제 완료");
     }
 }
