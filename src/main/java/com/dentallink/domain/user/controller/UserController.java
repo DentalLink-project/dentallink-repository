@@ -7,7 +7,6 @@ import com.dentallink.domain.user.dto.request.UserUpdatePasswordRequest;
 import com.dentallink.domain.user.dto.request.UserUpdateRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.dto.security.AuthUser;
-import com.dentallink.domain.user.service.UserExternalService;
 import com.dentallink.domain.user.service.UserInternalService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
