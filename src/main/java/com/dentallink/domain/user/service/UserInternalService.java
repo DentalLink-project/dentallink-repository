@@ -2,7 +2,6 @@ package com.dentallink.domain.user.service;
 
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.common.response.PageResponse;
-import com.dentallink.domain.auth.service.AuthService;
 import com.dentallink.domain.user.dto.request.UserSignupRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.entity.User;
@@ -13,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserInternalService {
 
     private final UserRepository userRepository;
-    private final AuthService authService;
+    private final PasswordEncoder passwordEncoder;
 
     // ID(PK) 기준으로 유저 검색
     public User getUserById(Long id) {
@@ -65,7 +65,7 @@ public class UserInternalService {
         }
         User user = userRepository.save(User.of(
                 request.email(),
-                authService.passwordEncode(request.password()),
+                passwordEncoder.encode(request.password()),
                 request.username(),
                 UserRole.ROLE_HOSPITAL
         ));
@@ -79,7 +79,7 @@ public class UserInternalService {
         }
         User user = userRepository.save(User.of(
                 "admin@example.com",
-                authService.passwordEncode("password123!"),
+                passwordEncoder.encode("password123!"),
                 "관리자",
                 UserRole.ROLE_ADMIN
         ));
