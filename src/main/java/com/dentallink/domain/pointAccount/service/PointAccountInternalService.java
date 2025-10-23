@@ -8,7 +8,7 @@ import com.dentallink.domain.pointAccount.repository.PointAccountRepository;
 import com.dentallink.domain.pointLog.enums.PointLogType;
 import com.dentallink.domain.pointLog.service.PointLogExternalService;
 import com.dentallink.domain.user.entity.User;
-import com.dentallink.domain.user.service.query.UserQueryService;
+import com.dentallink.domain.user.service.UserExternalService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,13 +18,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class PointAccountInternalService {
     public final PointAccountRepository pointAccountRepository;
-    private final UserQueryService userQueryService;
     private final PointLogExternalService pointLogExternalService;
+    private final UserExternalService userExternalService;
 
     // 계좌 생성하기
     @Transactional
     public PointAccountCreateResponse createPointAccount(Long userId) {
-        User user = userQueryService.getUserById(userId);
+        User user = userExternalService.getUserById(userId);
         if (pointAccountRepository.findByUser(user).isPresent()) {
             throw new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_ALREADY_EXISTS);
         }
@@ -36,7 +36,7 @@ public class PointAccountInternalService {
     // 계좌 잔액 확인하기
     @Transactional(readOnly = true)
     public PointAccountGetResponse getPointAccount(Long userId) {
-        User user = userQueryService.getUserById(userId);
+        User user = userExternalService.getUserById(userId);
         PointAccount account = pointAccountRepository.findByUser(user)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         return PointAccountGetResponse.from(account);
