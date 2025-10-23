@@ -34,7 +34,7 @@ public class UserExternalService {
     // 내 프로필 조회
     @Transactional(readOnly = true)
     public UserResponse getUser(AuthUser authUser) {
-        User user = userInternalService.getUserById(authUser.getUserId());
+        User user = getUserById(authUser.getUserId());
         return UserResponse.from(user);
     }
 
@@ -52,7 +52,7 @@ public class UserExternalService {
     }
 
     public UserResponse updateUser(UserUpdateRequest request, AuthUser authUser) {
-        User user = userInternalService.getUserById(authUser.getUserId());
+        User user = getUserById(authUser.getUserId());
         if (request.password() == null) throw new GlobalException(UserErrorCode.USER_BAD_REQUEST);
         authService.passwordCheck(request.password(), user.getId());
         if (request.email() != null && !user.getEmail().equals(request.email()) && userInternalService.existsUserByEmail(request.email())) {
@@ -65,7 +65,7 @@ public class UserExternalService {
     }
 
     public Void changePassword(UserUpdatePasswordRequest request, AuthUser authUser) {
-        User user = userInternalService.getUserById(authUser.getUserId());
+        User user = getUserById(authUser.getUserId());
         authService.passwordCheck(request.oldPassword(), user.getId());
 
         user.updatePassword(authService.passwordEncode(request.newPassword()));
@@ -74,7 +74,7 @@ public class UserExternalService {
     }
 
     public Void withdraw(UserDeleteRequest request, AuthUser authUser) {
-        User user = userInternalService.getUserById(authUser.getUserId());
+        User user = getUserById(authUser.getUserId());
         authService.passwordCheck(request.password(), user.getId());
         user.delete();
         return null;
