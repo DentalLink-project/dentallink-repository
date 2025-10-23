@@ -3,6 +3,7 @@ package com.dentallink.domain.payment.service;
 import com.dentallink.domain.payment.dto.response.PaymentResponse;
 import com.dentallink.domain.payment.entity.Payment;
 import com.dentallink.domain.payment.enums.PaymentMethod;
+import com.dentallink.domain.payment.enums.PaymentStatus;
 import com.dentallink.domain.payment.repository.PaymentRepository;
 import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
@@ -17,11 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentInternalService {
     private final PaymentRepository paymentRepository;
     private final PointAccountExternalService pointAccountExternalService;
-    private final UserExternalService userQueryService;
+    private final UserExternalService userExternalService;
 
     @Transactional
     public PaymentResponse depositPoint(Long userId, Long amount, PaymentMethod paymentMethod) {
-        User user = userQueryService.getUserById(userId);
+        User user = userExternalService.getUserById(userId);
         PointAccount account = pointAccountExternalService.getPointAccountByUser(user);
         Payment payment = Payment.create(account, amount, paymentMethod);
         payment.markSuccess();
