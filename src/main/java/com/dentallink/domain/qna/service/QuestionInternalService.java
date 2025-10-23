@@ -38,6 +38,7 @@ public class QuestionInternalService {
         questionRepository.delete(question);
     }
 
+    // todo: 필요 시 페이징 처리 고려
     // 제목으로 질문 존재 여부 확인
     public boolean existsByTitle(String title) {
         return questionRepository.existsByTitleAndDeletedFalse(title);
