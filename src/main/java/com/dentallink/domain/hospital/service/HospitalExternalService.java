@@ -128,10 +128,4 @@ public class HospitalExternalService {
             throw new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER);
         }
     }
-
-    @Transactional
-    public Hospital getHospitalById(Long id) {
-        return hospitalRepository.findById(id)
-                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
-    }
 }
