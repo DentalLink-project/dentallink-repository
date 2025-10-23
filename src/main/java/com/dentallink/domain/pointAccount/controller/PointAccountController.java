@@ -40,11 +40,14 @@ public class PointAccountController {
     // 관계자가 특정 포인트 계좌에 포인트를 충전하는 메서드
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/deposit")
-    public ResponseEntity<ApiResponse<PointAccountDepositResponse>> chargePointAccount(
+    public ResponseEntity<ApiResponse<PointAccountDepositResponse>> depositPointAccount(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody PointAccountRequest request
-    ){
-        PointAccountDepositResponse response = pointAccountInternalService.depositPointAccount(authUser.getUserId(), request.amount());
+    ) {
+        PointAccountDepositResponse response = pointAccountInternalService.depositPointAccount(
+                request.accountId(),
+                request.amount()
+        );
         return ApiResponse.success(response, "포인트 충전에 성공했습니다.");
     }
 
