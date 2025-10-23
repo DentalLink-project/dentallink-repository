@@ -9,6 +9,8 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review,Long> {
+    boolean existsByReservationId(Long reservationId);
+
     @Query("SELECT r FROM Review r WHERE r.hospitalId = :hospitalId ORDER BY r.createdAt")
     Page<Review> findByHospitalId(Long hospitalId, Pageable pageable);
 }
