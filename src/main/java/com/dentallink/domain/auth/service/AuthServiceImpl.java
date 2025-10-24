@@ -6,7 +6,7 @@ import com.dentallink.domain.auth.dto.request.LoginRequest;
 import com.dentallink.domain.auth.dto.response.TokenResponse;
 import com.dentallink.domain.auth.exception.AuthErrorCode;
 import com.dentallink.domain.user.entity.User;
-import com.dentallink.domain.user.service.UserInternalService;
+import com.dentallink.domain.user.service.UserExternalService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import lombok.RequiredArgsConstructor;
@@ -28,12 +28,12 @@ public class AuthServiceImpl implements AuthService{
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
-    private final UserInternalService userService;
+    private final UserExternalService userExternalService;
 
     // 비밀번호를 확인하는 메서드입니다.
     @Override
     public void passwordCheck(String password, Long userId) {
-        if (!passwordEncoder.matches(password, userService.getUserById(userId).getPassword())) {
+        if (!passwordEncoder.matches(password, userExternalService.getUserById(userId).getPassword())) {
             throw new GlobalException(AuthErrorCode.LOGIN_FAILED);
         }
     }
@@ -44,7 +44,7 @@ public class AuthServiceImpl implements AuthService{
 
     @Override
     public TokenResponse login(LoginRequest request) {
-        User user = userService.getUserByEmail(request.email());
+        User user = userExternalService.getUserByEmail(request.email());
         passwordCheck(request.password(), user.getId());
         String token = jwtUtil.createToken(user.getId(), user.getEmail(), user.getUserRole());
         return TokenResponse.of(token);
