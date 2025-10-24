@@ -1,12 +1,14 @@
 package com.dentallink.domain.review.service;
 
 import com.dentallink.common.exception.GlobalException;
+import com.dentallink.common.response.PageResponse;
 import com.dentallink.domain.review.dto.request.*;
 import com.dentallink.domain.review.dto.response.*;
 import com.dentallink.domain.review.entity.Review;
 import com.dentallink.domain.review.exception.ReviewErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,9 +41,11 @@ public class ReviewExternalService {
 
     // 병원 리뷰 조회
     @Transactional(readOnly = true)
-    public Page<ReviewListResponse> findAllReviews(Long hospitalId, Pageable pageable) {
-        return reviewInternalService.findReviewsByHospitalId(hospitalId, pageable)
-                .map(ReviewListResponse::from);
+    public PageResponse<ReviewListResponse> findAllReviews(Long hospitalId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Review> reviews = reviewInternalService.findReviewsByHospitalId(hospitalId, pageable);
+        Page<ReviewListResponse> reviewListResponse = reviews.map(ReviewListResponse::from);
+        return PageResponse.fromPage(reviewListResponse);
     }
 
     // 리뷰 단건 조회
