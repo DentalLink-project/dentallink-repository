@@ -149,6 +149,7 @@ public class HospitalExternalService {
 
         HospitalSchedule schedule = hospitalInternalService.getScheduleByHospitalId(hospitalId);
         hospitalInternalService.deleteHospitalSchedule(schedule);
+        hospital.deleteHospitalSchedule(); // 일정 삭제 시 병원 테이블에서도 일정을 삭제시킴
     }
 
     // 병원 소유권 확인

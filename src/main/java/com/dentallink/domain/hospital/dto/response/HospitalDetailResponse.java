@@ -18,7 +18,29 @@ public record HospitalDetailResponse (
         LocalTime breakStart,
         LocalTime breakEnd
 ) {
+    private HospitalDetailResponse ( // 생정자 별도 생성
+            Long id,
+            String hospitalName,
+            String hospitalDescription,
+            String hospitalAddress,
+            Boolean isOpen,
+            String doctorName
+    ) {
+        this(id, hospitalName, hospitalDescription, hospitalAddress, isOpen, doctorName, null, null, null, null)
+    }
+
     public static HospitalDetailResponse of(Hospital hospital, HospitalSchedule schedule) {
+        if(schedule == null) { // (삭제되어서) 일정이 없는 병원을 조회할 시
+            return new HospitalDetailResponse(
+                    hospital.getId(),
+                    hospital.getHospitalName(),
+                    hospital.getHospitalDescription(),
+                    hospital.getHospitalAddress(),
+                    hospital.getHospitalIsOpen(),
+                    hospital.getDoctorName()
+            );
+        }
+
         return new HospitalDetailResponse(
                 hospital.getId(),
                 hospital.getHospitalName(),
