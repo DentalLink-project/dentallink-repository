@@ -85,7 +85,7 @@ public class HospitalController {
     }
 
     // 병원 일정 수정
-    @PutMapping("/{hospitalId}/schedule")
+    @PatchMapping("/{hospitalId}/schedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
     public ResponseEntity<HospitalScheduleUpdateResponse> updateHospitalSchedule(
             @PathVariable Long hospitalId,
