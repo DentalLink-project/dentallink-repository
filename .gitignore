@@ -45,3 +45,16 @@ out/
 http-client.env.json
 http-client.private.env.json
 .httpRequests/
+
+
+# 프론트엔드 요약
+FRONTEND_SUMMARY.md
+
+# Redis dump 파일
+dump.rdb
+
+# 프론트엔드 폴더
+frontend/
+
+# WebConfig (로컬 설정)
+src/main/java/com/dentallink/common/config/WebConfig.java
