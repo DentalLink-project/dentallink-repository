@@ -1,5 +1,6 @@
 package com.dentallink.domain.review.controller;
 
+import com.dentallink.common.response.ApiResponse;
 import com.dentallink.domain.review.dto.request.ReviewCreateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateStatusRequest;
@@ -16,6 +17,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import static com.dentallink.common.response.ApiResponse.*;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api")
@@ -24,7 +27,7 @@ public class ReviewController {
 
     // 리뷰 등록
     @PostMapping("/hospitals/{hospitalId}/reviews")
-    public ResponseEntity<ReviewCreateResponse> createReview(
+    public ResponseEntity<ApiResponse<ReviewCreateResponse>> createReview(
             @PathVariable Long hospitalId,
             @RequestParam Long reservationId,
             @AuthenticationPrincipal AuthUser authUser,
@@ -33,54 +36,63 @@ public class ReviewController {
         ReviewCreateResponse response = reviewExternalService.createReview(
                 reservationId, hospitalId, authUser.getUserId(), reviewCreateRequest
         );
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return created (
+                response, "리뷰가 작성되었습니다."
+        );
     }
 
     // 병원 별 리뷰 목록 조회
     @GetMapping("/hospitals/{hospitalId}/reviews")
-    public ResponseEntity<Page<ReviewListResponse>> getAllReviews(
+    public ResponseEntity<ApiResponse<Page<ReviewListResponse>>> getAllReviews(
             @PathVariable Long hospitalId,
             @PageableDefault Pageable pageable
     ) {
         Page<ReviewListResponse> reviews = reviewExternalService.findAllReviews(hospitalId, pageable);
-        return ResponseEntity.ok(reviews);
+        return success (
+                reviews, "리뷰 목록이 조회되었습니다."
+        );
     }
 
     // 리뷰 상세 조회
     @GetMapping("/reviews/{id}")
-    public ResponseEntity<ReviewDetailResponse> getReviewById(
+    public ResponseEntity<ApiResponse<ReviewDetailResponse>> getReviewById(
             @PathVariable Long id
     ) {
         ReviewDetailResponse review = reviewExternalService.findReviewById(id);
-        return ResponseEntity.ok(review);
+        return success (
+                review, "리뷰가 조회되었습니다."
+        );
     }
 
     // 리뷰 수정
     @PatchMapping("/reviews/{id}")
-    public ResponseEntity<ReviewUpdateResponse> updateReview(
+    public ResponseEntity<ApiResponse<ReviewUpdateResponse>> updateReview(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody ReviewUpdateRequest reviewUpdateRequest
     ) {
         ReviewUpdateResponse review = reviewExternalService.updateReview(id, authUser.getUserId(), reviewUpdateRequest);
-        return ResponseEntity.ok(review);
+        return success (
+                review, "리뷰가 수정되었습니다."
+        );
     }
 
     // 리뷰 삭제
     @DeleteMapping("/reviews/{id}")
-    public ResponseEntity<ReviewDeleteResponse> deleteReviewById(
+    public ResponseEntity<ApiResponse<ReviewDeleteResponse>> deleteReviewById(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser
     ) {
         ReviewDeleteResponse review = reviewExternalService.deleteReview(id, authUser.getUserId());
-        return ResponseEntity.ok(review);
+        return success (
+                review, "리뷰가 삭제되었습니다."
+        );
     }
 
     // 리뷰 상태 변경
     @PatchMapping("/reviews/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<ReviewStatusResponse> updateReviewStatus(
+    public ResponseEntity<ApiResponse<ReviewStatusResponse>> updateReviewStatus(
             @PathVariable Long id,
             @RequestBody ReviewUpdateStatusRequest request,
             @AuthenticationPrincipal AuthUser authUser // 관리자 인증정보
@@ -89,6 +101,8 @@ public class ReviewController {
                 id, request, authUser.getUserId() // ExternalService에서 관리자 권한 확인
         );
 
-        return ResponseEntity.ok(response);
+        return success (
+                response, "리뷰 상태가 변경되었습니다."
+        );
     }
 }
