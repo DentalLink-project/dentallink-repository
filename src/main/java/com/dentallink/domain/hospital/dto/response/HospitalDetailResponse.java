@@ -26,7 +26,7 @@ public record HospitalDetailResponse (
             Boolean isOpen,
             String doctorName
     ) {
-        this(id, hospitalName, hospitalDescription, hospitalAddress, isOpen, doctorName, null, null, null, null)
+        this(id, hospitalName, hospitalDescription, hospitalAddress, isOpen, doctorName, null, null, null, null) ;
     }
 
     public static HospitalDetailResponse of(Hospital hospital, HospitalSchedule schedule) {
