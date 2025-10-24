@@ -1,6 +1,7 @@
 package com.dentallink.domain.hospital.service;
 
 import com.dentallink.common.exception.GlobalException;
+import com.dentallink.common.response.PageResponse;
 import com.dentallink.domain.hospital.dto.request.HospitalCreateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalScheduleCreateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalScheduleUpdateRequest;
@@ -12,6 +13,7 @@ import com.dentallink.domain.hospital.exception.HospitalErrorCode;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,10 +52,16 @@ public class HospitalExternalService {
 
     // 병원 전체 조회
     @Transactional(readOnly = true)
-    public Page<HospitalListResponse> findAllHospitals(Pageable pageable) {
-        return hospitalInternalService.findAllHospitals(pageable)
-                .map(HospitalListResponse::from);
+    public PageResponse<HospitalListResponse> findAllHospitals(int page, int size) {
+        Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
+        Page<Hospital> hospitals = hospitalRepository.findAll(pageable);
+        Page<HospitalListResponse> hospitalResponse = hospitals.map(HospitalListResponse::from);
+        return PageResponse.fromPage(hospitalResponse);
     }
+//    public Page<HospitalListResponse> findAllHospitals(Pageable pageable) {
+//        return hospitalInternalService.findAllHospitals(pageable)
+//                .map(HospitalListResponse::from);
+//    }
 
     // 병원 단건 조회
     @Transactional(readOnly = true)
