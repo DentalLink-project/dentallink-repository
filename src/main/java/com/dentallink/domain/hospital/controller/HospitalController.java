@@ -1,5 +1,7 @@
 package com.dentallink.domain.hospital.controller;
 
+import com.dentallink.common.response.ApiResponse;
+import com.dentallink.common.response.PageResponse;
 import com.dentallink.domain.hospital.dto.request.HospitalCreateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalScheduleCreateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalScheduleUpdateRequest;
@@ -9,12 +11,12 @@ import com.dentallink.domain.hospital.service.HospitalExternalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import static com.dentallink.common.response.ApiResponse.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,85 +27,106 @@ public class HospitalController {
     // 병원 등록
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<HospitalCreateResponse> createHospital(
+    public ResponseEntity<ApiResponse<HospitalCreateResponse>> createHospital(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalCreateRequest request
     ) {
-        HospitalCreateResponse response = hospitalExternalService.createHospital(authUser.getUserId(), request);
-        return ResponseEntity.ok(response);
+        return created(
+                hospitalExternalService.createHospital(authUser.getUserId(), request),
+                "병원이 성공적으로 등록되었습니다."
+        );
     }
 
     // 병원 전체 조회
     @GetMapping
-    public ResponseEntity<Page<HospitalListResponse>> getAllHospitals(Pageable pageable) {
-        Page<HospitalListResponse> hospitals = hospitalExternalService.findAllHospitals(pageable);
-        return ResponseEntity.ok(hospitals);
+    public ResponseEntity<ApiResponse<PageResponse<HospitalListResponse>>> getAllHospitals(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        return success (
+                hospitalExternalService.findAllHospitals(page, size),
+                "병원 목록을 조회했습니다."
+        );
     }
 
     // 병원 단건 조회
     @GetMapping("/{id}")
-    public ResponseEntity<HospitalDetailResponse> getHospitalById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<HospitalDetailResponse>> getHospitalById(@PathVariable Long id) {
         HospitalDetailResponse hospital = hospitalExternalService.findHospitalById(id);
-        return ResponseEntity.ok(hospital);
+        return success(
+                hospital, "병원 상세 정보를 조회했습니다."
+        );
     }
 
     // 병원 수정
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
-    public ResponseEntity<HospitalUpdateResponse> updateHospital(
+    public ResponseEntity<ApiResponse<HospitalUpdateResponse>> updateHospital(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalUpdateRequest hospitalUpdateRequest
     ) {
         HospitalUpdateResponse hospital =
                 hospitalExternalService.updateHospital(id, authUser.getUserId(), hospitalUpdateRequest);
-        return ResponseEntity.ok(hospital);
+        return success(
+                hospital, "병원이 성공적으로 수정되었습니다."
+        );
     }
 
     // 병원 삭제
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<Void> deleteHospital(
+    public ResponseEntity<ApiResponse<Void>> deleteHospital(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser
     ) {
         hospitalExternalService.deleteHospital(id, authUser.getUserId());
-        return ResponseEntity.noContent().build();
+        return deleteSuccess(
+                "병원이 성공적으로 삭제되었습니다."
+        );
     }
 
     // 병원 일정 등록
     @PostMapping("/{hospitalId}/schedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
-    public ResponseEntity<HospitalScheduleCreateResponse> createHospitalSchedule(
+    public ResponseEntity<ApiResponse<HospitalScheduleCreateResponse>> createHospitalSchedule(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalScheduleCreateRequest request
     ) {
         HospitalScheduleCreateResponse response =
                 hospitalExternalService.createHospitalSchedule(hospitalId, authUser.getUserId(), request);
-        return ResponseEntity.ok(response);
+        return created(
+                response,
+                "병원 일정이 성공적으로 등록되었습니다."
+        );
     }
 
     // 병원 일정 수정
     @PatchMapping("/{hospitalId}/schedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
-    public ResponseEntity<HospitalScheduleUpdateResponse> updateHospitalSchedule(
+    public ResponseEntity<ApiResponse<HospitalScheduleUpdateResponse>> updateHospitalSchedule(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalScheduleUpdateRequest request
     ) {
         HospitalScheduleUpdateResponse response = hospitalExternalService.updateHospitalSchedule(hospitalId, authUser.getUserId(), request);
-        return ResponseEntity.ok(response);
+        return success(
+                response,
+                "병원 일정이 성공적으로 수정되었습니다."
+        );
     }
 
     // 병원 일정 삭제
     @DeleteMapping("/{hospitalId}/schedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
-    public ResponseEntity<Void> deleteHospitalSchedule(
+    public ResponseEntity<ApiResponse<Void>> deleteHospitalSchedule(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser
     ) {
         hospitalExternalService.deleteHospitalSchedule(hospitalId, authUser.getUserId());
-        return ResponseEntity.noContent().build();
+        return deleteSuccess(
+                "병원 일정이 성공적으로 삭제되었습니다."
+        );
     }
 }
