@@ -5,8 +5,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Entity
 @Getter
 @NoArgsConstructor
@@ -44,7 +42,7 @@ public class Hospital extends BaseEntity {
     }
 
     public void deleteHospitalSchedule() {
-        this.hospitalSchedule = null;
+        this.hospitalSchedule = null; // 케스케이드 삭제를 위한 관계 끊기
     }
 
     public void updateHospital(
