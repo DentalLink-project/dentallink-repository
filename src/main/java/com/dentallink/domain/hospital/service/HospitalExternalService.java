@@ -58,10 +58,6 @@ public class HospitalExternalService {
         Page<HospitalListResponse> hospitalResponse = hospitals.map(HospitalListResponse::from);
         return PageResponse.fromPage(hospitalResponse);
     }
-//    public Page<HospitalListResponse> findAllHospitals(Pageable pageable) {
-//        return hospitalInternalService.findAllHospitals(pageable)
-//                .map(HospitalListResponse::from);
-//    }
 
     // 병원 단건 조회
     @Transactional(readOnly = true)
