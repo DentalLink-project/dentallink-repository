@@ -43,6 +43,10 @@ public class Hospital extends BaseEntity {
         this.doctorName = doctorName;
     }
 
+    public void deleteHospitalSchedule() {
+        this.hospitalSchedule = null;
+    }
+
     public void updateHospital(
             String name,
             String description,
