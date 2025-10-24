@@ -42,7 +42,7 @@ public class ReservationController {
             @AuthenticationPrincipal AuthUser authUser) {
 
         ReservationResponse response = reservationService.createReservation(request, authUser.getUserId());
-        return ApiResponse.success(response, "예약 생성 성공");
+        return ApiResponse.created(response, "예약 생성 성공");
     }
 
     //예약 가능 시간 조회 (인증 불필요)
