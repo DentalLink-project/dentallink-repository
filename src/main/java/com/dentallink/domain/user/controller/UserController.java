@@ -1,6 +1,6 @@
 package com.dentallink.domain.user.controller;
 
-import com.dentallink.common.response.ApiResponse;
+import com.dentallink.common.response.CommonApiResponse;
 import com.dentallink.domain.user.dto.request.UserDeleteRequest;
 import com.dentallink.domain.user.dto.request.UserSignupRequest;
 import com.dentallink.domain.user.dto.request.UserUpdatePasswordRequest;
@@ -14,8 +14,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import static com.dentallink.common.response.ApiResponse.created;
-import static com.dentallink.common.response.ApiResponse.success;
+import static com.dentallink.common.response.CommonApiResponse.created;
+import static com.dentallink.common.response.CommonApiResponse.success;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,7 +26,7 @@ public class UserController {
 
     // 회원가입
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<UserResponse>> signup(
+    public ResponseEntity<CommonApiResponse<UserResponse>> signup(
              @Valid @RequestBody UserSignupRequest request
     ) {
         return created(
@@ -36,7 +36,7 @@ public class UserController {
     }
     // 정보수정
     @PatchMapping("/me")
-    public ResponseEntity<ApiResponse<UserResponse>> updateUser(
+    public ResponseEntity<CommonApiResponse<UserResponse>> updateUser(
             @Valid @RequestBody UserUpdateRequest request,
             @AuthenticationPrincipal AuthUser authUser
     ) {
@@ -47,7 +47,7 @@ public class UserController {
     }
     // 비밀번호 수정
     @PutMapping("/password")
-    public ResponseEntity<ApiResponse<Void>> changePassword(
+    public ResponseEntity<CommonApiResponse<Void>> changePassword(
             @Valid @RequestBody UserUpdatePasswordRequest request,
             @AuthenticationPrincipal AuthUser authUser
     ) {
@@ -58,7 +58,7 @@ public class UserController {
     }
     // 회원탈퇴
     @DeleteMapping("/withdraw")
-    public ResponseEntity<ApiResponse<Void>> withdraw(
+    public ResponseEntity<CommonApiResponse<Void>> withdraw(
             @Valid @RequestBody UserDeleteRequest request,
             @AuthenticationPrincipal AuthUser authUser
     ) {
@@ -69,7 +69,7 @@ public class UserController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<UserResponse>> getUser(
+    public ResponseEntity<CommonApiResponse<UserResponse>> getUser(
             @AuthenticationPrincipal AuthUser authUser
     ) {
         return success(
