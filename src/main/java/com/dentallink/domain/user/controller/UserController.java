@@ -51,7 +51,6 @@ public class UserController {
     // 정보수정
     @Operation(summary = "사용자 정보 수정",
             description = "로그인한 사용자 본인의 정보를 수정합니다.",
-            security = {@SecurityRequirement(name = "sessionAuth")},
             responses = {
                     @ApiResponse(responseCode = "200", description = "수정 성공"),
                     @ApiResponse(responseCode = "401", description = "인증 실패"),
@@ -71,7 +70,6 @@ public class UserController {
     // 비밀번호 수정
     @Operation(summary = "사용자 암호 수정",
             description = "로그인한 사용자 본인의 암호를 수정합니다.",
-            security = {@SecurityRequirement(name = "sessionAuth")},
             responses = {
                     @ApiResponse(responseCode = "200", description = "수정 성공"),
                     @ApiResponse(responseCode = "401", description = "인증 실패"),
@@ -91,7 +89,6 @@ public class UserController {
     // 회원탈퇴
     @Operation(summary = "사용자 회원 탈퇴",
             description = "로그인한 사용자 회원 탈퇴.",
-            security = {@SecurityRequirement(name = "sessionAuth")},
             responses = {
                     @ApiResponse(responseCode = "200", description = "탈퇴 성공"),
                     @ApiResponse(responseCode = "401", description = "인증 실패"),
@@ -112,7 +109,6 @@ public class UserController {
     // 내 정보 조회
     @Operation(summary = "사용자 정보 조회",
             description = "로그인한 사용자 정보 조회.",
-            security = {@SecurityRequirement(name = "sessionAuth")},
             responses = {
                     @ApiResponse(responseCode = "200", description = "조회 성공"),
                     @ApiResponse(responseCode = "400", description = "잘못된 요청")

@@ -32,7 +32,6 @@ public class UserAdminController {
     // 특정 유저 열람
     @Operation(summary = "회원 조회",
             description = "특정 회원을 조회합니다.",
-            security = {@SecurityRequirement(name = "sessionAuth")},
             responses = {
                     @ApiResponse(responseCode = "200", description = "조회 성공"),
                     @ApiResponse(responseCode = "403", description = "권한 없음"),
@@ -52,7 +51,6 @@ public class UserAdminController {
     // 모든 유저 열람
     @Operation(summary = "전체 회원 조회",
             description = "모든 회원을 조회합니다.",
-            security = {@SecurityRequirement(name = "sessionAuth")},
             responses = {
                     @ApiResponse(responseCode = "200", description = "조회 성공"),
                     @ApiResponse(responseCode = "403", description = "권한 없음")
@@ -86,9 +84,8 @@ public class UserAdminController {
     // 병원 관계자 가입
     @Operation(summary = "병원 관계자 가입",
             description = "ADMIN 권한으로 병원 관계자 자격의 사용자를 생성합니다.",
-            security = {@SecurityRequirement(name = "sessionAuth")},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "조회 성공"),
+                    @ApiResponse(responseCode = "201", description = "생성 성공"),
                     @ApiResponse(responseCode = "403", description = "권한 없음"),
                     @ApiResponse(responseCode = "400", description = "잘못된 요청")
             })
