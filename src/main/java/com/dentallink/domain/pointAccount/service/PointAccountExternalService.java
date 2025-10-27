@@ -77,4 +77,11 @@ public class PointAccountExternalService {
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         return account.getBalance();
     }
+
+    @Transactional
+    public void createPointAccount(User user) {
+        PointAccount account = PointAccount.create(user, 0L);
+        pointAccountRepository.save(account);
+
+    }
 }
