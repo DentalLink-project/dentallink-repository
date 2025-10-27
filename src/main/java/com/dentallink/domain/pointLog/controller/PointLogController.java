@@ -1,6 +1,6 @@
 package com.dentallink.domain.pointLog.controller;
 
-import com.dentallink.common.response.ApiResponse;
+import com.dentallink.common.response.CommonApiResponse;
 import com.dentallink.common.response.PageResponse;
 import com.dentallink.domain.pointLog.dto.response.PointLogResponse;
 import com.dentallink.domain.pointLog.service.PointLogInternalService;
@@ -18,7 +18,7 @@ public class PointLogController {
     private final PointLogInternalService pointLogInternalService;
 
     @GetMapping("/logs/me")
-    public ResponseEntity<ApiResponse<PageResponse<PointLogResponse>>> getMyLogs(
+    public ResponseEntity<CommonApiResponse<PageResponse<PointLogResponse>>> getMyLogs(
             @AuthenticationPrincipal AuthUser authUser,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -26,6 +26,6 @@ public class PointLogController {
     ) {
         Long userId = authUser.getUserId();
         PageResponse<PointLogResponse> response = pointLogInternalService.getLogsByUser(userId, page, size, sort);
-        return ApiResponse.success(response, "내 포인트 로그 조회 성공");
+        return CommonApiResponse.success(response, "내 포인트 로그 조회 성공");
     }
 }

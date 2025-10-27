@@ -1,6 +1,6 @@
 package com.dentallink.domain.hospital.controller;
 
-import com.dentallink.common.response.ApiResponse;
+import com.dentallink.common.response.CommonApiResponse;
 import com.dentallink.common.response.PageResponse;
 import com.dentallink.domain.hospital.dto.request.HospitalCreateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalScheduleCreateRequest;
@@ -16,7 +16,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import static com.dentallink.common.response.ApiResponse.*;
+import static com.dentallink.common.response.CommonApiResponse.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,7 +27,7 @@ public class HospitalController {
     // 병원 등록
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<ApiResponse<HospitalCreateResponse>> createHospital(
+    public ResponseEntity<CommonApiResponse<HospitalCreateResponse>> createHospital(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalCreateRequest request
     ) {
@@ -39,7 +39,7 @@ public class HospitalController {
 
     // 병원 전체 조회
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<HospitalListResponse>>> getAllHospitals(
+    public ResponseEntity<CommonApiResponse<PageResponse<HospitalListResponse>>> getAllHospitals(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
@@ -51,7 +51,7 @@ public class HospitalController {
 
     // 병원 단건 조회
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<HospitalDetailResponse>> getHospitalById(@PathVariable Long id) {
+    public ResponseEntity<CommonApiResponse<HospitalDetailResponse>> getHospitalById(@PathVariable Long id) {
         HospitalDetailResponse hospital = hospitalExternalService.findHospitalById(id);
         return success(
                 hospital, "병원 상세 정보를 조회했습니다."
@@ -61,7 +61,7 @@ public class HospitalController {
     // 병원 수정
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
-    public ResponseEntity<ApiResponse<HospitalUpdateResponse>> updateHospital(
+    public ResponseEntity<CommonApiResponse<HospitalUpdateResponse>> updateHospital(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalUpdateRequest hospitalUpdateRequest
@@ -76,7 +76,7 @@ public class HospitalController {
     // 병원 삭제
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Void>> deleteHospital(
+    public ResponseEntity<CommonApiResponse<Void>> deleteHospital(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser
     ) {
@@ -89,7 +89,7 @@ public class HospitalController {
     // 병원 일정 등록
     @PostMapping("/{hospitalId}/schedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
-    public ResponseEntity<ApiResponse<HospitalScheduleCreateResponse>> createHospitalSchedule(
+    public ResponseEntity<CommonApiResponse<HospitalScheduleCreateResponse>> createHospitalSchedule(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalScheduleCreateRequest request
@@ -105,7 +105,7 @@ public class HospitalController {
     // 병원 일정 수정
     @PatchMapping("/{hospitalId}/schedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
-    public ResponseEntity<ApiResponse<HospitalScheduleUpdateResponse>> updateHospitalSchedule(
+    public ResponseEntity<CommonApiResponse<HospitalScheduleUpdateResponse>> updateHospitalSchedule(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalScheduleUpdateRequest request
@@ -120,7 +120,7 @@ public class HospitalController {
     // 병원 일정 삭제
     @DeleteMapping("/{hospitalId}/schedule")
     @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
-    public ResponseEntity<ApiResponse<Void>> deleteHospitalSchedule(
+    public ResponseEntity<CommonApiResponse<Void>> deleteHospitalSchedule(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser
     ) {
