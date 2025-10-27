@@ -29,7 +29,6 @@ public class FavoriteController {
 
     @Operation(summary = "즐겨찾기 토글",
             description = "병원에 대한 특정 사용자의 즐겨찾기를 생성/삭제함.",
-            security = {@SecurityRequirement(name = "sessionAuth")},
             responses = {
                     @ApiResponse(responseCode = "200", description = "생성/삭제 성공"),
                     @ApiResponse(responseCode = "404", description = "병원 존재하지 않음"),

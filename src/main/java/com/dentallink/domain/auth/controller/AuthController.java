@@ -28,7 +28,6 @@ public class AuthController {
     // 로그인 로직
     @Operation(summary = "로그인",
             description = "이메일과 비밀번호를 사용해 로그인.",
-            security = {@SecurityRequirement(name = "sessionAuth")},
             responses = {
                     @ApiResponse(responseCode = "200", description = "로그인 성공"),
                     @ApiResponse(responseCode = "401", description = "인증 실패"),
@@ -63,7 +62,6 @@ public class AuthController {
     // 로그아웃
     @Operation(summary = "로그아웃",
             description = "로그아웃 합니다.",
-            security = {@SecurityRequirement(name = "sessionAuth")},
             responses = {
                     @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
                     @ApiResponse(responseCode = "400", description = "잘못된 요청")
