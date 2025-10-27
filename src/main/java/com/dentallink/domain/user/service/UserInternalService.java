@@ -3,7 +3,7 @@ package com.dentallink.domain.user.service;
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.common.response.PageResponse;
 import com.dentallink.domain.auth.service.AuthService;
-import com.dentallink.domain.pointAccount.service.PointAccountService;
+import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
 import com.dentallink.domain.user.dto.request.UserDeleteRequest;
 import com.dentallink.domain.user.dto.request.UserSignupRequest;
 import com.dentallink.domain.user.dto.request.UserUpdatePasswordRequest;
@@ -29,7 +29,7 @@ public class UserInternalService {
     private final UserExternalService userExternalService;
     private final AuthService authService;
     private final UserRepository userRepository;
-    private final PointAccountService pointAccountService;
+    private final PointAccountExternalService  pointAccountExternalService;
 
     // ---------- 내부 사용 검색 기능 ----------
 
@@ -52,7 +52,7 @@ public class UserInternalService {
                 request.username(),
                 UserRole.ROLE_USER
         ));
-        pointAccountService.createPointAccount(user);
+        pointAccountExternalService.createPointAccount(user);
         return UserResponse.from(user);
     }
 
@@ -106,7 +106,7 @@ public class UserInternalService {
                 "관리자",
                 UserRole.ROLE_ADMIN
         ));
-        pointAccountService.createPointAccount(user);
+        pointAccountExternalService.createPointAccount(user);
         return UserResponse.from(user);
     }
 
@@ -138,7 +138,7 @@ public class UserInternalService {
                 request.username(),
                 UserRole.ROLE_HOSPITAL
         ));
-        pointAccountService.createPointAccount(user);
+        pointAccountExternalService.createPointAccount(user);
         return UserResponse.from(user);
     }
 }
