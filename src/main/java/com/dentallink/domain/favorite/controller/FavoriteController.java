@@ -22,7 +22,7 @@ import static com.dentallink.common.response.CommonApiResponse.success;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/hospitals/{hospitalId}/favorites")
-@Tag(name = "즐겨찾기", description = "즐겨찾기 관리를 위한 API")
+@Tag(name = "즐겨찾기", description = "즐겨찾기 관리를 위한 API.")
 public class FavoriteController {
 
     private final FavoriteService favoriteService;
