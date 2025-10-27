@@ -1,24 +1,22 @@
 spring:
-  # AWS Parameter Store는 프로덕션용 - 로컬 개발 시에는 주석 처리
-  # config:
-  #   import:
-  #     - "optional:aws-parameterstore:/config/dev/"
+  config:
+    import:
+      - "optional:aws-parameterstore:/config/dev/"
 
   cloud:
     aws:
       region:
-        static: ${AWS_REGION:ap-northeast-2}
+        static: ap-northeast-2  # ⭐ 여기에 직접 추가!
 
   datasource:
-    # 환경 변수 필수! 기본값 없음 (보안)
-    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:devdb}?useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
-    username: ${DB_USERNAME:admin}
-    password: ${DB_PASSWORD}  # ⭐ 기본값 없음 - 환경 변수 필수!
+    url: ${db.url:jdbc:mysql://${db.host:localhost}:${db.port:3306}/${db.name:dentallink}?useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true}
+    username: ${db.username:root}
+    password: ${db.password}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
+      ddl-auto: ${hibernate.ddl-auto:create}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
@@ -31,14 +29,11 @@ spring:
     deserialization:
       adjust-dates-to-context-time-zone: false
 
-# JWT 설정
 jwt:
   secret:
-    key: ${JWT_SECRET_KEY}  # ⭐ 기본값 없음 - Base64 인코딩된 키 필수!
-  expiration: ${JWT_EXPIRATION:86400000}  # 24시간
+    key: ${secret.key}
 
 server:
-  port: ${SERVER_PORT:8080}
   error:
     include-message: always
     include-binding-errors: always
