@@ -1,5 +1,5 @@
 spring:
-  # AWS Parameter Store는 프로덕션용 - 개발 시에는 주석 처리
+  # AWS Parameter Store는 프로덕션용 - 로컬 개발 시에는 주석 처리
   # config:
   #   import:
   #     - "optional:aws-parameterstore:/config/dev/"
@@ -7,18 +7,18 @@ spring:
   cloud:
     aws:
       region:
-        static: ap-northeast-2
+        static: ${AWS_REGION:ap-northeast-2}
 
   datasource:
-    # RDS 연결 (dev-rds-mysql)
-    url: jdbc:mysql://dev-rds-mysql.c3g4uqiy0c1r.ap-northeast-2.rds.amazonaws.com:3306/devdb?useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
-    username: admin
-    password: ${DB_PASSWORD:your-rds-master-password}  # 환경 변수 또는 직접 입력
+    # 환경 변수 필수! 기본값 없음 (보안)
+    url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:devdb}?useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:admin}
+    password: ${DB_PASSWORD}  # ⭐ 기본값 없음 - 환경 변수 필수!
     driver-class-name: com.mysql.cj.jdbc.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update  # create에서 update로 변경 (데이터 보존)
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
@@ -31,15 +31,14 @@ spring:
     deserialization:
       adjust-dates-to-context-time-zone: false
 
-# JWT 설정 - 순환 참조 해결
+# JWT 설정
 jwt:
   secret:
-    # 개발용 키 (프로덕션에서는 환경 변수 사용!)
-    key: ${JWT_SECRET_KEY:devSecretKeyForLocalDevelopmentOnlyMin256BitsHS256Algorithm123456789012345678901234567890}
-  expiration: 86400000  # 24시간 (밀리초)
+    key: ${JWT_SECRET_KEY}  # ⭐ 기본값 없음 - Base64 인코딩된 키 필수!
+  expiration: ${JWT_EXPIRATION:86400000}  # 24시간
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   error:
     include-message: always
     include-binding-errors: always
