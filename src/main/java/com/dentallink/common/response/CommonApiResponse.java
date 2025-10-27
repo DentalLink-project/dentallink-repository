@@ -9,14 +9,14 @@ import org.springframework.http.ResponseEntity;
 import java.time.LocalDateTime;
 
 @Getter
-public class ApiResponse<T> {
+public class CommonApiResponse<T> {
 
     private final boolean success;
     private final String message;
     private final T data;
     private final LocalDateTime timestamp;
 
-    private ApiResponse(boolean success, String message, T data, LocalDateTime timestamp) {
+    private CommonApiResponse(boolean success, String message, T data, LocalDateTime timestamp) {
         this.success = success;
         this.message = message;
         this.data = data;
@@ -31,10 +31,10 @@ public class ApiResponse<T> {
      * @param message 응답 메세지
      * @return HTTP 201 Created 응답과 함께 생성된 데이터가 포함된 ApiResponseDto
      */
-    public static <T> ResponseEntity<ApiResponse<T>> created(T data, String message) {
+    public static <T> ResponseEntity<CommonApiResponse<T>> created(T data, String message) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(new ApiResponse<>(true, message, data, LocalDateTime.now()));
+                .body(new CommonApiResponse<>(true, message, data, LocalDateTime.now()));
     }
 
     /**
@@ -45,8 +45,8 @@ public class ApiResponse<T> {
      * @param message 응답 메세지
      * @return HTTP 200 OK 응답과 함께 성공 데이터가 포함된 ApiResponseDto
      */
-    public static <T> ResponseEntity<ApiResponse<T>> success(T data, String message) {
-        return ResponseEntity.ok(new ApiResponse<>(true, message, data, LocalDateTime.now()));
+    public static <T> ResponseEntity<CommonApiResponse<T>> success(T data, String message) {
+        return ResponseEntity.ok(new CommonApiResponse<>(true, message, data, LocalDateTime.now()));
     }
 
     /**
@@ -56,8 +56,8 @@ public class ApiResponse<T> {
      * @param message 응답 메세지
      * @return HTTP 200 OK 응답과 함께 응답 메세지만 반환
      */
-    public static <T> ResponseEntity<ApiResponse<T>> deleteSuccess(String message) {
-        return ResponseEntity.ok(new ApiResponse<>(true, message, null, LocalDateTime.now()));
+    public static <T> ResponseEntity<CommonApiResponse<T>> deleteSuccess(String message) {
+        return ResponseEntity.ok(new CommonApiResponse<>(true, message, null, LocalDateTime.now()));
     }
 
     /**
@@ -65,8 +65,8 @@ public class ApiResponse<T> {
      * 이 메서드는 `ErrorCode` 객체에서 제공하는 메세지를 사용하여 메세지를 반환
      * `data`는 항상 `null' 값을 반환하며 `success` 값은 `false`로 반환
      */
-    public static <T> ApiResponse<T> error(ErrorCode error) {
-        return new ApiResponse<>(false, error.getMessage(), null, LocalDateTime.now());
+    public static <T> CommonApiResponse<T> error(ErrorCode error) {
+        return new CommonApiResponse<>(false, error.getMessage(), null, LocalDateTime.now());
     }
 
     /**
@@ -74,8 +74,8 @@ public class ApiResponse<T> {
      * 이 메서드는 DTO 필드에 지정된 Valid 어노테이션에서의 메세지를 반환
      * `data`는 항상 `null' 값을 반환하며 `success` 값은 `false`로 반환
      */
-    public static <T> ApiResponse<T> error(String message) {
-        return new ApiResponse<>(false, message, null, LocalDateTime.now());
+    public static <T> CommonApiResponse<T> error(String message) {
+        return new CommonApiResponse<>(false, message, null, LocalDateTime.now());
     }
 
     /**
@@ -86,13 +86,13 @@ public class ApiResponse<T> {
      * @param message 응답 메세지
      * @return HTTP 200 OK 응답과 함께 PageResponse가 포함된 ApiResponse
      */
-    public static <T> ResponseEntity<ApiResponse<PageResponse<T>>> pageSuccess(Page<T> page, String message) {
+    public static <T> ResponseEntity<CommonApiResponse<PageResponse<T>>> pageSuccess(Page<T> page, String message) {
         PageResponse<T> data = PageResponse.fromPage(page);
-        return ResponseEntity.ok(new ApiResponse<>(true, message, data, LocalDateTime.now()));
+        return ResponseEntity.ok(new CommonApiResponse<>(true, message, data, LocalDateTime.now()));
     }
 
-    public static <T> ResponseEntity<ApiResponse<PageResponse<T>>> pageSuccess(PageResponse<T> response, String message) {
-        return ResponseEntity.ok(new ApiResponse<>(true, message, response, LocalDateTime.now()));
+    public static <T> ResponseEntity<CommonApiResponse<PageResponse<T>>> pageSuccess(PageResponse<T> response, String message) {
+        return ResponseEntity.ok(new CommonApiResponse<>(true, message, response, LocalDateTime.now()));
     }
 }
 
