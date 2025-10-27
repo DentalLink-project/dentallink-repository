@@ -1,5 +1,6 @@
 package com.dentallink.domain.pointAccount.service;
 
+import com.dentallink.domain.pointAccount.dto.request.PointAccountWithdrawRequest;
 import com.dentallink.domain.pointAccount.dto.response.*;
 import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.exception.InvalidPointAccountException;
@@ -53,14 +54,15 @@ public class PointAccountInternalService {
         return PointAccountDepositResponse.from(account, amount);
     }
 
-    // 포인트를 현금으로 바꾸는 메서드
     @Transactional
-    public PointAccountWithdrawResponse withdrawPointAccount(Long accountId, Long amount){
-        PointAccount account = pointAccountRepository.findById(accountId)
+    public PointAccountWithdrawResponse withdrawPointAccount(Long userId, PointAccountWithdrawRequest request) {
+        User user = userExternalService.getUserById(userId);
+        PointAccount account = pointAccountRepository.findByUser(user)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
-        account.withdraw(amount);
-        pointLogExternalService.createLog(account, PointLogType.WITHDRAW, amount);
-        return PointAccountWithdrawResponse.from(account, amount);
+        account.withdraw(request.amount());
+        pointLogExternalService.createLog(account, PointLogType.WITHDRAW, request.amount());
+
+        return PointAccountWithdrawResponse.from(account, request);
     }
 
 
