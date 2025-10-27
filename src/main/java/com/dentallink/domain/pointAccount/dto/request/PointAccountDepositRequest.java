@@ -3,7 +3,7 @@ package com.dentallink.domain.pointAccount.dto.request;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
-public record PointAccountRequest(
+public record PointAccountDepositRequest(
         @NotNull(message = "계좌 ID를 입력해주세요.")
         Long accountId,
 
