@@ -1,6 +1,6 @@
 package com.dentallink.domain.payment.controller;
 
-import com.dentallink.common.response.ApiResponse;
+import com.dentallink.common.response.CommonApiResponse;
 import com.dentallink.domain.payment.dto.request.PaymentRequest;
 import com.dentallink.domain.payment.dto.response.PaymentResponse;
 import com.dentallink.domain.payment.service.PaymentInternalService;
@@ -19,7 +19,7 @@ public class PaymentController {
     private final PaymentInternalService paymentInternalService;
 
     @PostMapping("/deposit")
-    public ResponseEntity<ApiResponse<PaymentResponse>> depositPoint(
+    public ResponseEntity<CommonApiResponse<PaymentResponse>> depositPoint(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody PaymentRequest request
     ) {
@@ -29,6 +29,6 @@ public class PaymentController {
                 request.method()             // 결제 수단
         );
 
-        return ApiResponse.created(response, "포인트 충전에 성공했습니다.");
+        return CommonApiResponse.created(response, "포인트 충전에 성공했습니다.");
     }
 }

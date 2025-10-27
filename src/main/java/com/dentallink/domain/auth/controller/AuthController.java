@@ -1,17 +1,16 @@
 package com.dentallink.domain.auth.controller;
 
-import com.dentallink.common.response.ApiResponse;
+import com.dentallink.common.response.CommonApiResponse;
 import com.dentallink.common.utility.JwtUtil;
 import com.dentallink.domain.auth.dto.request.LoginRequest;
 import com.dentallink.domain.auth.service.AuthServiceImpl;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static com.dentallink.common.response.ApiResponse.success;
+import static com.dentallink.common.response.CommonApiResponse.success;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,7 +21,7 @@ public class AuthController {
 
     // 로그인 로직
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Void>> login(
+    public ResponseEntity<CommonApiResponse<Void>> login(
             @Valid @RequestBody LoginRequest request,
             HttpServletResponse response
     ) {
@@ -48,7 +47,7 @@ public class AuthController {
 
     // 로그아웃
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(
+    public ResponseEntity<CommonApiResponse<Void>> logout(
             @RequestHeader(JwtUtil.AUTHORIZATION_HEADER) String authorizationHeader
     ) {
         if (authorizationHeader != null && authorizationHeader.startsWith(JwtUtil.BEARER_PREFIX)) {

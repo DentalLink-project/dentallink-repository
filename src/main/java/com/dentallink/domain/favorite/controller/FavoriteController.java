@@ -1,6 +1,6 @@
 package com.dentallink.domain.favorite.controller;
 
-import com.dentallink.common.response.ApiResponse;
+import com.dentallink.common.response.CommonApiResponse;
 import com.dentallink.domain.favorite.enums.FavoriteAction;
 import com.dentallink.domain.favorite.service.FavoriteService;
 import com.dentallink.domain.user.dto.security.AuthUser;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.dentallink.common.response.ApiResponse.success;
+import static com.dentallink.common.response.CommonApiResponse.success;
 
 @RestController
 @RequiredArgsConstructor
@@ -22,7 +22,7 @@ public class FavoriteController {
     private final FavoriteService favoriteService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<Boolean>> toggleFavorite(
+    public ResponseEntity<CommonApiResponse<Boolean>> toggleFavorite(
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser
     ) {
