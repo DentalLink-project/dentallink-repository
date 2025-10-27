@@ -1,6 +1,6 @@
 package com.dentallink.domain.review.controller;
 
-import com.dentallink.common.response.ApiResponse;
+import com.dentallink.common.response.CommonApiResponse;
 import com.dentallink.common.response.PageResponse;
 import com.dentallink.domain.review.dto.request.ReviewCreateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateRequest;
@@ -14,7 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import static com.dentallink.common.response.ApiResponse.*;
+import static com.dentallink.common.response.CommonApiResponse.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,7 +24,7 @@ public class ReviewController {
 
     // 리뷰 등록
     @PostMapping("/hospitals/{hospitalId}/reviews")
-    public ResponseEntity<ApiResponse<ReviewCreateResponse>> createReview(
+    public ResponseEntity<CommonApiResponse<ReviewCreateResponse>> createReview(
             @PathVariable Long hospitalId,
             @RequestParam Long reservationId,
             @AuthenticationPrincipal AuthUser authUser,
@@ -40,7 +40,7 @@ public class ReviewController {
 
     // 병원 별 리뷰 목록 조회
     @GetMapping("/hospitals/{hospitalId}/reviews")
-    public ResponseEntity<ApiResponse<PageResponse<ReviewListResponse>>> getAllReviews(
+    public ResponseEntity<CommonApiResponse<PageResponse<ReviewListResponse>>> getAllReviews(
             @PathVariable Long hospitalId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
@@ -53,7 +53,7 @@ public class ReviewController {
 
     // 리뷰 상세 조회
     @GetMapping("/reviews/{id}")
-    public ResponseEntity<ApiResponse<ReviewDetailResponse>> getReviewById(
+    public ResponseEntity<CommonApiResponse<ReviewDetailResponse>> getReviewById(
             @PathVariable Long id
     ) {
         ReviewDetailResponse review = reviewExternalService.findReviewById(id);
@@ -64,7 +64,7 @@ public class ReviewController {
 
     // 리뷰 수정
     @PatchMapping("/reviews/{id}")
-    public ResponseEntity<ApiResponse<ReviewUpdateResponse>> updateReview(
+    public ResponseEntity<CommonApiResponse<ReviewUpdateResponse>> updateReview(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody ReviewUpdateRequest reviewUpdateRequest
@@ -77,7 +77,7 @@ public class ReviewController {
 
     // 리뷰 삭제
     @DeleteMapping("/reviews/{id}")
-    public ResponseEntity<ApiResponse<ReviewDeleteResponse>> deleteReviewById(
+    public ResponseEntity<CommonApiResponse<ReviewDeleteResponse>> deleteReviewById(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser
     ) {
@@ -90,7 +90,7 @@ public class ReviewController {
     // 리뷰 상태 변경
     @PatchMapping("/reviews/{id}/status")
     @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<ApiResponse<ReviewStatusResponse>> updateReviewStatus(
+    public ResponseEntity<CommonApiResponse<ReviewStatusResponse>> updateReviewStatus(
             @PathVariable Long id,
             @RequestBody ReviewUpdateStatusRequest request,
             @AuthenticationPrincipal AuthUser authUser // 관리자 인증정보

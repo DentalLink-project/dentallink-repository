@@ -1,6 +1,6 @@
 package com.dentallink.domain.pointAccount.controller;
 
-import com.dentallink.common.response.ApiResponse;
+import com.dentallink.common.response.CommonApiResponse;
 import com.dentallink.domain.pointAccount.dto.request.PointAccountRequest;
 import com.dentallink.domain.pointAccount.dto.response.*;
 import com.dentallink.domain.pointAccount.service.PointAccountInternalService;
@@ -31,34 +31,34 @@ public class PointAccountController {
 
     // 잔액 확인하기
     @GetMapping("/account")
-    public ResponseEntity<ApiResponse<PointAccountGetResponse>> getPointAccount(
+    public ResponseEntity<CommonApiResponse<PointAccountGetResponse>> getPointAccount(
             @AuthenticationPrincipal AuthUser authUser
     ) {
         PointAccountGetResponse response = pointAccountInternalService.getPointAccount(authUser.getUserId());
-        return ApiResponse.success(response, "잔액을 확인하였습니다.");
+        return CommonApiResponse.success(response, "잔액을 확인하였습니다.");
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/deposit")
-    public ResponseEntity<ApiResponse<PointAccountDepositResponse>> depositPointAccount(
+    public ResponseEntity<CommonApiResponse<PointAccountDepositResponse>> depositPointAccount(
             @Valid @RequestBody PointAccountRequest request
     ) {
         PointAccountDepositResponse response = pointAccountInternalService.depositPointAccount(
                 request.accountId(),   //
                 request.amount()
         );
-        return ApiResponse.success(response, "포인트 충전에 성공했습니다.");
+        return CommonApiResponse.success(response, "포인트 충전에 성공했습니다.");
     }
 
 
     // 포인트를 현금으로 전환(지금은 그냥 point의 balance 값을 줄이는 용도)
     @PostMapping("/withdraw")
-    public ResponseEntity<ApiResponse<PointAccountWithdrawResponse>> withdrawPointAccount(
+    public ResponseEntity<CommonApiResponse<PointAccountWithdrawResponse>> withdrawPointAccount(
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody PointAccountRequest request
     ){
         PointAccountWithdrawResponse response = pointAccountInternalService.withdrawPointAccount(authUser.getUserId(), request.amount());
-        return ApiResponse.success(response, "포인트를 현금으로 전환했습니다.");
+        return CommonApiResponse.success(response, "포인트를 현금으로 전환했습니다.");
     }
 
 }

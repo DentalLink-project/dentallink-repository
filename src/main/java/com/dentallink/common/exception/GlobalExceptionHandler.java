@@ -1,6 +1,6 @@
 package com.dentallink.common.exception;
 
-import com.dentallink.common.response.ApiResponse;
+import com.dentallink.common.response.CommonApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,13 +13,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(GlobalException.class)
-    public ResponseEntity<ApiResponse<Object>> handleGlobalException(GlobalException ex) {
+    public ResponseEntity<CommonApiResponse<Object>> handleGlobalException(GlobalException ex) {
         log.error("비즈니스 오류 발생 ", ex);
         return handleExceptionInternal(ex.getErrorCode());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Object>> handleValidationException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<CommonApiResponse<Object>> handleValidationException(MethodArgumentNotValidException ex) {
         log.error("유효성 검사 실패 ", ex);
         String errorMessage = ex.getBindingResult()
                 .getAllErrors()
@@ -28,21 +28,21 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.error(errorMessage));
+                .body(CommonApiResponse.error(errorMessage));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Object>> handleServerException(Exception ex) {
+    public ResponseEntity<CommonApiResponse<Object>> handleServerException(Exception ex) {
         log.error("서버 오류 발생", ex);
         return ResponseEntity
                 .status(CommonErrorCode.INTERNAL_SERVER_ERROR.getHttpStatus())
-                .body(ApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR));
+                .body(CommonApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR));
     }
 
-    private ResponseEntity<ApiResponse<Object>> handleExceptionInternal(ErrorCode errorCode) {
+    private ResponseEntity<CommonApiResponse<Object>> handleExceptionInternal(ErrorCode errorCode) {
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
-                .body(ApiResponse.error(errorCode));
+                .body(CommonApiResponse.error(errorCode));
     }
 }
 

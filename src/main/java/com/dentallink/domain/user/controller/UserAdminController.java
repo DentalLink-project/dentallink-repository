@@ -1,7 +1,7 @@
 package com.dentallink.domain.user.controller;
 
 import com.dentallink.common.response.PageResponse;
-import com.dentallink.common.response.ApiResponse;
+import com.dentallink.common.response.CommonApiResponse;
 import com.dentallink.domain.user.dto.request.UserSignupRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.service.UserInternalService;
@@ -11,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import static com.dentallink.common.response.ApiResponse.success;
+import static com.dentallink.common.response.CommonApiResponse.success;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,7 +25,7 @@ public class UserAdminController {
     // 특정 유저 열람
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users/{userId}")
-    public ResponseEntity<ApiResponse<UserResponse>> getOneUser(
+    public ResponseEntity<CommonApiResponse<UserResponse>> getOneUser(
             @PathVariable("userId") Long userId
     ) {
         return success(
@@ -37,7 +37,7 @@ public class UserAdminController {
     // 모든 유저 열람
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/users")
-    public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> getUsers(
+    public ResponseEntity<CommonApiResponse<PageResponse<UserResponse>>> getUsers(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
@@ -49,7 +49,7 @@ public class UserAdminController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/hospitals/signup")
-    public ResponseEntity<ApiResponse<UserResponse>> signup(
+    public ResponseEntity<CommonApiResponse<UserResponse>> signup(
             @Valid @RequestBody UserSignupRequest request
     ) {
         return success(
@@ -59,7 +59,7 @@ public class UserAdminController {
     }
 
     @PostMapping("/admin")
-    public ResponseEntity<ApiResponse<UserResponse>> createTestAdmin(){
+    public ResponseEntity<CommonApiResponse<UserResponse>> createTestAdmin(){
         return success(
                 userInternalService.createTestAdmin(),
                 "테스트용 관리자 계정이 생성되었습니다."
