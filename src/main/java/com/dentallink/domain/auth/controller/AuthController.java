@@ -66,7 +66,6 @@ public class AuthController {
             security = {@SecurityRequirement(name = "sessionAuth")},
             responses = {
                     @ApiResponse(responseCode = "200", description = "로그아웃 성공"),
-                    @ApiResponse(responseCode = "401", description = "인증 실패"),
                     @ApiResponse(responseCode = "400", description = "잘못된 요청")
             })
     @PostMapping("/logout")
