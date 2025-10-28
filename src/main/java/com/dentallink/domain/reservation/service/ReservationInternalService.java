@@ -67,7 +67,7 @@ public class ReservationInternalService {
 
     //내 예약 목록 조회
     public Page<ReservationResponse> getMyReservations(Long userId, Pageable pageable) {
-        Page<Reservation> reservations = reservationRepository.findByUserId(userId, pageable);
+        Page<Reservation> reservations = reservationRepository.findByUserIdWithFetchJoin(userId, pageable);
         return reservations.map(ReservationResponse::from);
     }
 

@@ -90,4 +90,15 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime
     );
+
+    @Query(value = "SELECT r FROM Reservation r " +
+            "JOIN FETCH r.hospital h " +
+            "JOIN FETCH r.user u " +
+            "WHERE r.user.id = :userId " +
+            "AND r.deletedAt IS NULL " +
+            "ORDER BY r.appointmentDate DESC",
+            countQuery = "SELECT COUNT(r) FROM Reservation r " +
+                    "WHERE r.user.id = :userId " +
+                    "AND r.deletedAt IS NULL")
+    Page<Reservation> findByUserIdWithFetchJoin(@Param("userId") Long userId, Pageable pageable);
 }
