@@ -82,7 +82,7 @@ public class ReservationInternalService {
         // 병원 소유권 확인 (@PreAuthorize로 역할은 체크됨)
         validateHospitalOwnership(hospitalId, hospitalAdminId);
 
-        Page<Reservation> reservations = reservationRepository.findByHospitalIdWithPaging(hospitalId, pageable);
+        Page<Reservation> reservations = reservationRepository.findByHospitalIdWithFetchJoin(hospitalId, pageable);
         return reservations.map(ReservationResponse::from);
     }
 
@@ -316,6 +316,7 @@ public class ReservationInternalService {
 
     /**
      * 병원 소유권 검증
+     *
      * @PreAuthorize로 역할은 이미 체크되었으므로, 비즈니스 로직만 체크
      */
     private void validateHospitalOwnership(Long hospitalId, Long userId) {
