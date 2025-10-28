@@ -18,18 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class PointAccountExternalService {
     private final PointAccountRepository pointAccountRepository;
     private final PointLogExternalService pointLogExternalService;
-    private final UserExternalService userExternalService;
-
-    // pointAccountId 찾는 메서드
-    @Transactional(readOnly = true)
-    public PointAccount getPointAccountById(Long accountId) {
-        return pointAccountRepository.findById(accountId)
-                .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
-    }
 
     @Transactional(readOnly = true)
-    public PointAccount getPointAccountByUser(User user) {
-        return pointAccountRepository.findByUser(user)
+    public PointAccount getPointAccountByUserId(Long userId) {
+        return pointAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
     }
     // 현금을 포인트로 바꾸는 메서드
@@ -60,28 +52,9 @@ public class PointAccountExternalService {
         pointLogExternalService.createLog(account, PointLogType.REFUND, amount);
     }
 
-    // 계좌 잔액을 보여주기
-    @Transactional(readOnly = true)
-    public PointAccountGetResponse getPointAccount(Long userId) {
-        User user = userExternalService.getUserById(userId);
-        PointAccount account = pointAccountRepository.findByUser(user)
-                .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
-        return PointAccountGetResponse.from(account);
-    }
-
-    // 계좌 잔액을 반환하기
-    @Transactional(readOnly = true)
-    public Long getPointAccountBalance(Long userId) {
-        User user = userExternalService.getUserById(userId);
-        PointAccount account = pointAccountRepository.findByUser(user)
-                .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
-        return account.getBalance();
-    }
-
     @Transactional
     public void createPointAccount(User user) {
         PointAccount account = PointAccount.create(user, 0L);
         pointAccountRepository.save(account);
-
     }
 }
