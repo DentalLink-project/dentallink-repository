@@ -20,25 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class PointAccountInternalService {
     public final PointAccountRepository pointAccountRepository;
     private final PointLogExternalService pointLogExternalService;
-    private final UserExternalService userExternalService;
-
-    // 계좌 생성하기
-    @Transactional
-    public PointAccountCreateResponse createPointAccount(Long userId) {
-        User user = userExternalService.getUserById(userId);
-        if (pointAccountRepository.findByUser(user).isPresent()) {
-            throw new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_ALREADY_EXISTS);
-        }
-        PointAccount account = PointAccount.create(user, 0L);
-        pointAccountRepository.save(account);
-        return PointAccountCreateResponse.from(account);
-    }
 
     // 계좌 잔액 확인하기
     @Transactional(readOnly = true)
     public PointAccountGetResponse getPointAccount(Long userId) {
-        User user = userExternalService.getUserById(userId);
-        PointAccount account = pointAccountRepository.findByUser(user)
+        PointAccount account = pointAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         return PointAccountGetResponse.from(account);
     }
@@ -56,14 +42,11 @@ public class PointAccountInternalService {
 
     @Transactional
     public PointAccountWithdrawResponse withdrawPointAccount(Long userId, PointAccountWithdrawRequest request) {
-        User user = userExternalService.getUserById(userId);
-        PointAccount account = pointAccountRepository.findByUser(user)
+        PointAccount account = pointAccountRepository.findByUserId(userId)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         account.withdraw(request.amount());
         pointLogExternalService.createLog(account, PointLogType.WITHDRAW, request.amount());
 
         return PointAccountWithdrawResponse.from(account, request);
     }
-
-
 }

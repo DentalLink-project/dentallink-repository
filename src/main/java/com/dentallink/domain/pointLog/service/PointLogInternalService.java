@@ -21,12 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class PointLogInternalService {
     private final PointLogRepository pointLogRepository;
     private final PointAccountExternalService pointAccountExternalService;
-    private final UserExternalService userExternalService;
 
     @Transactional(readOnly = true)
     public PageResponse<PointLogResponse> getLogsByUser(Long userId, int page, int size, String sort) {
-        User user = userExternalService.getUserById(userId);
-        PointAccount account = pointAccountExternalService.getPointAccountByUser(user);
+        PointAccount account = pointAccountExternalService.getPointAccountByUserId(userId);
         Sort order = "oldest".equalsIgnoreCase(sort)
                 ? Sort.by("createdAt").ascending()
                 : Sort.by("createdAt").descending();
