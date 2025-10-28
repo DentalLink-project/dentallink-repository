@@ -110,10 +110,7 @@ public class ReservationInternalService {
                 reservation.reject();
 
                 // 포인트 환불 (환불 가능한 경우만)
-                if (refundablePoints > 0) {
-                    PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(reservation.getUser().getId());
-                    pointAccountExternalService.refundPointAccount(pointAccount.getId(), refundablePoints);
-                }
+                refundPoints(reservation.getUser().getId(), refundablePoints);
             }
             case COMPLETED -> reservation.complete();
             default -> throw new GlobalException(ReservationErrorCode.INVALID_STATUS_TRANSITION);
@@ -143,10 +140,7 @@ public class ReservationInternalService {
         reservation.cancel();
 
         // 포인트 환불 (환불 가능한 경우만)
-        if (refundablePoints > 0) {
-            PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(reservation.getUser().getId());
-            pointAccountExternalService.refundPointAccount(pointAccount.getId(), refundablePoints);
-        }
+        refundPoints(reservation.getUser().getId(), refundablePoints);
     }
 
     /**
@@ -384,5 +378,16 @@ public class ReservationInternalService {
         if (reservation.getAppointmentDate().isBefore(LocalDateTime.now())) {
             throw new GlobalException(ReservationErrorCode.PAST_APPOINTMENT_TIME);
         }
+    }
+
+    /**
+     * 포인트 환불 (중복 제거)
+     */
+    private void refundPoints(Long userId, Long points) {
+        if (points <= 0) {
+            return;
+        }
+        PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(userId);
+        pointAccountExternalService.refundPointAccount(pointAccount.getId(), points);
     }
 }
