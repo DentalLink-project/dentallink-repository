@@ -111,7 +111,7 @@ public class ReservationInternalService {
 
                 // 포인트 환불 (환불 가능한 경우만)
                 if (refundablePoints > 0) {
-                    PointAccount pointAccount = pointAccountExternalService.getPointAccountByUser(reservation.getUser());
+                    PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(reservation.getUser().getId());
                     pointAccountExternalService.refundPointAccount(pointAccount.getId(), refundablePoints);
                 }
             }
@@ -144,7 +144,7 @@ public class ReservationInternalService {
 
         // 포인트 환불 (환불 가능한 경우만)
         if (refundablePoints > 0) {
-            PointAccount pointAccount = pointAccountExternalService.getPointAccountByUser(reservation.getUser());
+            PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(reservation.getUser().getId());
             pointAccountExternalService.refundPointAccount(pointAccount.getId(), refundablePoints);
         }
     }
@@ -176,7 +176,7 @@ public class ReservationInternalService {
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
 
         try {
-            PointAccount pointAccount = pointAccountExternalService.getPointAccountByUser(user);
+            PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(user.getId());
             pointAccountExternalService.spendPointAccount(pointAccount.getId(), RESERVATION_COST_POINTS);
         } catch (IllegalStateException e) {
             // PointAccount.spend()에서 발생하는 "잔액이 부족합니다" 예외를 비즈니스 예외로 변환

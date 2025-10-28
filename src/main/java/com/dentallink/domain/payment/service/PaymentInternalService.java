@@ -18,12 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentInternalService {
     private final PaymentRepository paymentRepository;
     private final PointAccountExternalService pointAccountExternalService;
-    private final UserExternalService userExternalService;
 
     @Transactional
     public PaymentResponse depositPoint(Long userId, Long amount, PaymentMethod paymentMethod) {
-        User user = userExternalService.getUserById(userId);
-        PointAccount account = pointAccountExternalService.getPointAccountByUser(user);
+        PointAccount account = pointAccountExternalService.getPointAccountByUserId(userId);
         Payment payment = Payment.create(account, amount, paymentMethod);
         payment.markSuccess();
         paymentRepository.save(payment);
