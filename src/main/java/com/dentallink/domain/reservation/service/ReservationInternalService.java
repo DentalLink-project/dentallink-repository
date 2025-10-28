@@ -102,7 +102,19 @@ public class ReservationInternalService {
         // 상태 변경
         switch (request.status()) {
             case APPROVED -> reservation.approve();
-            case REJECTED -> reservation.reject();
+            case REJECTED -> {
+                // 환불 가능 포인트 계산
+                Long refundablePoints = reservation.getRefundablePoints();
+
+                // 예약 거절
+                reservation.reject();
+
+                // 포인트 환불 (환불 가능한 경우만)
+                if (refundablePoints > 0) {
+                    PointAccount pointAccount = pointAccountExternalService.getPointAccountByUser(reservation.getUser());
+                    pointAccountExternalService.refundPointAccount(pointAccount.getId(), refundablePoints);
+                }
+            }
             case COMPLETED -> reservation.complete();
             default -> throw new GlobalException(ReservationErrorCode.INVALID_STATUS_TRANSITION);
         }
