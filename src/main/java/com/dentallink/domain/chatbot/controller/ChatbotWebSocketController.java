@@ -119,20 +119,6 @@ public class ChatbotWebSocketController {
 
     // ===== REST API (Postman 테스트용) ===== ⭐
 
-    /**
-     * 🧪 Postman 테스트: 메시지 전송 (REST API)
-     *
-     * POST /api/chatbot/messages
-     * Authorization: Bearer {JWT_TOKEN}
-     *
-     * Body:
-     * {
-     * "sessionId": null,
-     * "content": "안녕하세요!"
-     * }
-     *
-     * 프론트엔드 개발 시에는 WebSocket 사용 권장!
-     */
     @PostMapping("/api/chatbot/messages")
     @ResponseBody
     public ChatResponse sendMessageRest(
