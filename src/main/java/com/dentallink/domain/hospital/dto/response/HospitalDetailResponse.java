@@ -13,6 +13,7 @@ public record HospitalDetailResponse (
         String hospitalAddress,
         Boolean isOpen,
         String doctorName,
+        Integer reservationCost,
         LocalTime openTime,
         LocalTime closeTime,
         LocalTime breakStart,
@@ -24,9 +25,11 @@ public record HospitalDetailResponse (
             String hospitalDescription,
             String hospitalAddress,
             Boolean isOpen,
-            String doctorName
+            String doctorName,
+            Integer reservationCost
     ) {
-        this(id, hospitalName, hospitalDescription, hospitalAddress, isOpen, doctorName, null, null, null, null) ;
+        this(id, hospitalName, hospitalDescription, hospitalAddress, isOpen, doctorName, reservationCost,
+                null, null, null, null) ;
     }
 
     public static HospitalDetailResponse of(Hospital hospital, HospitalSchedule schedule) {
@@ -37,7 +40,8 @@ public record HospitalDetailResponse (
                     hospital.getHospitalDescription(),
                     hospital.getHospitalAddress(),
                     hospital.getHospitalIsOpen(),
-                    hospital.getDoctorName()
+                    hospital.getDoctorName(),
+                    hospital.getReservationCost()
             );
         }
 
@@ -48,6 +52,7 @@ public record HospitalDetailResponse (
                 hospital.getHospitalAddress(),
                 hospital.getHospitalIsOpen(),
                 hospital.getDoctorName(),
+                hospital.getReservationCost(),
                 schedule.getOpenTime(),
                 schedule.getCloseTime(),
                 schedule.getBreakStart(),
