@@ -2,8 +2,8 @@ package com.dentallink.domain.chatbot.controller;
 
 import com.dentallink.domain.chatbot.dto.ChatRequest;
 import com.dentallink.domain.chatbot.dto.ChatResponse;
-import com.dentallink.domain.chatbot.dto.SessionResponse;
 import com.dentallink.domain.chatbot.service.ChatbotService;
+import com.dentallink.domain.user.dto.security.AuthUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +12,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +21,8 @@ import java.util.List;
 
 /**
  * 챗봇 WebSocket Controller
- * - 실시간 채팅 메시지 처리
+ * - 실시간 채팅 메시지 처리 (WebSocket)
+ * - Postman 테스트용 REST API
  */
 @Slf4j
 @Controller
@@ -30,8 +32,10 @@ public class ChatbotWebSocketController {
     private final ChatbotService chatbotService;
     private final SimpMessagingTemplate messagingTemplate;
 
+    // ===== WebSocket 메시지 핸들러 =====
+
     /**
-     * 채팅 메시지 전송
+     * 채팅 메시지 전송 (WebSocket)
      * 클라이언트: /app/chat/send
      * 응답: /user/queue/reply
      */
@@ -40,17 +44,14 @@ public class ChatbotWebSocketController {
             @Payload @Valid ChatRequest request,
             SimpMessageHeaderAccessor headerAccessor) {
 
-        // 사용자 ID 가져오기 (인증된 사용자)
         Long userId = getUserIdFromHeader(headerAccessor);
 
         log.info("채팅 메시지 수신: userId={}, sessionId={}, content={}",
                 userId, request.sessionId(), request.content());
 
         try {
-            // AI 응답 생성
             ChatResponse response = chatbotService.processMessage(request, userId);
 
-            // 사용자에게 응답 전송
             messagingTemplate.convertAndSendToUser(
                     userId.toString(),
                     "/queue/reply",
@@ -60,7 +61,6 @@ public class ChatbotWebSocketController {
         } catch (Exception e) {
             log.error("메시지 처리 중 오류 발생", e);
 
-            // 에러 응답 전송
             ChatResponse errorResponse = ChatResponse.builder()
                     .sessionId(request.sessionId())
                     .content("죄송합니다. 오류가 발생했습니다: " + e.getMessage())
@@ -75,7 +75,7 @@ public class ChatbotWebSocketController {
     }
 
     /**
-     * 세션 종료
+     * 세션 종료 (WebSocket)
      * 클라이언트: /app/chat/close
      */
     @MessageMapping("/chat/close")
@@ -117,48 +117,80 @@ public class ChatbotWebSocketController {
         return new TypingEvent(sessionId, userId, true);
     }
 
-    // ===== REST API (세션 정보 조회용) =====
+    // ===== REST API (Postman 테스트용) ===== ⭐
 
     /**
-     * 내 활성 세션 조회 (REST)
+     * 🧪 Postman 테스트: 메시지 전송 (REST API)
+     *
+     * POST /api/chatbot/messages
+     * Authorization: Bearer {JWT_TOKEN}
+     *
+     * Body:
+     * {
+     * "sessionId": null,
+     * "content": "안녕하세요!"
+     * }
+     *
+     * 프론트엔드 개발 시에는 WebSocket 사용 권장!
      */
-    @GetMapping("/api/chatbot/sessions/active")
+    @PostMapping("/api/chatbot/messages")
     @ResponseBody
-    public SessionResponse getActiveSession(@RequestParam Long userId) {
-        // 실제로는 Spring Security에서 userId를 가져와야 함
-        return chatbotService.getMySessions(userId,
-                        org.springframework.data.domain.PageRequest.of(0, 1))
-                .getContent()
-                .stream()
-                .findFirst()
-                .orElse(null);
+    public ChatResponse sendMessageRest(
+            @RequestBody @Valid ChatRequest request,
+            @AuthenticationPrincipal AuthUser user) {
+
+        Long userId = user.getUserId();
+        log.info("REST API - 메시지 전송: userId={}, content={}",
+                userId, request.content());
+
+        return chatbotService.processMessage(request, userId);
+    }
+
+    /**
+     * 🧪 Postman 테스트: 세션 종료 (REST API)
+     *
+     * POST /api/chatbot/sessions/{sessionId}/close
+     * Authorization: Bearer {JWT_TOKEN}
+     */
+    @PostMapping("/api/chatbot/sessions/{sessionId}/close")
+    @ResponseBody
+    public void closeSessionRest(
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal AuthUser user) { // ✅ Principal -> AuthUser로 수정
+
+        Long userId = user.getUserId(); // ✅ ID 추출 방식 통일
+        log.info("REST API - 세션 종료: userId={}, sessionId={}", userId, sessionId);
+
+        chatbotService.closeSession(sessionId, userId);
     }
 
     /**
      * 세션 메시지 히스토리 조회 (REST)
+     *
+     * GET /api/chatbot/sessions/{sessionId}/messages
+     * Authorization: Bearer {JWT_TOKEN}
      */
     @GetMapping("/api/chatbot/sessions/{sessionId}/messages")
     @ResponseBody
     public List<ChatResponse> getSessionMessages(
             @PathVariable Long sessionId,
-            @RequestParam Long userId) {
+            @AuthenticationPrincipal AuthUser user) { // ✅ Principal -> AuthUser로 수정
 
+        Long userId = user.getUserId(); // ✅ ID 추출 방식 통일
         return chatbotService.getSessionMessages(sessionId, userId);
     }
 
     // ===== Private Helper Methods =====
 
     /**
-     * 헤더에서 사용자 ID 추출
-     * 실제로는 Spring Security Principal에서 가져와야 함
+     * 헤더에서 사용자 ID 추출 (WebSocket용)
      */
     private Long getUserIdFromHeader(SimpMessageHeaderAccessor headerAccessor) {
-        // Principal을 통해 인증된 사용자 ID 가져오기
         Principal principal = headerAccessor.getUser();
 
         if (principal != null) {
-            // JWT 토큰이나 세션에서 userId 추출
-            // 예: return Long.parseLong(principal.getName());
+            // JWT 토큰에서 userId 추출
+            // JwtAuthenticationFilter에서 설정한 userId 사용
             return Long.parseLong(principal.getName());
         }
 
