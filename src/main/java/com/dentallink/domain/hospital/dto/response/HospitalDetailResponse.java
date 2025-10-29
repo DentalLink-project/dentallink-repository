@@ -2,7 +2,6 @@ package com.dentallink.domain.hospital.dto.response;
 
 import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
-import lombok.AllArgsConstructor;
 
 import java.time.LocalTime;
 
