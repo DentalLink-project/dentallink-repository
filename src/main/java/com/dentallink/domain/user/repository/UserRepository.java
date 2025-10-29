@@ -1,6 +1,5 @@
 package com.dentallink.domain.user.repository;
 
-import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.entity.User;
 import com.dentallink.domain.user.enums.UserRole;
 import org.springframework.data.domain.Page;
