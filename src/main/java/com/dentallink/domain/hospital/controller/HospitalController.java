@@ -7,7 +7,7 @@ import com.dentallink.domain.hospital.dto.request.HospitalScheduleCreateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalScheduleUpdateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalUpdateRequest;
 import com.dentallink.domain.hospital.dto.response.*;
-import com.dentallink.domain.hospital.service.HospitalExternalService;
+import com.dentallink.domain.hospital.service.HospitalInternalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,7 +27,7 @@ import static com.dentallink.common.response.CommonApiResponse.*;
 @RequiredArgsConstructor
 @RequestMapping("/api/hospitals")
 public class HospitalController {
-    private final HospitalExternalService hospitalExternalService;
+    private final HospitalInternalService hospitalInternalService;
 
     // 병원 등록
     @Operation(summary = "병원 등록", description = "새로운 병원을 등록합니다. 시스템 관리자만 가능")
@@ -44,7 +44,7 @@ public class HospitalController {
             @Valid @RequestBody HospitalCreateRequest request
     ) {
         return created(
-                hospitalExternalService.createHospital(authUser.getUserId(), request),
+                hospitalInternalService.createHospital(authUser.getUserId(), request),
                 "병원이 성공적으로 등록되었습니다."
         );
     }
@@ -60,7 +60,7 @@ public class HospitalController {
             @RequestParam(defaultValue = "10") int size
     ) {
         return success (
-                hospitalExternalService.findAllHospitals(page, size),
+                hospitalInternalService.findAllHospitals(page, size),
                 "병원 목록을 조회했습니다."
         );
     }
@@ -73,7 +73,7 @@ public class HospitalController {
     })
     @GetMapping("/{id}")
     public ResponseEntity<CommonApiResponse<HospitalDetailResponse>> getHospitalById(@PathVariable Long id) {
-        HospitalDetailResponse hospital = hospitalExternalService.findHospitalById(id);
+        HospitalDetailResponse hospital = hospitalInternalService.findHospitalById(id);
         return success(
                 hospital, "병원 상세 정보를 조회했습니다."
         );
@@ -96,7 +96,7 @@ public class HospitalController {
             @Valid @RequestBody HospitalUpdateRequest hospitalUpdateRequest
     ) {
         HospitalUpdateResponse hospital =
-                hospitalExternalService.updateHospital(id, authUser.getUserId(), hospitalUpdateRequest);
+                hospitalInternalService.updateHospital(id, authUser.getUserId(), hospitalUpdateRequest);
         return success(
                 hospital, "병원이 성공적으로 수정되었습니다."
         );
@@ -116,7 +116,7 @@ public class HospitalController {
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser
     ) {
-        hospitalExternalService.deleteHospital(id, authUser.getUserId());
+        hospitalInternalService.deleteHospital(id, authUser.getUserId());
         return deleteSuccess(
                 "병원이 성공적으로 삭제되었습니다."
         );
@@ -140,7 +140,7 @@ public class HospitalController {
             @Valid @RequestBody HospitalScheduleCreateRequest request
     ) {
         HospitalScheduleCreateResponse response =
-                hospitalExternalService.createHospitalSchedule(hospitalId, authUser.getUserId(), request);
+                hospitalInternalService.createHospitalSchedule(hospitalId, authUser.getUserId(), request);
         return created(
                 response,
                 "병원 일정이 성공적으로 등록되었습니다."
@@ -163,7 +163,7 @@ public class HospitalController {
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalScheduleUpdateRequest request
     ) {
-        HospitalScheduleUpdateResponse response = hospitalExternalService.updateHospitalSchedule(hospitalId, authUser.getUserId(), request);
+        HospitalScheduleUpdateResponse response = hospitalInternalService.updateHospitalSchedule(hospitalId, authUser.getUserId(), request);
         return success(
                 response,
                 "병원 일정이 성공적으로 수정되었습니다."
@@ -184,7 +184,7 @@ public class HospitalController {
             @PathVariable Long hospitalId,
             @AuthenticationPrincipal AuthUser authUser
     ) {
-        hospitalExternalService.deleteHospitalSchedule(hospitalId, authUser.getUserId());
+        hospitalInternalService.deleteHospitalSchedule(hospitalId, authUser.getUserId());
         return deleteSuccess(
                 "병원 일정이 성공적으로 삭제되었습니다."
         );
