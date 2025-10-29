@@ -18,7 +18,7 @@ public interface ChatSessionRepository extends JpaRepository<ChatSession, Long> 
 
     Page<ChatSession> findByUserIdAndStatus(Long userId, SessionStatus staus, Pageable pageable);
 
-    Optional<ChatSession> findByUserIdOrderByStartedAtDesc(Long userId);
+    Page<ChatSession> findByUserIdOrderByStartedAtDesc(Long userId, Pageable pageable);
 
     List<ChatSession> findByConsultantIdAndStatus(Long consultantId, SessionStatus status);
 
