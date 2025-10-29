@@ -1,13 +1,14 @@
 package com.dentallink.domain.chatbot.exception;
 
 
+import com.dentallink.common.exception.ErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
 @Getter
 @RequiredArgsConstructor
-public enum ChatbotErrorCode {
+public enum ChatbotErrorCode implements ErrorCode {
     // 세션 관련
     SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "채팅 세션을 찾을 수 없습니다."),
     SESSION_ALREADY_CLOSED(HttpStatus.BAD_REQUEST, "이미 종료된 세션입니다."),
