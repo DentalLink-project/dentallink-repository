@@ -28,6 +28,7 @@ public class HospitalInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
 
+
     // -------------------- 공용 조회 메서드 --------------------
 
     @Transactional(readOnly = true)
@@ -55,8 +56,9 @@ public class HospitalInternalService {
         return PageResponse.fromPage(hospitalResponse);
     }
 
-    // -------------------- 병원 등록 / 수정 / 삭제 --------------------
+    // -------------------- 병원 CRUD --------------------
 
+    // 병원 등록
     @Transactional
     public HospitalCreateResponse createHospital(Long userId, HospitalCreateRequest req) {
         Hospital hospital = new Hospital(
@@ -65,7 +67,8 @@ public class HospitalInternalService {
                 req.hospitalDescription(),
                 req.hospitalAddress(),
                 req.hospitalIsOpen(),
-                req.doctorName()
+                req.doctorName(),
+                req.reservationCost()
         );
         Hospital savedHospital = hospitalRepository.save(hospital);
 
@@ -87,6 +90,7 @@ public class HospitalInternalService {
         return HospitalDetailResponse.of(hospital, hospital.getHospitalSchedule());
     }
 
+    // 병원 수정
     @Transactional
     public HospitalUpdateResponse updateHospital(Long id, Long userId, HospitalUpdateRequest req) {
         Hospital hospital = getHospitalById(id);
@@ -97,7 +101,8 @@ public class HospitalInternalService {
                 req.hospitalDescription(),
                 req.hospitalAddress(),
                 req.hospitalIsOpen(),
-                req.doctorName()
+                req.doctorName(),
+                req.reservationCost()
         );
 
         HospitalSchedule schedule = getScheduleByHospitalId(id);
@@ -111,6 +116,7 @@ public class HospitalInternalService {
         return HospitalUpdateResponse.of(hospital, schedule);
     }
 
+    // 병원 삭제
     @Transactional
     public void deleteHospital(Long id, Long userId) {
         Hospital hospital = getHospitalById(id);
@@ -120,6 +126,7 @@ public class HospitalInternalService {
 
     // -------------------- 병원 일정 CRUD --------------------
 
+    // 병원 일정 등록
     @Transactional
     public HospitalScheduleCreateResponse createHospitalSchedule(Long hospitalId, Long userId, HospitalScheduleCreateRequest req) {
         Hospital hospital = getHospitalById(hospitalId);
@@ -140,6 +147,7 @@ public class HospitalInternalService {
         return HospitalScheduleCreateResponse.of(savedSchedule);
     }
 
+    // 병원 일정 수정
     @Transactional
     public HospitalScheduleUpdateResponse updateHospitalSchedule(Long hospitalId, Long userId, HospitalScheduleUpdateRequest req) {
         Hospital hospital = getHospitalById(hospitalId);
@@ -156,6 +164,7 @@ public class HospitalInternalService {
         return HospitalScheduleUpdateResponse.of(schedule);
     }
 
+    // 병원 일정 삭제
     @Transactional
     public void deleteHospitalSchedule(Long hospitalId, Long userId) {
         Hospital hospital = getHospitalById(hospitalId);
