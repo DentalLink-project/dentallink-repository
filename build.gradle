@@ -62,6 +62,15 @@ dependencies {
 
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8'
     implementation 'org.apache.commons:commons-lang3:3.18.0'
+
+    // WebSocket (실시간 채팅)
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // Gson (Gemini API JSON 처리)
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Guava (Rate Limiter - API 호출 제한)
+    implementation 'com.google.guava:guava:33.0.0-jre'
 }
 
 tasks.named('test') {
