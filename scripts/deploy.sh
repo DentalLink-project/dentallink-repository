@@ -32,7 +32,7 @@ CMDS=(
   "docker pull ${FULL_URI}"
   "docker stop ${CONTAINER_NAME} || true"
   "docker rm   ${CONTAINER_NAME} || true"
-  "docker run -d --name ${CONTAINER_NAME} --restart=always -p ${APP_PORT}:${APP_PORT} -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILE} ${FULL_URI}"
+  "docker run -d --name ${CONTAINER_NAME} --network my-app-network --restart=always -p ${APP_PORT}:${APP_PORT} -e SPRING_PROFILES_ACTIVE=${SPRING_PROFILE} ${FULL_URI}"
 )
 
 # Bash 배열 → JSON 배열 변환 (jq 필수)
@@ -59,14 +59,14 @@ for i in {1..30}; do
     --query 'Status' \
     --output text \
     --region "${AWS_REGION}") || true
-  
+
   echo "[INFO] SSM Status: ${STATUS}"
-  
+
   case "${STATUS}" in
     Success) exit 0 ;;
     Failed|Cancelled|TimedOut) echo "[ERROR] SSM failed: ${STATUS}"; exit 1 ;;
   esac
-  
+
   sleep 5
 done
 
