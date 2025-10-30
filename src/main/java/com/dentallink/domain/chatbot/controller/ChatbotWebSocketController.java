@@ -43,7 +43,6 @@ public class ChatbotWebSocketController {
      * 응답: /user/queue/reply
      */
     @MessageMapping("/chat/send")
-    @SendTo("/queue/messages")
     public void sendMessage(
             @Payload @Valid ChatRequest request,
             SimpMessageHeaderAccessor headerAccessor) {
@@ -146,9 +145,9 @@ public class ChatbotWebSocketController {
     @ResponseBody
     public void closeSessionRest(
             @PathVariable Long sessionId,
-            @AuthenticationPrincipal AuthUser user) { // ✅ Principal -> AuthUser로 수정
+            @AuthenticationPrincipal AuthUser user) {
 
-        Long userId = user.getUserId(); // ✅ ID 추출 방식 통일
+        Long userId = user.getUserId();
         log.info("REST API - 세션 종료: userId={}, sessionId={}", userId, sessionId);
 
         chatbotService.closeSession(sessionId, userId);
@@ -164,33 +163,36 @@ public class ChatbotWebSocketController {
     @ResponseBody
     public List<ChatResponse> getSessionMessages(
             @PathVariable Long sessionId,
-            @AuthenticationPrincipal AuthUser user) { // ✅ Principal -> AuthUser로 수정
+            @AuthenticationPrincipal AuthUser user) {
 
-        Long userId = user.getUserId(); // ✅ ID 추출 방식 통일
+        Long userId = user.getUserId();
         return chatbotService.getSessionMessages(sessionId, userId);
     }
 
     // ===== Private Helper Methods =====
 
     /**
-     * 헤더에서 사용자 ID 추출 (WebSocket용)
+     *  개선: 헤더에서 사용자 ID 추출 (타입 체크 강화)
      */
     private Long getUserIdFromHeader(SimpMessageHeaderAccessor headerAccessor) {
         Principal principal = headerAccessor.getUser();
 
-        if (principal != null) {
-            // JWT 토큰에서 userId 추출
-            // JwtAuthenticationFilter에서 설정한 userId 사용
-            return ((AuthUser) ((JwtAuthenticationToken) principal).getPrincipal()).getUserId();
+        if (principal == null) {
+            throw new IllegalArgumentException("인증되지 않은 사용자입니다.");
         }
 
-        // 테스트용: 헤더에서 직접 가져오기
-        String userIdHeader = (String) headerAccessor.getSessionAttributes().get("userId");
-        if (userIdHeader != null) {
-            return Long.parseLong(userIdHeader);
+        // 타입 체크 후 안전하게 캐스팅
+        if (!(principal instanceof JwtAuthenticationToken jwtToken)) {
+            throw new IllegalArgumentException("잘못된 인증 타입입니다. JwtAuthenticationToken이 필요합니다.");
         }
 
-        throw new IllegalArgumentException("인증되지 않은 사용자입니다.");
+        Object principalObj = jwtToken.getPrincipal();
+
+        if (!(principalObj instanceof AuthUser authUser)) {
+            throw new IllegalArgumentException("잘못된 Principal 타입입니다. AuthUser가 필요합니다.");
+        }
+
+        return authUser.getUserId();
     }
 
     // ===== Inner Classes =====
