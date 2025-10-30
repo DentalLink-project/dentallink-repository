@@ -1,7 +1,9 @@
 package com.dentallink.domain.chatbot.controller;
 
+import com.dentallink.common.security.JwtAuthenticationToken;
 import com.dentallink.domain.chatbot.dto.ChatRequest;
 import com.dentallink.domain.chatbot.dto.ChatResponse;
+import com.dentallink.domain.chatbot.enums.MessageType;
 import com.dentallink.domain.chatbot.service.ChatbotService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import jakarta.validation.Valid;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -40,6 +43,7 @@ public class ChatbotWebSocketController {
      * 응답: /user/queue/reply
      */
     @MessageMapping("/chat/send")
+    @SendTo("/queue/messages")
     public void sendMessage(
             @Payload @Valid ChatRequest request,
             SimpMessageHeaderAccessor headerAccessor) {
@@ -134,7 +138,7 @@ public class ChatbotWebSocketController {
 
     /**
      * 🧪 Postman 테스트: 세션 종료 (REST API)
-     *
+     * <p>
      * POST /api/chatbot/sessions/{sessionId}/close
      * Authorization: Bearer {JWT_TOKEN}
      */
@@ -152,7 +156,7 @@ public class ChatbotWebSocketController {
 
     /**
      * 세션 메시지 히스토리 조회 (REST)
-     *
+     * <p>
      * GET /api/chatbot/sessions/{sessionId}/messages
      * Authorization: Bearer {JWT_TOKEN}
      */
@@ -177,7 +181,7 @@ public class ChatbotWebSocketController {
         if (principal != null) {
             // JWT 토큰에서 userId 추출
             // JwtAuthenticationFilter에서 설정한 userId 사용
-            return Long.parseLong(principal.getName());
+            return ((AuthUser) ((JwtAuthenticationToken) principal).getPrincipal()).getUserId();
         }
 
         // 테스트용: 헤더에서 직접 가져오기
@@ -194,5 +198,6 @@ public class ChatbotWebSocketController {
     /**
      * Typing 이벤트
      */
-    private record TypingEvent(Long sessionId, Long userId, boolean isTyping) {}
+    private record TypingEvent(Long sessionId, Long userId, boolean isTyping) {
+    }
 }
