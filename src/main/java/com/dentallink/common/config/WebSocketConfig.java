@@ -22,6 +22,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureClientInboundChannel(ChannelRegistration registration) {
         registration.interceptors(authInterceptor);
     }
+
     /**
      * 메시지 브로커 설정
      */
@@ -33,8 +34,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // 클라이언트가 메시지를 보낼 때 사용하는 prefix
         config.setApplicationDestinationPrefixes("/app");
 
-        // 특정 사용자에게 메시지를 보낼 때 사용하는 prefix
-//        config.setUserDestinationPrefix("/user");
+        // ✅ 수정: 특정 사용자에게 메시지를 보낼 때 사용하는 prefix (명시적 설정)
+        config.setUserDestinationPrefix("/user");
     }
 
     /**
@@ -45,6 +46,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws/chat")
                 .setAllowedOriginPatterns("*");  // CORS 설정 (프로덕션에서는 구체적으로 지정)
-                //.withSockJS();  // SockJS fallback 옵션 활성화
+        //.withSockJS();  // SockJS fallback 옵션 활성화
     }
 }

@@ -60,8 +60,8 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
                     throw new RuntimeException("JWT 인증 실패: " + e.getMessage());
                 }
             } else {
-                // 토큰이 없거나 형식이 잘못된 경우 (개발 중에는 허용할 수도 있지만, 보안상 거부가 맞음)
-                log.warn("Authorization 헤더가 없거나 형식이 잘못되었습니다.");
+                log.error("Authorization 헤더가 없거나 형식이 잘못되었습니다.");
+                throw new RuntimeException("JWT 토큰이 필요합니다.");
             }
         }
 
