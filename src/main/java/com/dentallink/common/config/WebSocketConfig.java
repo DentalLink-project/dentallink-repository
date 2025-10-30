@@ -34,7 +34,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         config.setApplicationDestinationPrefixes("/app");
 
         // 특정 사용자에게 메시지를 보낼 때 사용하는 prefix
-        config.setUserDestinationPrefix("/user");
+//        config.setUserDestinationPrefix("/user");
     }
 
     /**
