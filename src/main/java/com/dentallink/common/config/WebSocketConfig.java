@@ -1,6 +1,9 @@
 package com.dentallink.common.config;
 
+import com.dentallink.common.security.WebSocketAuthChannelInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -9,8 +12,16 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
+
+    private final WebSocketAuthChannelInterceptor authInterceptor;
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(authInterceptor);
+    }
     /**
      * 메시지 브로커 설정
      */
@@ -33,7 +44,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws/chat")
-                .setAllowedOriginPatterns("*")  // CORS 설정 (프로덕션에서는 구체적으로 지정)
-                .withSockJS();  // SockJS fallback 옵션 활성화
+                .setAllowedOriginPatterns("*");  // CORS 설정 (프로덕션에서는 구체적으로 지정)
+                //.withSockJS();  // SockJS fallback 옵션 활성화
     }
 }
