@@ -16,7 +16,6 @@ spring:
 
   data:
     redis:
-      host: ${redis.host:redis}
       port: ${redis.port:6379}
 
   jpa:
@@ -70,3 +69,7 @@ springdoc:
     path: /swagger-ui/index.html
     display-request-duration: true
     tryItOutEnabled: true
+
+
+toss:
+  secret-key: test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6
