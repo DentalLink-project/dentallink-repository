@@ -2,18 +2,16 @@ package com.dentallink.domain.hospital.service;
 
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.common.response.PageResponse;
-import com.dentallink.domain.hospital.dto.request.HospitalCreateRequest;
-import com.dentallink.domain.hospital.dto.request.HospitalScheduleCreateRequest;
-import com.dentallink.domain.hospital.dto.request.HospitalScheduleUpdateRequest;
-import com.dentallink.domain.hospital.dto.request.HospitalUpdateRequest;
+import com.dentallink.domain.hospital.dto.request.*;
 import com.dentallink.domain.hospital.dto.response.*;
 import com.dentallink.domain.hospital.entity.Hospital;
-import com.dentallink.domain.hospital.entity.HospitalAvailableTime;
+import com.dentallink.domain.hospital.entity.HospitalReservationTime;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import com.dentallink.domain.hospital.exception.HospitalErrorCode;
-import com.dentallink.domain.hospital.repository.HospitalAvailableTimeRepository;
+import com.dentallink.domain.hospital.repository.HospitalReservationTimeRepository;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -34,7 +32,7 @@ import java.util.Optional;
 public class HospitalInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
-    private final HospitalAvailableTimeRepository hospitalAvailableTimeRepository;
+    private final HospitalReservationTimeRepository hospitalReservationTimeRepository;
 
 
     // -------------------- 공용 조회 메서드 --------------------
@@ -224,7 +222,7 @@ public class HospitalInternalService {
             throw new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND);
         }
 
-        List<HospitalAvailableTime> slots = new ArrayList<>();
+        List<HospitalReservationTime> slots = new ArrayList<>();
 
         LocalTime time = open;
 
@@ -233,13 +231,13 @@ public class HospitalInternalService {
 
             if (!isDuringBreak) {
                 LocalTime end = time.plusMinutes(30);
-                slots.add(new HospitalAvailableTime(hospital, date, time, end));
+                slots.add(new HospitalReservationTime(hospital, date, time, end));
             }
 
             time = time.plusMinutes(30);
         }
 
-        hospitalAvailableTimeRepository.saveAll(slots);
+        hospitalReservationTimeRepository.saveAll(slots);
     }
 
     // 병원 예약 가능 시간 자동 생성 테스트용
@@ -254,8 +252,67 @@ public class HospitalInternalService {
         hospitalAvailableTimes(hospital, schedule, date);
     }
 
-    // TODO: 병원 예약 등록
+    // 병원 예약 가능 시간 조회
+    @Transactional(readOnly = true)
+    public List<HospitalReservationTimeResponse> getAvailableTimes(Long hospitalId, LocalDate date) {
+        Hospital hospital = getHospitalById(hospitalId);
 
-    // TODO: 병원 예약 취소
+        LocalDate targetDate = date != null ? date : LocalDate.now();
+
+        List<HospitalReservationTime> times = hospitalReservationTimeRepository
+                .findByHospital_IdAndDateOrderByStartTime(hospitalId, targetDate);
+
+        List<HospitalReservationTimeResponse> availableTimes = new ArrayList<>();
+        for (HospitalReservationTime t : times) {
+            if (!t.isDeleted() && !Boolean.TRUE.equals(t.getIsReserved())) {
+                availableTimes.add(HospitalReservationTimeResponse.of(t.getId(), t.getStartTime(), t.getEndTime()));
+            }
+        }
+
+        return availableTimes;
+    }
+
+    // 병원 예약 등록
+    @Transactional
+    public HospitalReservationResponse createHospitalReservation(Long hospitalId, Long userId, @Valid HospitalReservationCreateRequest request) {
+        HospitalReservationTime availableTime = hospitalReservationTimeRepository.findById(request.availableTimeId())
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND));
+
+        if (!availableTime.getHospital().getId().equals(hospitalId)) {
+            throw new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND);
+        }
+
+        if (availableTime.getIsReserved()) {
+            throw new GlobalException(HospitalErrorCode.DUPLICATE_SCHEDULE); // 이미 예약됨
+        }
+
+        availableTime.reserve(userId);
+
+        return new HospitalReservationResponse(
+                hospitalId,
+                userId,
+                availableTime.getDate(),
+                availableTime.getStartTime(),
+                availableTime.getEndTime()
+        );
+    }
+
+    // 예약 취소
+    @Transactional
+    public void cancelHospitalReservation(Long hospitalId, Long reservationId, Long userId) {
+        HospitalReservationTime availableTime = hospitalReservationTimeRepository
+                .findById(reservationId)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND));
+
+        if (!availableTime.getIsReserved()) {
+            throw new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND);
+        }
+
+        if (!availableTime.getUserId().equals(userId)) {
+            throw new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER); // 본인 예약 아님
+        }
+
+        availableTime.cancel();
+    }
 
 }

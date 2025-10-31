@@ -12,7 +12,7 @@ import java.time.LocalTime;
 @Entity
 @Getter
 @NoArgsConstructor
-public class HospitalAvailableTime extends BaseEntity {
+public class HospitalReservationTime extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,12 +26,12 @@ public class HospitalAvailableTime extends BaseEntity {
     private LocalTime endTime;
     private Boolean isReserved = false;
 
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id")
     private Long userId;
 
     private LocalDateTime reservedAt;
 
-    public HospitalAvailableTime (
+    public HospitalReservationTime(
             Hospital hospital,
             LocalDate date,
             LocalTime startTime,
@@ -41,7 +41,19 @@ public class HospitalAvailableTime extends BaseEntity {
         this.date = date;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.userId = null;
+    }
+
+    public void reserve(Long userId) {
+        this.isReserved = true;
+        this.userId = userId;
+        this.reservedAt = LocalDateTime.now();
+    }
+
+    public void cancel() {
         this.isReserved = false;
+        this.userId = null;
+        this.reservedAt = null;
     }
 
 }
