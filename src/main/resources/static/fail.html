@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>결제 실패</title>
+</head>
+<body>
+<h2>결제가 실패했습니다.</h2>
+<p id="orderId"></p>
+<p id="message"></p>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get("orderId");
+    const message = urlParams.get("message") || "결제가 취소되었거나 실패했습니다.";
+
+    document.getElementById("orderId").innerText = "주문번호: " + orderId;
+    document.getElementById("message").innerText = message;
+
+    // 백엔드에 결제 취소 요청
+    const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJzb21lb25lQGV4YW1wbGUuY29tIiwiYXV0aCI6IlJPTEVfVVNFUiIsImV4cCI6MTc2MTg5NTg0OSwiaWF0IjoxNzYxODkyMjQ5fQ.kf7EHfpwQEbIs-AJzlYL3sfk5OBNOawHH8sv4mRufK0";
+    fetch(`http://localhost:8080/api/payments/cancel/ready/${orderId}`, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+        },
+    })
+</script>
+</body>
+</html>
