@@ -15,10 +15,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 import static com.dentallink.common.response.CommonApiResponse.*;
 
@@ -189,4 +192,16 @@ public class HospitalController {
                 "병원 일정이 성공적으로 삭제되었습니다."
         );
     }
+
+    // 병원 예약 가능 시간 자동 생성 테스트용
+//    @PostMapping("/{hospitalId}/available-times")
+//    public ResponseEntity<CommonApiResponse<Void>> generateAvailableTimes(
+//            @PathVariable Long hospitalId,
+//            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
+//    ) {
+//        return success(
+//                hospitalInternalService.hospitalAvailableTimesTest(hospitalId, date),
+//                "병원 예약 가능 시간이 성공적으로 등록되었습니다."
+//        )
+//    }
 }
