@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 챗봇 WebSocket Controller
@@ -64,19 +65,57 @@ public class ChatbotWebSocketController {
 
         try {
             if (request.sessionId() != null) {
-                ChatSession session = chatSessionRepository.findById(request.sessionId())
-                        .orElse(null);
-                if (session != null && session.isConsultantMode()) {
-                    ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
-                    chatMessageRepository.save(userMessage); //repository naming
+                chatSessionRepository.findById(request.sessionId()).ifPresent(session -> {
+                    if (!session.isOwnedBy(userId)) {
+                        throw new GlobalException(ChatbotErrorCode.UNAUTHORIZED_ACCESS);
+                    }
 
-                    messagingTemplate.convertAndSendToUser(
-                            session.getConsultant().getId().toString(),
-                            "/queue/messages", ChatResponse.from(userMessage)
-                    );
-                    return ChatResponse.from(userMessage);
+                    if (session.isConsultantMode()) {
+                        ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
+                        chatMessageRepository.save(userMessage);
+
+                        messagingTemplate.convertAndSendToUser(
+                                session.getConsultant().getId().toString(),
+                                "/queue/messages", ChatResponse.from(userMessage)
+                        );
+                    }
+                });
+                // ifPresent는 값을 반환하지 않으므로, return을 위해선 다른 접근이 필요합니다.
+                // 아래는 return을 포함한 수정 제안입니다.
+                Optional<ChatSession> sessionOpt = chatSessionRepository.findById(request.sessionId());
+                if (sessionOpt.isPresent()) {
+                    ChatSession session = sessionOpt.get();
+                    if (!session.isOwnedBy(userId)) {
+                        throw new GlobalException(ChatbotErrorCode.UNAUTHORIZED_ACCESS);
+                    }
+
+                    if (session.isConsultantMode()) {
+                        ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
+                        chatMessageRepository.save(userMessage);
+
+                        messagingTemplate.convertAndSendToUser(
+                                session.getConsultant().getId().toString(),
+                                "/queue/messages", ChatResponse.from(userMessage)
+                        );
+                        return ChatResponse.from(userMessage);
+                    }
                 }
             }
+
+//            if (request.sessionId() != null) {
+//                ChatSession session = chatSessionRepository.findById(request.sessionId())
+//                        .orElse(null);
+//                if (session != null && session.isConsultantMode()) {
+//                    ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
+//                    chatMessageRepository.save(userMessage); //repository naming
+//
+//                    messagingTemplate.convertAndSendToUser(
+//                            session.getConsultant().getId().toString(),
+//                            "/queue/messages", ChatResponse.from(userMessage)
+//                    );
+//                    return ChatResponse.from(userMessage);
+//                }
+//            }
             ChatResponse response = chatbotService.processMessage(request, userId);
 
             return response;
