@@ -1,9 +1,15 @@
 package com.dentallink.domain.chatbot.controller;
 
+import com.dentallink.common.exception.GlobalException;
 import com.dentallink.common.security.JwtAuthenticationToken;
 import com.dentallink.domain.chatbot.dto.ChatRequest;
 import com.dentallink.domain.chatbot.dto.ChatResponse;
+import com.dentallink.domain.chatbot.entity.ChatMessage;
+import com.dentallink.domain.chatbot.entity.ChatSession;
 import com.dentallink.domain.chatbot.enums.MessageType;
+import com.dentallink.domain.chatbot.exception.ChatbotErrorCode;
+import com.dentallink.domain.chatbot.repository.ChatMessageRepository;
+import com.dentallink.domain.chatbot.repository.ChatSessionRepository;
 import com.dentallink.domain.chatbot.service.ChatbotService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import jakarta.validation.Valid;
@@ -35,6 +41,8 @@ public class ChatbotWebSocketController {
 
     private final ChatbotService chatbotService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatSessionRepository chatSessionRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
     // ===== WebSocket 메시지 핸들러 =====
 
@@ -55,6 +63,20 @@ public class ChatbotWebSocketController {
                 userId, request.sessionId(), request.content());
 
         try {
+            if (request.sessionId() != null) {
+                ChatSession session = chatSessionRepository.findById(request.sessionId())
+                        .orElse(null);
+                if (session != null && session.isConsultantMode()) {
+                    ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
+                    chatMessageRepository.save(userMessage); //repository naming
+
+                    messagingTemplate.convertAndSendToUser(
+                            session.getConsultant().getId().toString(),
+                            "/queue/messages", ChatResponse.from(userMessage)
+                    );
+                    return ChatResponse.from(userMessage);
+                }
+            }
             ChatResponse response = chatbotService.processMessage(request, userId);
 
             return response;
@@ -166,7 +188,7 @@ public class ChatbotWebSocketController {
     // ===== Private Helper Methods =====
 
     /**
-     *  개선: 헤더에서 사용자 ID 추출 (타입 체크 강화)
+     * 개선: 헤더에서 사용자 ID 추출 (타입 체크 강화)
      */
     private Long getUserIdFromHeader(SimpMessageHeaderAccessor headerAccessor) {
         Principal principal = headerAccessor.getUser();
