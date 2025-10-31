@@ -14,6 +14,7 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -40,10 +41,11 @@ public class ChatbotWebSocketController {
     /**
      * 채팅 메시지 전송 (WebSocket)
      * 클라이언트: /app/chat/send
-     * 응답: /user/queue/reply
+     * 응답: /queue/reply
      */
     @MessageMapping("/chat/send")
-    public void sendMessage(
+    @SendToUser("/queue/reply")
+    public ChatResponse sendMessage(
             @Payload @Valid ChatRequest request,
             SimpMessageHeaderAccessor headerAccessor) {
 
@@ -55,11 +57,7 @@ public class ChatbotWebSocketController {
         try {
             ChatResponse response = chatbotService.processMessage(request, userId);
 
-            messagingTemplate.convertAndSendToUser(
-                    userId.toString(),
-                    "/queue/reply",
-                    response
-            );
+            return response;
 
         } catch (Exception e) {
             log.error("메시지 처리 중 오류 발생", e);
@@ -69,11 +67,7 @@ public class ChatbotWebSocketController {
                     .content("죄송합니다. 오류가 발생했습니다: " + e.getMessage())
                     .build();
 
-            messagingTemplate.convertAndSendToUser(
-                    userId.toString(),
-                    "/queue/reply",
-                    errorResponse
-            );
+            return errorResponse;
         }
     }
 
