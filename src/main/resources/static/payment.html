@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <title>Dentallink 결제 테스트</title>
+    <script src="https://js.tosspayments.com/v2/standard"></script>
+</head>
+<body>
+<h2> Dentallink 결제 테스트 페이지</h2>
+
+<!-- 쿠폰 체크박스 -->
+<div>
+    <input type="checkbox" id="coupon-box" />
+    <label for="coupon-box">5,000원 쿠폰 적용</label>
+</div>
+
+<!-- 결제 UI -->
+<div id="payment-method"></div>
+
+<!-- 약관 UI -->
+<div id="agreement"></div>
+
+<!-- 결제 버튼 -->
+<button id="payment-button" style="margin-top: 30px;">결제하기</button>
+
+<script>
+    main();
+
+    async function main() {
+        const button = document.getElementById("payment-button");
+        const coupon = document.getElementById("coupon-box");
+
+        // Toss 클라이언트 키
+        const clientKey = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
+        const tossPayments = TossPayments(clientKey);
+
+        // JWT (Postman에서 로그인 후 받은 토큰 넣기)
+        const token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJzb21lb25lQGV4YW1wbGUuY29tIiwiYXV0aCI6IlJPTEVfVVNFUiIsImV4cCI6MTc2MTg5NTg0OSwiaWF0IjoxNzYxODkyMjQ5fQ.kf7EHfpwQEbIs-AJzlYL3sfk5OBNOawHH8sv4mRufK0";
+        const customerKey = "user-1";
+        const widgets = tossPayments.widgets({ customerKey });
+
+        // 기본 결제 금액
+        let totalAmount = 50000;
+
+        await widgets.setAmount({
+            currency: "KRW",
+            value: totalAmount,
+        });
+
+        // Toss 위젯 렌더링
+        await Promise.all([
+            widgets.renderPaymentMethods({
+                selector: "#payment-method",
+                variantKey: "DEFAULT",
+            }),
+            widgets.renderAgreement({
+                selector: "#agreement",
+                variantKey: "AGREEMENT",
+            }),
+        ]);
+
+        // 쿠폰 이벤트
+        coupon.addEventListener("change", async () => {
+            totalAmount = coupon.checked ? 45000 : 50000;
+            await widgets.setAmount({ currency: "KRW", value: totalAmount });
+        });
+
+        // 결제 버튼 클릭 시
+        button.addEventListener("click", async () => {
+            try {
+                // (1) 백엔드에 결제 준비 요청 (JWT 포함)
+                const readyResponse = await fetch("http://localhost:8080/api/payments/ready", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}` // 이 형식만 인식됨
+                    },
+                    body: JSON.stringify({
+                        amount: totalAmount,
+                        orderId: "ORDER-" + Date.now(), // 매번 고유 ID 생성
+                    }),
+                });
+
+                if (!readyResponse.ok) {
+                    const err = await readyResponse.text();
+                    console.error("/api/payments/ready 실패:", readyResponse.status, err);
+                    alert("결제 준비 중 오류 발생 (" + readyResponse.status + ")");
+                    return;
+                }
+
+                const readyData = await readyResponse.json();
+                const orderId = readyData.data.orderId;
+                console.log("결제 준비 완료:", readyData);
+
+                // (2) Toss 결제창 띄우기
+                await widgets.requestPayment({
+                    orderId: orderId,
+                    orderName: "Dentallink 포인트 충전 테스트",
+                    successUrl: window.location.origin + "/success.html",
+                    failUrl: window.location.origin + "/fail.html",
+                    customerEmail: "testuser@dentallink.com",
+                    customerName: "홍길동",
+                    customerMobilePhone: "01012345678",
+                });
+
+            } catch (error) {
+                console.error("오류 발생:", error);
+                alert("결제 요청 중 문제가 발생했습니다.");
+            }
+        });
+    }
+</script>
+</body>
+</html>
