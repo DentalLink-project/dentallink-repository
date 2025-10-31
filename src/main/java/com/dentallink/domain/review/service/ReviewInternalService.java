@@ -86,8 +86,6 @@ public class ReviewInternalService {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new GlobalException(ReviewErrorCode.REVIEW_NOT_FOUND));
 
-        validateHospitalAdmin(review.getHospitalId(), hospitalAdminId);
-
         switch (request.status()) {
             case APPROVED -> review.approve();
             case REJECTED -> review.reject();
@@ -112,14 +110,5 @@ public class ReviewInternalService {
         }
 
         return review;
-    }
-
-    // TODO: 병원 관리자 검증 로직
-    private void validateHospitalAdmin(Long hospitalId, Long adminId) {
-        // TODO: HospitalRepository 등으로 관리자 확인 로직 구현
-        boolean isAdmin = true; // 임시
-        if (!isAdmin) {
-            throw new GlobalException(ReviewErrorCode.NOT_HOSPITAL_ADMIN);
-        }
     }
 }
