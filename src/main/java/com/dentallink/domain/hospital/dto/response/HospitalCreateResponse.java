@@ -12,7 +12,7 @@ public record HospitalCreateResponse (
         String hospitalAddress,
         Boolean isOpen,
         String doctorName,
-        Integer reservationCost,
+        Long reservationCost,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalTime openTime,
