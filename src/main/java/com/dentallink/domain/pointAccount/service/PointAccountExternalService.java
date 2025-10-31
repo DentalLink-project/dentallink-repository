@@ -1,6 +1,5 @@
 package com.dentallink.domain.pointAccount.service;
 
-import com.dentallink.domain.pointAccount.dto.response.*;
 import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.exception.InvalidPointAccountException;
 import com.dentallink.domain.pointAccount.exception.PointAccountErrorCode;
@@ -8,7 +7,6 @@ import com.dentallink.domain.pointAccount.repository.PointAccountRepository;
 import com.dentallink.domain.pointLog.enums.PointLogType;
 import com.dentallink.domain.pointLog.service.PointLogExternalService;
 import com.dentallink.domain.user.entity.User;
-import com.dentallink.domain.user.service.UserExternalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +25,7 @@ public class PointAccountExternalService {
     // 현금을 포인트로 바꾸는 메서드
     @Transactional
     public void depositPointAccount(Long accountId, Long amount){
-        PointAccount account = pointAccountRepository.findById(accountId)
+        PointAccount account = pointAccountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         account.deposit(amount);
         // 로그 생성
@@ -37,7 +35,7 @@ public class PointAccountExternalService {
     // 포인트를 통해 상품 구매(reservation 도메인에서 사용)
     @Transactional
     public void spendPointAccount(Long accountId, Long amount){
-        PointAccount account = pointAccountRepository.findById(accountId)
+        PointAccount account = pointAccountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         account.spend(amount);
         pointLogExternalService.createLog(account, PointLogType.SPEND, amount);
@@ -46,7 +44,7 @@ public class PointAccountExternalService {
     // 상품 구매 취소를 통해 포인트 복구(reservation 도메인에서 사용)
     @Transactional
     public void refundPointAccount(Long accountId, Long amount){
-        PointAccount account = pointAccountRepository.findById(accountId)
+        PointAccount account = pointAccountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         account.refund(amount);
         pointLogExternalService.createLog(account, PointLogType.REFUND, amount);
