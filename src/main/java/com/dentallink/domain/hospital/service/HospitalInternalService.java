@@ -242,6 +242,18 @@ public class HospitalInternalService {
         hospitalAvailableTimeRepository.saveAll(slots);
     }
 
+    // 병원 예약 가능 시간 자동 생성 테스트용
+    @Transactional
+    public void hospitalAvailableTimesTest(Long hospitalId, LocalDate date) {
+        Hospital hospital = hospitalRepository.findById(hospitalId)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
+
+        HospitalSchedule schedule = hospitalScheduleRepository.findByHospitalId(hospitalId)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND));
+
+        hospitalAvailableTimes(hospital, schedule, date);
+    }
+
     // TODO: 병원 예약 등록
 
     // TODO: 병원 예약 취소
