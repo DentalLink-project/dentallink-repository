@@ -6,7 +6,7 @@ import com.dentallink.domain.review.dto.request.ReviewCreateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateRequest;
 import com.dentallink.domain.review.dto.request.ReviewUpdateStatusRequest;
 import com.dentallink.domain.review.dto.response.*;
-import com.dentallink.domain.review.service.ReviewExternalService;
+import com.dentallink.domain.review.service.ReviewInternalService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,7 +20,7 @@ import static com.dentallink.common.response.ApiResponse.*;
 @RequiredArgsConstructor
 @RequestMapping("/api")
 public class ReviewController {
-    private final ReviewExternalService reviewExternalService;
+    private final ReviewInternalService reviewInternalService;
 
     // 리뷰 등록
     @PostMapping("/hospitals/{hospitalId}/reviews")
@@ -30,7 +30,7 @@ public class ReviewController {
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody ReviewCreateRequest reviewCreateRequest
     ) {
-        ReviewCreateResponse response = reviewExternalService.createReview(
+        ReviewCreateResponse response = reviewInternalService.createReview(
                 reservationId, hospitalId, authUser.getUserId(), reviewCreateRequest
         );
         return created (
@@ -46,7 +46,7 @@ public class ReviewController {
             @RequestParam(defaultValue = "10") int size
     ) {
         return success (
-                reviewExternalService.findAllReviews(hospitalId, page, size),
+                reviewInternalService.findAllReviews(hospitalId, page, size),
                 "리뷰 목록이 조회되었습니다."
         );
     }
@@ -56,7 +56,7 @@ public class ReviewController {
     public ResponseEntity<ApiResponse<ReviewDetailResponse>> getReviewById(
             @PathVariable Long id
     ) {
-        ReviewDetailResponse review = reviewExternalService.findReviewById(id);
+        ReviewDetailResponse review = reviewInternalService.findReviewById(id);
         return success (
                 review, "리뷰가 조회되었습니다."
         );
@@ -69,7 +69,7 @@ public class ReviewController {
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody ReviewUpdateRequest reviewUpdateRequest
     ) {
-        ReviewUpdateResponse review = reviewExternalService.updateReview(id, authUser.getUserId(), reviewUpdateRequest);
+        ReviewUpdateResponse review = reviewInternalService.updateReview(id, authUser.getUserId(), reviewUpdateRequest);
         return success (
                 review, "리뷰가 수정되었습니다."
         );
@@ -81,7 +81,7 @@ public class ReviewController {
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser
     ) {
-        ReviewDeleteResponse review = reviewExternalService.deleteReview(id, authUser.getUserId());
+        ReviewDeleteResponse review = reviewInternalService.deleteReview(id, authUser.getUserId());
         return success (
                 review, "리뷰가 삭제되었습니다."
         );
@@ -95,7 +95,7 @@ public class ReviewController {
             @RequestBody ReviewUpdateStatusRequest request,
             @AuthenticationPrincipal AuthUser authUser // 관리자 인증정보
     ) {
-        ReviewStatusResponse response = reviewExternalService.updateReviewStatus(
+        ReviewStatusResponse response = reviewInternalService.updateReviewStatus(
                 id, request, authUser.getUserId() // ExternalService에서 관리자 권한 확인
         );
 
