@@ -5,8 +5,6 @@ import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
 import com.dentallink.domain.pointLog.dto.response.PointLogResponse;
 import com.dentallink.domain.pointLog.repository.PointLogRepository;
-import com.dentallink.domain.user.entity.User;
-import com.dentallink.domain.user.service.UserExternalService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
