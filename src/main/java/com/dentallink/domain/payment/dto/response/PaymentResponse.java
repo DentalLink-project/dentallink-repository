@@ -1,14 +1,17 @@
 package com.dentallink.domain.payment.dto.response;
 
 import com.dentallink.domain.payment.entity.Payment;
-import com.dentallink.domain.payment.enums.PaymentMethod;
 import com.dentallink.domain.payment.enums.PaymentStatus;
+import java.time.LocalDateTime;
 
 public record PaymentResponse(
         Long paymentId,
         Long amount,
         PaymentStatus paymentStatus,
-        PaymentMethod paymentMethod,
+        String orderId,
+        String paymentKey,
+        LocalDateTime requestedAt,
+        LocalDateTime approvedAt,
         PaymentPointAccountResponse account
 ) {
     public static PaymentResponse from(Payment payment) {
@@ -16,7 +19,10 @@ public record PaymentResponse(
                 payment.getId(),
                 payment.getAmount(),
                 payment.getStatus(),
-                payment.getMethod(),
+                payment.getOrderId(),
+                payment.getPaymentKey(),
+                payment.getRequestedAt(),
+                payment.getApprovedAt(),
                 PaymentPointAccountResponse.from(payment.getPointAccount())
         );
     }
