@@ -8,8 +8,6 @@ import com.dentallink.domain.pointAccount.exception.PointAccountErrorCode;
 import com.dentallink.domain.pointAccount.repository.PointAccountRepository;
 import com.dentallink.domain.pointLog.enums.PointLogType;
 import com.dentallink.domain.pointLog.service.PointLogExternalService;
-import com.dentallink.domain.user.entity.User;
-import com.dentallink.domain.user.service.UserExternalService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,7 +30,7 @@ public class PointAccountInternalService {
     // 관계자가 특정 포인트 계좌에 포인트를 충전하는 메서드
     @Transactional
     public PointAccountDepositResponse depositPointAccount(Long accountId, Long amount){
-        PointAccount account = pointAccountRepository.findById(accountId)
+        PointAccount account = pointAccountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         account.deposit(amount);
         // 로그 생성
@@ -42,7 +40,7 @@ public class PointAccountInternalService {
 
     @Transactional
     public PointAccountWithdrawResponse withdrawPointAccount(Long userId, PointAccountWithdrawRequest request) {
-        PointAccount account = pointAccountRepository.findByUserId(userId)
+        PointAccount account = pointAccountRepository.findByUserIdWithLock(userId)
                 .orElseThrow(() -> new InvalidPointAccountException(PointAccountErrorCode.ACCOUNT_NOT_FOUND));
         account.withdraw(request.amount());
         pointLogExternalService.createLog(account, PointLogType.WITHDRAW, request.amount());
