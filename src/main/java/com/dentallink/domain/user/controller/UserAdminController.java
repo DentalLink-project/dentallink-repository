@@ -58,10 +58,11 @@ public class UserAdminController {
     @GetMapping("/users")
     public ResponseEntity<CommonApiResponse<PageResponse<UserResponse>>> getUsers(
             @Parameter(description = "페이지") @RequestParam(defaultValue = "1") int page,
-            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size
+            @Parameter(description = "페이지 크기") @RequestParam(defaultValue = "10") int size,
+            @Parameter(description = "조회 필터값(권한), 소문자") @RequestParam(defaultValue = "none") String role
     ) {
         return  success(
-                userInternalService.getUsers(page, size),
+                userInternalService.getUsers(page, size, role),
                 "회원 목록이 조회되었습니다."
         );
     }
