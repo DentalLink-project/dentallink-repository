@@ -6,7 +6,8 @@ import com.dentallink.domain.payment.dto.request.PaymentConfirmRequest;
 import com.dentallink.domain.payment.dto.response.PaymentCancelResponse;
 import com.dentallink.domain.payment.dto.response.PaymentReadyResponse;
 import com.dentallink.domain.payment.dto.response.PaymentResponse;
-import com.dentallink.domain.payment.service.PaymentInternalService;
+import com.dentallink.domain.payment.service.PaymentService;
+import com.dentallink.domain.payment.service.PaymentTestService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,9 +26,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
 @Validated
-public class PaymentController {
+public class PaymentController{
 
-    private final PaymentInternalService paymentInternalService;
+    private final PaymentService paymentService;
+    private final PaymentTestService paymentTestService;
 
     // 결제 준비
     @Operation(summary = "결제 준비", description = "결제 요청 정보를 서버에 미리 저장합니다.")
@@ -42,7 +44,7 @@ public class PaymentController {
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody PaymentReadyRequest request
     ) {
-        PaymentReadyResponse response = paymentInternalService.saveReadyPayment(authUser.getUserId(), request);
+        PaymentReadyResponse response = paymentService.saveReadyPayment(authUser.getUserId(), request);
         return CommonApiResponse.created(response, "결제 준비가 완료되었습니다.");
     }
 
@@ -59,7 +61,7 @@ public class PaymentController {
             @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody PaymentConfirmRequest request
     ) {
-        PaymentResponse response = paymentInternalService.confirmPayment(authUser.getUserId(), request);
+        PaymentResponse response = paymentService.confirmPayment(authUser.getUserId(), request);
         return CommonApiResponse.created(response, "포인트 충전이 완료되었습니다.");
     }
 
@@ -76,7 +78,7 @@ public class PaymentController {
             @AuthenticationPrincipal AuthUser authUser,
             @PathVariable String orderId
     ) {
-        PaymentCancelResponse response = paymentInternalService.cancelReadyPayment(authUser.getUserId(), orderId);
+        PaymentCancelResponse response = paymentService.cancelReadyPayment(authUser.getUserId(), orderId);
         return CommonApiResponse.success(response, "결제가 정상적으로 취소되었습니다.");
     }
 
@@ -97,7 +99,7 @@ public class PaymentController {
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody PaymentReadyRequest request
     ) {
-        PaymentReadyResponse response = paymentInternalService.testReadyPayment(authUser.getUserId(), request);
+        PaymentReadyResponse response = paymentTestService.testReadyPayment(authUser.getUserId(), request);
         return CommonApiResponse.created(response, "결제 준비가 완료되었습니다.");
     }
 
@@ -113,7 +115,7 @@ public class PaymentController {
     public ResponseEntity<CommonApiResponse<PaymentCancelResponse>> testCancelPayment(
             @PathVariable String orderId
     ) {
-        PaymentCancelResponse response = paymentInternalService.testCancelPayment(orderId);
+        PaymentCancelResponse response = paymentTestService.testCancelPayment(orderId);
         return CommonApiResponse.created(response, "결제가 성공적으로 취소되었습니다.");
     }
 
@@ -131,7 +133,7 @@ public class PaymentController {
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody PaymentConfirmRequest request
     ) {
-        PaymentResponse response = paymentInternalService.testConfirmPayment(authUser.getUserId(), request);
+        PaymentResponse response = paymentTestService.testConfirmPayment(authUser.getUserId(), request);
         return CommonApiResponse.created(response, "포인트 충전이 완료되었습니다.");
     }
 }
