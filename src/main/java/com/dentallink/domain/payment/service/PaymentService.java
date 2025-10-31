@@ -28,7 +28,7 @@ import java.nio.charset.StandardCharsets;
 
 @Service
 @RequiredArgsConstructor
-public class PaymentService {
+public class PaymentService{
 
     private final PaymentRepository paymentRepository;
     private final PointAccountExternalService pointAccountExternalService;
