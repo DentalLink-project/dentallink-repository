@@ -31,4 +31,17 @@ public class HospitalAvailableTime extends BaseEntity {
 
     private LocalDateTime reservedAt;
 
+    public HospitalAvailableTime (
+            Hospital hospital,
+            LocalDate date,
+            LocalTime startTime,
+            LocalTime endTime
+    ) {
+        this.hospital = hospital;
+        this.date = date;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.isReserved = false;
+    }
+
 }

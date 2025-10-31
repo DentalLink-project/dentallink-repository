@@ -8,8 +8,10 @@ import com.dentallink.domain.hospital.dto.request.HospitalScheduleUpdateRequest;
 import com.dentallink.domain.hospital.dto.request.HospitalUpdateRequest;
 import com.dentallink.domain.hospital.dto.response.*;
 import com.dentallink.domain.hospital.entity.Hospital;
+import com.dentallink.domain.hospital.entity.HospitalAvailableTime;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import com.dentallink.domain.hospital.exception.HospitalErrorCode;
+import com.dentallink.domain.hospital.repository.HospitalAvailableTimeRepository;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import lombok.AccessLevel;
@@ -17,9 +19,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -27,6 +34,7 @@ import java.util.Optional;
 public class HospitalInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
+    private final HospitalAvailableTimeRepository hospitalAvailableTimeRepository;
 
 
     // -------------------- 공용 조회 메서드 --------------------
@@ -132,8 +140,9 @@ public class HospitalInternalService {
         Hospital hospital = getHospitalById(hospitalId);
         checkHospitalOwner(hospital, userId);
 
-        findScheduleByHospitalId(hospitalId)
-                .ifPresent(existing -> { throw new GlobalException(HospitalErrorCode.DUPLICATE_SCHEDULE); });
+        if (findScheduleByHospitalId(hospitalId).isPresent()) {
+            throw new GlobalException(HospitalErrorCode.DUPLICATE_SCHEDULE);
+        }
 
         HospitalSchedule schedule = new HospitalSchedule(
                 req.openTime(),
@@ -182,4 +191,59 @@ public class HospitalInternalService {
             throw new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER);
         }
     }
+
+    // -------------------- 병원 예약 시간 CRUD --------------------
+
+    // 자정마다 다음날 예약 가능 시간 자동 생성
+    @Scheduled(cron = "0 0 0 * * *")
+    @Transactional
+    public void updateHospitalAvailableTimes() {
+        LocalDate targetDate = LocalDate.now().plusDays(1);
+        List<Hospital> hospitals = hospitalRepository.findAll();
+
+        for (Hospital hospital : hospitals) {
+            var scheduleOpt = hospitalScheduleRepository.findByHospitalId(hospital.getId());
+            if (scheduleOpt.isEmpty()) {
+                continue;
+            }
+
+            var schedule = scheduleOpt.get();
+            hospitalAvailableTimes(hospital, schedule, targetDate);
+        }
+    }
+
+    // 병원 예약 가능 시간 자동 계산 로직
+    @Transactional
+    public void hospitalAvailableTimes (Hospital hospital, HospitalSchedule schedule, LocalDate date) {
+        LocalTime open = schedule.getOpenTime();
+        LocalTime close = schedule.getCloseTime();
+        LocalTime breakStart = schedule.getBreakStart();
+        LocalTime breakEnd = schedule.getBreakEnd();
+
+        if (open == null || close == null) {
+            throw new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND);
+        }
+
+        List<HospitalAvailableTime> slots = new ArrayList<>();
+
+        LocalTime time = open;
+
+        while (time.plusMinutes(30).isBefore(close) || time.plusMinutes(30).equals(close)) {
+            boolean isDuringBreak = !time.isBefore(breakStart) && time.isBefore(breakEnd);
+
+            if (!isDuringBreak) {
+                LocalTime end = time.plusMinutes(30);
+                slots.add(new HospitalAvailableTime(hospital, date, time, end));
+            }
+
+            time = time.plusMinutes(30);
+        }
+
+        hospitalAvailableTimeRepository.saveAll(slots);
+    }
+
+    // TODO: 병원 예약 등록
+
+    // TODO: 병원 예약 취소
+
 }
