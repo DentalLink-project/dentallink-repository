@@ -82,7 +82,7 @@ public class ReviewInternalService {
 
     // 리뷰 상태 변경
     @Transactional
-    public ReviewStatusResponse updateReviewStatus(Long reviewId, ReviewUpdateStatusRequest request, Long hospitalAdminId) {
+    public ReviewStatusResponse updateReviewStatus(Long reviewId, ReviewUpdateStatusRequest request) {
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new GlobalException(ReviewErrorCode.REVIEW_NOT_FOUND));
 

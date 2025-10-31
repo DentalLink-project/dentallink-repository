@@ -95,12 +95,9 @@ public class ReviewController {
             @RequestBody ReviewUpdateStatusRequest request,
             @AuthenticationPrincipal AuthUser authUser // 관리자 인증정보
     ) {
-        ReviewStatusResponse response = reviewInternalService.updateReviewStatus(
-                id, request, authUser.getUserId() // ExternalService에서 관리자 권한 확인
-        );
-
         return success (
-                response, "리뷰 상태가 변경되었습니다."
+                reviewInternalService.updateReviewStatus(id, request),
+                "리뷰 상태가 변경되었습니다."
         );
     }
 }
