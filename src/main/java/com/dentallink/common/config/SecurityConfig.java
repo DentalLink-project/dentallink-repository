@@ -46,6 +46,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/hospitals/**").permitAll() //    병원조회는 누구나
                         .requestMatchers("/api/reservations/available-slots").permitAll() //예약 가능시간조회
                         .requestMatchers("/api/admin").permitAll() // 테스트용 어드민 생성 기능입니다.
+                        .requestMatchers(
+                                "/payment.html",
+                                "/success.html",
+                                "/fail.html"
+                        ).permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 처리
         );
 
