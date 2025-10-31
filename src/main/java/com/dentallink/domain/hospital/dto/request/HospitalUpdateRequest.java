@@ -8,7 +8,7 @@ public record HospitalUpdateRequest (
     String hospitalAddress,
     Boolean hospitalIsOpen,
     String doctorName,
-    Integer reservationCost,
+    Long reservationCost,
     LocalTime openTime,
     LocalTime closeTime,
     LocalTime breakStart,
