@@ -14,6 +14,7 @@ import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class HospitalInternalService {
@@ -206,7 +208,12 @@ public class HospitalInternalService {
             }
 
             var schedule = scheduleOpt.get();
-            hospitalAvailableTimes(hospital, schedule, targetDate);
+            try {
+                hospitalAvailableTimes(hospital, schedule, targetDate);
+            } catch (GlobalException e){
+                log.warn("{}: 해당 병원에는 open 또는 close 시간이 없어 생성할 수 없습니다.", e.getMessage());
+            }
+
         }
     }
 
