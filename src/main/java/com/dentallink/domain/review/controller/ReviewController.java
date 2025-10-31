@@ -92,8 +92,7 @@ public class ReviewController {
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<ApiResponse<ReviewStatusResponse>> updateReviewStatus(
             @PathVariable Long id,
-            @RequestBody ReviewUpdateStatusRequest request,
-            @AuthenticationPrincipal AuthUser authUser // 관리자 인증정보
+            @RequestBody ReviewUpdateStatusRequest request
     ) {
         return success (
                 reviewInternalService.updateReviewStatus(id, request),
