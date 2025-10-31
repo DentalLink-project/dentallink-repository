@@ -77,7 +77,7 @@ public class PaymentController {
             @PathVariable String orderId
     ) {
         PaymentCancelResponse response = paymentInternalService.cancelReadyPayment(authUser.getUserId(), orderId);
-        return CommonApiResponse.created(response, "결제가 정상적으로 취소되었습니다.");
+        return CommonApiResponse.success(response, "결제가 정상적으로 취소되었습니다.");
     }
 
 
