@@ -41,6 +41,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests((authorizeHttpRequests) ->
                 authorizeHttpRequests
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()//Swagger 접근허용
+                        .requestMatchers("/ws/**").permitAll() //챗봇 접근허용
                         .requestMatchers("/api/users/signup", "/api/auth/login").permitAll() // 회원가입/로그인만 허용
                         .requestMatchers("/api/hospitals/**").permitAll() //    병원조회는 누구나
                         .requestMatchers("/api/reservations/available-slots").permitAll() //예약 가능시간조회
