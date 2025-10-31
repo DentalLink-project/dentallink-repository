@@ -38,6 +38,25 @@ jwt:
   secret:
     key: ${secret.key}
 
+gemini:
+  api-key: ${gemini.api.key}          # Parameter Store에서 로드
+  model-name: gemini-2.0-flash        # gemini.modelName
+  max-tokens: 2048                     # gemini.maxTokens
+  temperature: 0.7                     # gemini.temperature (창의성 0.0~1.0)
+  top-p: 0.95                          # gemini.topP
+  top-k: 40                            # gemini.topK
+  timeout: 30                          # gemini.timeout (API 타임아웃 초)
+
+  # Rate Limit 설정 (Gemini 무료 티어)
+  rate-limit:
+    per-minute: 15                     # 전체 분당 최대 15회
+    per-user-per-minute: 10            # 사용자당 분당 10회
+    per-day: 1500                      # 일일 최대 1500회
+
+# 챗봇 기능 활성화
+chatbot:
+  enabled: true
+
 server:
   error:
     include-message: always

@@ -59,3 +59,5 @@ src/main/java/com/dentallink/common/config/WebConfig.java
 .env.*.local
 
 src/main/resources/application-local.yml
+
+TROUBLESHOOTING.md

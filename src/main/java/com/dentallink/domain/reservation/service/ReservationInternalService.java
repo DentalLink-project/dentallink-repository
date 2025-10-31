@@ -67,7 +67,7 @@ public class ReservationInternalService {
 
     //내 예약 목록 조회
     public Page<ReservationResponse> getMyReservations(Long userId, Pageable pageable) {
-        Page<Reservation> reservations = reservationRepository.findByUserId(userId, pageable);
+        Page<Reservation> reservations = reservationRepository.findByUserIdWithFetchJoin(userId, pageable);
         return reservations.map(ReservationResponse::from);
     }
 
@@ -82,7 +82,7 @@ public class ReservationInternalService {
         // 병원 소유권 확인 (@PreAuthorize로 역할은 체크됨)
         validateHospitalOwnership(hospitalId, hospitalAdminId);
 
-        Page<Reservation> reservations = reservationRepository.findByHospitalIdWithPaging(hospitalId, pageable);
+        Page<Reservation> reservations = reservationRepository.findByHospitalIdWithFetchJoin(hospitalId, pageable);
         return reservations.map(ReservationResponse::from);
     }
 
@@ -110,10 +110,7 @@ public class ReservationInternalService {
                 reservation.reject();
 
                 // 포인트 환불 (환불 가능한 경우만)
-                if (refundablePoints > 0) {
-                    PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(reservation.getUser().getId());
-                    pointAccountExternalService.refundPointAccount(pointAccount.getId(), refundablePoints);
-                }
+                refundPoints(reservation.getUser().getId(), refundablePoints);
             }
             case COMPLETED -> reservation.complete();
             default -> throw new GlobalException(ReservationErrorCode.INVALID_STATUS_TRANSITION);
@@ -143,10 +140,7 @@ public class ReservationInternalService {
         reservation.cancel();
 
         // 포인트 환불 (환불 가능한 경우만)
-        if (refundablePoints > 0) {
-            PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(reservation.getUser().getId());
-            pointAccountExternalService.refundPointAccount(pointAccount.getId(), refundablePoints);
-        }
+        refundPoints(reservation.getUser().getId(), refundablePoints);
     }
 
     /**
@@ -322,6 +316,7 @@ public class ReservationInternalService {
 
     /**
      * 병원 소유권 검증
+     *
      * @PreAuthorize로 역할은 이미 체크되었으므로, 비즈니스 로직만 체크
      */
     private void validateHospitalOwnership(Long hospitalId, Long userId) {
@@ -384,5 +379,16 @@ public class ReservationInternalService {
         if (reservation.getAppointmentDate().isBefore(LocalDateTime.now())) {
             throw new GlobalException(ReservationErrorCode.PAST_APPOINTMENT_TIME);
         }
+    }
+
+    /**
+     * 포인트 환불 (중복 제거)
+     */
+    private void refundPoints(Long userId, Long points) {
+        if (points <= 0) {
+            return;
+        }
+        PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(userId);
+        pointAccountExternalService.refundPointAccount(pointAccount.getId(), points);
     }
 }
