@@ -21,7 +21,7 @@ public class Hospital extends BaseEntity {
     private String hospitalAddress;
     private Boolean hospitalIsOpen;
     private String doctorName;
-    private Integer reservationCost;
+    private Long reservationCost;
 
     @OneToOne(mappedBy = "hospital", cascade = CascadeType.ALL, orphanRemoval = true)
     private HospitalSchedule hospitalSchedule;
@@ -33,7 +33,7 @@ public class Hospital extends BaseEntity {
             String hospitalAddress,
             Boolean hospitalIsOpen,
             String doctorName,
-            Integer reservationCost
+            Long reservationCost
     ) {
         this.userId = userId;
         this.hospitalName = hospitalName;
@@ -54,7 +54,7 @@ public class Hospital extends BaseEntity {
             String address,
             Boolean isOpen,
             String doctorName,
-            Integer reservationCost
+            Long reservationCost
     ) {
         this.hospitalName = name;
         this.hospitalDescription = description;
