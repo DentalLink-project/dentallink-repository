@@ -255,8 +255,6 @@ public class HospitalInternalService {
     // 병원 예약 가능 시간 조회
     @Transactional(readOnly = true)
     public List<HospitalReservationTimeResponse> getAvailableTimes(Long hospitalId, LocalDate date) {
-        Hospital hospital = getHospitalById(hospitalId);
-
         LocalDate targetDate = date != null ? date : LocalDate.now();
 
         List<HospitalReservationTime> times = hospitalReservationTimeRepository
@@ -303,6 +301,10 @@ public class HospitalInternalService {
         HospitalReservationTime availableTime = hospitalReservationTimeRepository
                 .findById(reservationId)
                 .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND));
+
+        if (!availableTime.getHospital().getId().equals(hospitalId)) {
+            throw new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND);
+        }
 
         if (!availableTime.getIsReserved()) {
             throw new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND);
