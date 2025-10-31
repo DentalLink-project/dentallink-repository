@@ -11,7 +11,7 @@ import com.dentallink.domain.payment.exception.InvalidPaymentException;
 import com.dentallink.domain.payment.exception.PaymentErrorCode;
 import com.dentallink.domain.payment.repository.PaymentRepository;
 import com.dentallink.domain.pointAccount.entity.PointAccount;
-import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
+import com.dentallink.domain.pointAccount.service.PointAccountExternalService ;
 import com.dentallink.domain.pointLog.enums.PointLogType;
 import com.dentallink.domain.pointLog.service.PointLogExternalService;
 import lombok.RequiredArgsConstructor;

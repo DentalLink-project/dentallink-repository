@@ -32,7 +32,7 @@ public class PaymentController {
     private final PaymentTestService paymentTestService;
 
     // 결제 준비
-    @Operation(summary = "결제 준비", description = "결제 요청 정보를 서버에 미리 저장합니다.")
+    @Operation(summary = "결제 준비", description = "결제 요청 정보를 서버에 미리 저장합니다." )
     @ApiResponses({
             @ApiResponse(responseCode = "201", description = "결제 준비 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청 (요청 데이터 오류)"),
