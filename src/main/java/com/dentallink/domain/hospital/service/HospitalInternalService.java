@@ -227,7 +227,8 @@ public class HospitalInternalService {
         LocalTime time = open;
 
         while (time.plusMinutes(30).isBefore(close) || time.plusMinutes(30).equals(close)) {
-            boolean isDuringBreak = !time.isBefore(breakStart) && time.isBefore(breakEnd);
+            boolean isDuringBreak = breakStart != null && breakEnd != null &&
+                    !time.isBefore(breakStart) && time.isBefore(breakEnd);
 
             if (!isDuringBreak) {
                 LocalTime end = time.plusMinutes(30);
@@ -260,14 +261,10 @@ public class HospitalInternalService {
         List<HospitalReservationTime> times = hospitalReservationTimeRepository
                 .findByHospital_IdAndDateOrderByStartTime(hospitalId, targetDate);
 
-        List<HospitalReservationTimeResponse> availableTimes = new ArrayList<>();
-        for (HospitalReservationTime t : times) {
-            if (!t.isDeleted() && !Boolean.TRUE.equals(t.getIsReserved())) {
-                availableTimes.add(HospitalReservationTimeResponse.of(t.getId(), t.getStartTime(), t.getEndTime()));
-            }
-        }
-
-        return availableTimes;
+        return times.stream()
+                .filter(t -> !t.isDeleted() && !Boolean.TRUE.equals(t.getIsReserved()))
+                .map(t -> HospitalReservationTimeResponse.of(t.getId(), t.getStartTime(), t.getEndTime()))
+                .collect(java.util.stream.Collectors.toList());
     }
 
     // 병원 예약 등록
@@ -281,7 +278,7 @@ public class HospitalInternalService {
         }
 
         if (availableTime.getIsReserved()) {
-            throw new GlobalException(HospitalErrorCode.DUPLICATE_SCHEDULE); // 이미 예약됨
+            throw new GlobalException(HospitalErrorCode.ALREADY_RESERVED); // 이미 예약됨
         }
 
         availableTime.reserve(userId);
@@ -307,11 +304,11 @@ public class HospitalInternalService {
         }
 
         if (!availableTime.getIsReserved()) {
-            throw new GlobalException(HospitalErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND);
+            throw new GlobalException(HospitalErrorCode.RESERVATION_NOT_FOUND);
         }
 
         if (!availableTime.getUserId().equals(userId)) {
-            throw new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER); // 본인 예약 아님
+            throw new GlobalException(HospitalErrorCode.NOT_RESERVATION_OWNER); // 본인 예약 아님
         }
 
         availableTime.cancel();

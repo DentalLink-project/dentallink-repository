@@ -193,6 +193,7 @@ public class HospitalController {
 
     // 병원 예약 가능 시간 자동 생성 테스트용
     @PostMapping("/{hospitalId}/available-times")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<String> createAvailableTimesManually(
             @PathVariable Long hospitalId,
             @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
