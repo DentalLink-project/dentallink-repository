@@ -1,9 +1,15 @@
 package com.dentallink.domain.chatbot.controller;
 
+import com.dentallink.common.exception.GlobalException;
 import com.dentallink.common.security.JwtAuthenticationToken;
 import com.dentallink.domain.chatbot.dto.ChatRequest;
 import com.dentallink.domain.chatbot.dto.ChatResponse;
+import com.dentallink.domain.chatbot.entity.ChatMessage;
+import com.dentallink.domain.chatbot.entity.ChatSession;
 import com.dentallink.domain.chatbot.enums.MessageType;
+import com.dentallink.domain.chatbot.exception.ChatbotErrorCode;
+import com.dentallink.domain.chatbot.repository.ChatMessageRepository;
+import com.dentallink.domain.chatbot.repository.ChatSessionRepository;
 import com.dentallink.domain.chatbot.service.ChatbotService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import jakarta.validation.Valid;
@@ -22,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * 챗봇 WebSocket Controller
@@ -35,6 +42,8 @@ public class ChatbotWebSocketController {
 
     private final ChatbotService chatbotService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final ChatSessionRepository chatSessionRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
     // ===== WebSocket 메시지 핸들러 =====
 
@@ -55,8 +64,27 @@ public class ChatbotWebSocketController {
                 userId, request.sessionId(), request.content());
 
         try {
-            ChatResponse response = chatbotService.processMessage(request, userId);
+            // 상담원 모드 확인
+            if (request.sessionId() != null) {
+                ChatSession session = chatSessionRepository.findById(request.sessionId())
+                        .orElse(null);
+                if (session != null && session.isConsultantMode()) {
+                    // 사용자 메시지 저장
+                    ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
+                    chatMessageRepository.save(userMessage);
 
+                    // ✅ 수정: /queue/reply로 통일
+                    messagingTemplate.convertAndSendToUser(
+                            session.getConsultant().getId().toString(),
+                            "/queue/reply",
+                            ChatResponse.from(userMessage)
+                    );
+                    return ChatResponse.from(userMessage);
+                }
+            }
+
+            // AI 처리
+            ChatResponse response = chatbotService.processMessage(request, userId);
             return response;
 
         } catch (Exception e) {
@@ -114,7 +142,7 @@ public class ChatbotWebSocketController {
         return new TypingEvent(sessionId, userId, true);
     }
 
-    // ===== REST API (Postman 테스트용) ===== ⭐
+    // ===== REST API (Postman 테스트용) =====
 
     @PostMapping("/api/chatbot/messages")
     @ResponseBody
@@ -166,7 +194,7 @@ public class ChatbotWebSocketController {
     // ===== Private Helper Methods =====
 
     /**
-     *  개선: 헤더에서 사용자 ID 추출 (타입 체크 강화)
+     * 개선: 헤더에서 사용자 ID 추출 (타입 체크 강화)
      */
     private Long getUserIdFromHeader(SimpMessageHeaderAccessor headerAccessor) {
         Principal principal = headerAccessor.getUser();
