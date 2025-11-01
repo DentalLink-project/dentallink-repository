@@ -2,7 +2,6 @@ package com.dentallink.domain.search.service;
 
 import com.dentallink.common.response.PageResponse;
 import com.dentallink.domain.hospital.entity.Hospital;
-import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import com.dentallink.domain.hospital.service.HospitalExternalService;
 import com.dentallink.domain.search.dto.response.SearchHospitalResponse;
 import lombok.RequiredArgsConstructor;
