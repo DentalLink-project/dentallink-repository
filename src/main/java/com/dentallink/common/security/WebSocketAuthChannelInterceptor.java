@@ -1,6 +1,6 @@
 package com.dentallink.common.security;
 
-import com.dentallink.common.utility.JwtUtil;
+import com.dentallink.common.utility.JwtTokenProvider;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import com.dentallink.domain.user.enums.UserRole;
 import io.jsonwebtoken.Claims;
@@ -21,7 +21,7 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
 
-    private final JwtUtil jwtUtil;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -31,20 +31,20 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
 
             // 1. Authorization 헤더에서 토큰 추출
-            String token = accessor.getFirstNativeHeader(JwtUtil.AUTHORIZATION_HEADER);
+            String token = accessor.getFirstNativeHeader(JwtTokenProvider.AUTHORIZATION_HEADER);
 
-            if (StringUtils.hasText(token) && token.startsWith(JwtUtil.BEARER_PREFIX)) {
+            if (StringUtils.hasText(token) && token.startsWith(JwtTokenProvider.BEARER_PREFIX)) {
 
-                String tokenValue = token.substring(JwtUtil.BEARER_PREFIX.length());
+                String tokenValue = token.substring(JwtTokenProvider.BEARER_PREFIX.length());
 
                 try {
                     // 2. JWT 유효성 검증 및 Claims 추출 (JwtUtil 재사용)
-                    Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
+                    Claims info = jwtTokenProvider.getUserInfoFromToken(tokenValue);
 
                     // 3. AuthUser 및 JwtAuthenticationToken 생성
                     Long userId = Long.valueOf(info.getSubject());
                     String email = info.get("email", String.class);
-                    UserRole role = UserRole.valueOf(info.get(JwtUtil.AUTHORIZATION_KEY, String.class));
+                    UserRole role = UserRole.valueOf(info.get(JwtTokenProvider.AUTHORIZATION_KEY, String.class));
 
                     AuthUser authUser = new AuthUser(userId, email, role);
                     Authentication authentication = new JwtAuthenticationToken(authUser);
