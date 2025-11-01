@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 public class SearchServiceImpl implements SearchService {
 
     private final HospitalExternalService hospitalExternalService;
-    private final HospitalScheduleRepository hospitalScheduleRepository;
 
     @Override
     public PageResponse<SearchHospitalResponse> getSearchHospital(int page, int size, String keyword) {
