@@ -9,5 +9,5 @@ public interface AuthService {
     String passwordEncode(String password);
     JwtToken login(LoginRequest request);
     void logout(String accessToken, String refreshToken);
-    JwtToken reissueAccessToken(String refreshToken);
+    String reissueAccessToken(String refreshToken);
 }

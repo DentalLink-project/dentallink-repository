@@ -54,8 +54,7 @@ public class AuthController {
             @RequestHeader(JwtTokenProvider.REFRESH_TOKEN_HEADER) String refreshToken,
             HttpServletResponse response
     ) {
-        response.setHeader(JwtTokenProvider.AUTHORIZATION_HEADER,
-                authService.reissueAccessToken(refreshToken).getAccessToken());
+        response.setHeader(JwtTokenProvider.AUTHORIZATION_HEADER, authService.reissueAccessToken(refreshToken));
         return success(
                 null,
                 "토큰이 재발급되었습니다."
