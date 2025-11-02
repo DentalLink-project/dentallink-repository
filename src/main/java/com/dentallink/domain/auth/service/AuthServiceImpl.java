@@ -55,10 +55,8 @@ public class AuthServiceImpl implements AuthService{
         return JwtToken.of(token, refreshToken);
     }
 
-    public JwtToken reissueAccessToken(String refreshToken) {
-        return JwtToken.of(
-                refreshTokenService.reissueAccessToken(refreshToken),
-                refreshToken);
+    public String reissueAccessToken(String refreshToken) {
+        return refreshTokenService.reissueAccessToken(refreshToken);
     }
 
     @Override
