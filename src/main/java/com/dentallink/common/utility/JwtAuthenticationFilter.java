@@ -31,7 +31,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtUtil jwtUtil;
+    private final JwtTokenProvider jwtTokenProvider;
     private final ObjectMapper objectMapper;
     private final StringRedisTemplate redisTemplate;
 
@@ -41,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain)
             throws ServletException, IOException {
-        String tokenValue = jwtUtil.getJwtFromHeader(request);
+        String tokenValue = jwtTokenProvider.getJwtFromHeader(request);
 
         if (tokenValue != null) {
             // 블랙리스트 확인
@@ -53,7 +53,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             try {
-                Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
+                Claims info = jwtTokenProvider.getUserInfoFromToken(tokenValue);
                 setAuthentication(info);
             } catch (SecurityException | MalformedJwtException e) {
                 log.error("유효하지 않은 JWT 서명입니다.", e);
@@ -82,7 +82,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         Long userId = Long.valueOf(claims.getSubject());
         String email = claims.get("email", String.class);
-        UserRole role = UserRole.valueOf(claims.get(JwtUtil.AUTHORIZATION_KEY, String.class));
+        UserRole role = UserRole.valueOf(claims.get(JwtTokenProvider.AUTHORIZATION_KEY, String.class));
         AuthUser authUser = new AuthUser(userId, email, role);
         Authentication authentication = new JwtAuthenticationToken(authUser);
         context.setAuthentication(authentication);

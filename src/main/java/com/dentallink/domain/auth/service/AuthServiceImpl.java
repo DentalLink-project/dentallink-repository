@@ -1,9 +1,9 @@
 package com.dentallink.domain.auth.service;
 
 import com.dentallink.common.exception.GlobalException;
-import com.dentallink.common.utility.JwtUtil;
+import com.dentallink.common.utility.JwtTokenProvider;
 import com.dentallink.domain.auth.dto.request.LoginRequest;
-import com.dentallink.domain.auth.dto.response.TokenResponse;
+import com.dentallink.domain.auth.dto.response.JwtToken;
 import com.dentallink.domain.auth.exception.AuthErrorCode;
 import com.dentallink.domain.user.entity.User;
 import com.dentallink.domain.user.service.UserExternalService;
@@ -25,10 +25,11 @@ import java.util.concurrent.TimeUnit;
 @Transactional
 public class AuthServiceImpl implements AuthService{
 
-    private final JwtUtil jwtUtil;
+    private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final StringRedisTemplate redisTemplate;
     private final UserExternalService userExternalService;
+    private final RefreshTokenService  refreshTokenService;
 
     // 비밀번호를 확인하는 메서드입니다.
     @Override
@@ -43,19 +44,30 @@ public class AuthServiceImpl implements AuthService{
     }
 
     @Override
-    public TokenResponse login(LoginRequest request) {
+    public JwtToken login(LoginRequest request) {
+
         User user = userExternalService.getUserByEmail(request.email());
         passwordCheck(request.password(), user.getId());
-        String token = jwtUtil.createToken(user.getId(), user.getEmail(), user.getUserRole());
-        return TokenResponse.of(token);
+
+        String token = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getUserRole());
+        String refreshToken = refreshTokenService.createRefreshToken(user.getId());
+
+        return JwtToken.of(token, refreshToken);
+    }
+
+    public String reissueAccessToken(String refreshToken) {
+        return refreshTokenService.reissueAccessToken(refreshToken);
     }
 
     @Override
-    public void logout(String accessToken) {
+    public void logout(String accessToken, String refreshToken) {
         try {
-            Claims claims = jwtUtil.getUserInfoFromToken(accessToken);
+            Claims claimRefreshToken = jwtTokenProvider.getUserInfoFromToken(refreshToken);
+            // refreshToken 먼저 삭제
+            refreshTokenService.deleteRefreshToken(Long.parseLong(claimRefreshToken.getSubject()));
 
-            Date expiration = claims.getExpiration();
+            Claims claimAccessToken = jwtTokenProvider.getUserInfoFromToken(accessToken);
+            Date expiration = claimAccessToken.getExpiration();
             long now = new Date().getTime();
             long remainingTime = expiration.getTime() - now;
 
@@ -66,4 +78,5 @@ public class AuthServiceImpl implements AuthService{
             // 만료되었을 경우, 더이상의 작업은 필요하지 않습니다.
         }
     }
+
 }
