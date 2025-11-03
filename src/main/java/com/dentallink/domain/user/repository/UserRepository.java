@@ -1,7 +1,7 @@
 package com.dentallink.domain.user.repository;
 
-import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.entity.User;
+import com.dentallink.domain.user.enums.UserRole;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,4 +15,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
 
     Page<User> findAllByDeletedFalse(Pageable pageable);
+    Page<User> findAllByUserRoleAndDeletedFalse(Pageable pageable, UserRole role);
 }
