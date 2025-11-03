@@ -60,4 +60,3 @@ src/main/java/com/dentallink/common/config/WebConfig.java
 
 src/main/resources/application-local.yml
 
-TROUBLESHOOTING.md
