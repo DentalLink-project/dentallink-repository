@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -35,7 +34,6 @@ public class PaymentTestController {
     })
 
     @PostMapping("/ready")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonApiResponse<PaymentReadyResponse>> testReadyPayment(
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody PaymentReadyRequest request
@@ -52,7 +50,6 @@ public class PaymentTestController {
             @ApiResponse(responseCode = "400", description = "취소할 수 없는 결제 상태입니다.")
     })
     @PostMapping("/cancel/{orderId}")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonApiResponse<PaymentCancelResponse>> testCancelPayment(
             @PathVariable String orderId
     ) {
@@ -67,7 +64,6 @@ public class PaymentTestController {
             @ApiResponse(responseCode = "400", description = "결제 승인 중 오류 발생")
     })
     @PostMapping("/approve")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonApiResponse<PaymentResponse>> testConfirmPayment(
             @AuthenticationPrincipal AuthUser authUser,
             @RequestBody PaymentConfirmRequest request
