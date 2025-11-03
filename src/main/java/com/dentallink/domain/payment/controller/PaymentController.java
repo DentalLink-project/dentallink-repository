@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/payments")
 @RequiredArgsConstructor
 @Validated
-public class PaymentController{
+public class PaymentController {
 
     private final PaymentService paymentService;
 
