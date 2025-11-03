@@ -31,7 +31,7 @@ import java.nio.charset.StandardCharsets;
 public class PaymentService{
 
     private final PaymentRepository paymentRepository;
-    private final PointAccountExternalService pointAccountExternalService;
+    private final PointAccountExternalService pointAccountExternalService ;
     private final PointLogExternalService pointLogExternalService;
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
