@@ -39,7 +39,6 @@ public class PaymentTestService{
 
         Payment payment = Payment.create(account, request.amount(), request.orderId());
         Payment saved = paymentRepository.save(payment);
-        System.out.println("결제 준비 완료: " + saved.getOrderId());
         return PaymentReadyResponse.from(saved);
     }
 
@@ -52,7 +51,6 @@ public class PaymentTestService{
             throw new InvalidPaymentException(PaymentErrorCode.INVALID_PAYMENT_STATUS);
         }
         payment.markCancelled();
-        System.out.println("결제 취소 완료: " + orderId);
         return PaymentCancelResponse.from(payment);
     }
 
@@ -76,8 +74,6 @@ public class PaymentTestService{
         account.deposit(request.amount());
         payment.markSuccess(request.paymentKey());
         pointLogExternalService.createLog(account, PointLogType.DEPOSIT, request.amount());
-
-        System.out.println("결제 승인 완료: " + request.orderId());
         return PaymentResponse.from(payment);
     }
 }

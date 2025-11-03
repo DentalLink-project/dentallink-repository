@@ -34,7 +34,7 @@ public class Payment extends BaseEntity {
 
     // 결제 수단 (TOSS, CARD, CASH, KAKAO, NAVER 등)
     @Enumerated(EnumType.STRING)
-    @Column(nullable = true) // ✅ Toss 결제 시 초기에는 null 가능
+    @Column(nullable = true) // Toss 결제 시 초기에는 null 가능
     private PaymentMethod method;
 
     // 주문
