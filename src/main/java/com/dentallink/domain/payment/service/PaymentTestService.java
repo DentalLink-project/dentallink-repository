@@ -21,7 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
-public class PaymentTestService {
+public class PaymentTestService{
 
     private final PointAccountExternalService pointAccountExternalService;
     private final PaymentRepository paymentRepository;
