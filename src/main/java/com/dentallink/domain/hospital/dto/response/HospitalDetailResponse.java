@@ -10,7 +10,7 @@ public record HospitalDetailResponse (
         String hospitalName,
         String hospitalDescription,
         String hospitalAddress,
-        Boolean isOpen,
+        Boolean hospitalIsOpen,
         String doctorName,
         Long reservationCost,
         LocalTime openTime,
@@ -23,11 +23,11 @@ public record HospitalDetailResponse (
             String hospitalName,
             String hospitalDescription,
             String hospitalAddress,
-            Boolean isOpen,
+            Boolean hospitalIsOpen,
             String doctorName,
             Long reservationCost
     ) {
-        this(id, hospitalName, hospitalDescription, hospitalAddress, isOpen, doctorName, reservationCost,
+        this(id, hospitalName, hospitalDescription, hospitalAddress, hospitalIsOpen, doctorName, reservationCost,
                 null, null, null, null) ;
     }
 
