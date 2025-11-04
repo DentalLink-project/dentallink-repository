@@ -23,6 +23,6 @@ public class CustomHealthIndicator implements HealthIndicator {
 
     private boolean checkDatabaseConnection() {
         long count = userRepository.count();
-        return true; // 실제 DB 연결 확인 로직으로 대체
+        return userRepository.count() >= 0; // 실제 DB 연결 확인 로직으로 대체
     }
 }
