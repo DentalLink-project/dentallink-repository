@@ -49,17 +49,17 @@ public class Hospital extends BaseEntity {
     }
 
     public void updateHospital(
-            String name,
-            String description,
-            String address,
-            Boolean isOpen,
+            String hospitalName,
+            String hospitalDescription,
+            String hospitalAddress,
+            Boolean hospitalIsOpen,
             String doctorName,
             Long reservationCost
     ) {
-        this.hospitalName = name;
-        this.hospitalDescription = description;
-        this.hospitalAddress = address;
-        this.hospitalIsOpen = isOpen;
+        this.hospitalName = hospitalName;
+        this.hospitalDescription = hospitalDescription;
+        this.hospitalAddress = hospitalAddress;
+        this.hospitalIsOpen = hospitalIsOpen;
         this.doctorName = doctorName;
         this.reservationCost = reservationCost;
     }

@@ -6,7 +6,7 @@ public record HospitalListResponse (
         Long id,
         String hospitalName,
         String doctorName,
-        Boolean isOpen
+        Boolean hospitalIsOpen
 ) {
     public static HospitalListResponse from(Hospital hospital) {
         return new HospitalListResponse(

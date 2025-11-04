@@ -11,6 +11,8 @@ import com.dentallink.domain.payment.enums.PaymentStatus;
 import com.dentallink.domain.payment.exception.InvalidPaymentException;
 import com.dentallink.domain.payment.exception.PaymentErrorCode;
 import com.dentallink.domain.payment.repository.PaymentRepository;
+import com.dentallink.domain.paymentLog.enums.PaymentLogStatus;
+import com.dentallink.domain.paymentLog.service.PaymentLogExternalService;
 import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
 import com.dentallink.domain.pointLog.enums.PointLogType;
@@ -33,6 +35,7 @@ public class PaymentService{
     private final PaymentRepository paymentRepository;
     private final PointAccountExternalService pointAccountExternalService ;
     private final PointLogExternalService pointLogExternalService;
+    private final PaymentLogExternalService paymentLogExternalService;
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -54,14 +57,13 @@ public class PaymentService{
 
         Payment payment = Payment.create(account, request.amount(), request.orderId());
         Payment saved = paymentRepository.save(payment);
-        System.out.println("결제 준비 완료: " + saved.getOrderId());
+        paymentLogExternalService.createLog(saved, PaymentLogStatus.READY, "결제 준비 완료");
         return PaymentReadyResponse.from(saved);
     }
 
     // [2] 결제 승인 (CONFIRM)
     @Transactional
     public PaymentResponse confirmPayment(Long userId, PaymentConfirmRequest request) {
-        // 유저 포인트 계좌 조회
         PointAccount account = pointAccountExternalService.getPointAccountByUserId(userId);
 
         // 결제 조회
@@ -120,12 +122,12 @@ public class PaymentService{
             account.deposit(request.amount());
             pointLogExternalService.createLog(account, PointLogType.DEPOSIT, request.amount());
 
-            System.out.println("결제 승인 성공: " + paymentKey);
+            paymentLogExternalService.createLog(payment, PaymentLogStatus.SUCCESS, "결제 승인 완료");
             return PaymentResponse.from(payment);
 
         } catch (Exception e) {
             payment.markFailed();
-            System.err.println("결제 승인 중 오류 발생: " + e.getMessage());
+            paymentLogExternalService.createLog(payment, PaymentLogStatus.FAILED, "결제 승인 실패: " + e.getMessage());
             throw new InvalidPaymentException(PaymentErrorCode.PAYMENT_APPROVAL_ERROR);
         }
     }
@@ -141,11 +143,7 @@ public class PaymentService{
         }
 
         payment.markCancelled();
-        System.out.println("결제 취소 완료: " + orderId);
+        paymentLogExternalService.createLog(payment, PaymentLogStatus.CANCELLED, "결제 취소 완료");
         return PaymentCancelResponse.from(payment);
     }
-
-    //--------------------------------- postman 테스트용-------------------
-
-
 }
