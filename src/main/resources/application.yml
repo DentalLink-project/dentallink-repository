@@ -25,8 +25,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
-        show_sql: true
-        format_sql: true
+        show_sql: false
+        format_sql: false
 
   jackson:
     serialization:
@@ -81,3 +81,13 @@ kakao:
 
 toss:
   secret-key: test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6
+
+# 로그 레벨 설정
+logging:
+  level:
+    root: INFO
+    com.dentallink: INFO
+    org.springframework.web: WARN
+    org.hibernate: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
