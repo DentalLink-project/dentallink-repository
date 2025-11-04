@@ -16,7 +16,8 @@ public record HospitalDetailResponse (
         LocalTime openTime,
         LocalTime closeTime,
         LocalTime breakStart,
-        LocalTime breakEnd
+        LocalTime breakEnd,
+        boolean isFavorite
 ) {
     private HospitalDetailResponse ( // 생정자 별도 생성
             Long id,
@@ -25,14 +26,15 @@ public record HospitalDetailResponse (
             String hospitalAddress,
             Boolean hospitalIsOpen,
             String doctorName,
-            Long reservationCost
+            Long reservationCost,
+            boolean isFavorite
     ) {
         this(id, hospitalName, hospitalDescription, hospitalAddress, hospitalIsOpen, doctorName, reservationCost,
-                null, null, null, null) ;
+                null, null, null, null, isFavorite) ;
     }
 
-    public static HospitalDetailResponse of(Hospital hospital, HospitalSchedule schedule) {
-        if(schedule == null) { // (삭제되어서) 일정이 없는 병원을 조회할 시
+    public static HospitalDetailResponse of(Hospital hospital, HospitalSchedule schedule, boolean isFavorite) {
+        if (schedule == null) { // (삭제되어서) 일정이 없는 병원을 조회할 시
             return new HospitalDetailResponse(
                     hospital.getId(),
                     hospital.getHospitalName(),
@@ -40,7 +42,8 @@ public record HospitalDetailResponse (
                     hospital.getHospitalAddress(),
                     hospital.getHospitalIsOpen(),
                     hospital.getDoctorName(),
-                    hospital.getReservationCost()
+                    hospital.getReservationCost(),
+                    isFavorite
             );
         }
 
@@ -55,7 +58,8 @@ public record HospitalDetailResponse (
                 schedule.getOpenTime(),
                 schedule.getCloseTime(),
                 schedule.getBreakStart(),
-                schedule.getBreakEnd()
+                schedule.getBreakEnd(),
+                isFavorite
         );
     }
 }
