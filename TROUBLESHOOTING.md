@@ -9,6 +9,8 @@
 4. [CI/CD 환경 재현성 문제](#4-cicd-환경-재현성-문제)
 5. [WebSocket 양방향 통신 응답 전송 실패](#5-websocket-양방향-통신-응답-전송-실패)
 6. [WebSocket 메시지 라우팅 destination 불일치](#6-websocket-메시지-라우팅-destination-불일치)
+7. [성능 테스트 중 서버 다운 및 접속 불가](#7-성능-테스트-중-서버-다운-및-접속-불가)
+8. [EC2 재시작 후 로그인 500 에러](#8-ec2-재시작-후-로그인-500-에러)
 
 ---
 
@@ -269,8 +271,102 @@ messagingTemplate.convertAndSendToUser(
 - WebSocket destination 설계 시 일관성이 중요
 - 메시지 구분은 destination보다 메시지 타입 필드로 처리하는 것이 더 효율적
 - 클라이언트 복잡도를 최소화하는 것이 유지보수에 유리
+
+---
+## 7. 성능 테스트 중 서버 다운 및 접속 불가
+
+### 문제
+nGrinder 성능 테스트 중 약 35,000개 데이터 생성 시점에서 서버 다운 후 Swagger 접속 불가
+
+### 원인
+**서버 다운:**
+- Vuser 50명으로 지속적인 병원 생성 API 호출
+- 약 35,000개 데이터 생성 시점에서 메모리/CPU 한계 도달
+- OOM(Out of Memory) 또는 과부하로 인한 서버 프로세스 종료
+
+**접속 불가:**
+- EC2 인스턴스 "중지 → 시작" 시 퍼블릭 IP 재할당
+- 기존 IP(`13.124.153.37`) → 새 IP로 변경
+- DNS/고정 IP 없이 퍼블릭 IP에 직접 의존
+
+### 해결
+**즉시 조치:**
+```sql
+-- 1. Foreign Key 제약 임시 해제
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- 2. 테스트 데이터 삭제
+DELETE FROM hospital WHERE hospital_name = '바른치과';
+
+-- 3. Foreign Key 제약 복구
+SET FOREIGN_KEY_CHECKS = 1;
+```
+→ 35,298개 테스트 데이터 삭제 완료
+
+**근본 해결:**
+1. **Elastic IP 할당**
+    - EC2 인스턴스에 고정 IP 부여
+    - 재시작 시에도 IP 유지
+
+2. **성능 테스트 개선**
+    - 적정 부하 수준 설정 (Vuser 10~20)
+    - Duration 제한 (5~10분)
+    - 자동 데이터 정리 스크립트 추가
+
+### 배운 점
+- EC2 "중지 → 시작"과 "재부팅"의 차이
+    - **재부팅**: IP 유지 ✅
+    - **중지 → 시작**: IP 재할당 ❌
+- 성능 테스트 시 테스트 데이터 관리 전략 필수
+- Elastic IP 사용으로 인프라 안정성 확보
+
+---
+
+## 8. EC2 재시작 후 로그인 500 에러
+
+### 문제
+```
+POST /api/auth/login → 500 Internal Server Error
+회원가입: "이미 존재하는 사용자" ✅
+로그인: 500 에러 ❌
+```
+
+### 원인
+Docker 로그 확인 결과 Redis 연결 실패
+```
+Caused by: io.lettuce.core.RedisConnectionException: 
+Unable to connect to redis/<unresolved>:6379
+```
+
+**근본 원인:**
+- EC2 재시작 시 Redis 컨테이너 자동 시작 설정 누락
+- 스프링 부트는 실행되나 Redis 의존성으로 세션/캐시 기능 불가
+- 로그인 시 Redis에 토큰 저장 시도 → 연결 실패 → 500 에러
+
+### 해결
+```bash
+# 1. Redis 컨테이너 시작
+sudo docker start redis
+
+# 2. 스프링 부트 컨테이너 재시작
+sudo docker restart 38214bc22adc
+
+# 3. 자동 시작 설정 (재발 방지)
+sudo docker update --restart=always redis
+sudo docker update --restart=always app
+```
+
+### 배운 점
+- Docker 컨테이너 의존성 관리 중요성
+    - DB 연결 정상 ≠ 전체 시스템 정상
+    - Redis, Message Queue 등 모든 의존 서비스 확인 필요
+- `--restart=always` 플래그로 컨테이너 자동 시작 보장
+- 인프라 구성 요소의 시작 순서 관리 필요
+
+---
+
 ## 📊 성과
 
-- **해결한 문제:** 6개
-- **기술 스택:** Docker Networking, Spring Boot, WebSocket, AWS, Redis, Gemini AI
+- **해결한 문제:** 8개
+- **기술 스택:** Docker Networking, Spring Boot, WebSocket, AWS, Redis, Gemini AI, nGrinder
 - **결과:** 완전 자동화된 배포 파이프라인 구축 및 AI/상담원 하이브리드 실시간 채팅 시스템 구현
