@@ -37,6 +37,8 @@ spring:
 jwt:
   secret:
     key: ${secret.key}
+  access-token-expiration: ${access.token.expiration:3600000}       # AccessToken의 만료 시간은 1시간 입니다.
+  refresh-token-expiration: ${refresh.token.expiration:1209600000}  # RefreshToken의 만료 시간은 2주 입니다.
 
 gemini:
   api-key: ${gemini.api.key}          # Parameter Store에서 로드
@@ -70,3 +72,12 @@ springdoc:
     path: /swagger-ui/index.html
     display-request-duration: true
     tryItOutEnabled: true
+
+kakao:
+  auth:
+    client: f3f8992349ba97fdaa5f775e0b5d7d11
+    redirect: http://localhost:8080/api/auth/login/kakao
+
+
+toss:
+  secret-key: test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6

@@ -47,12 +47,6 @@ public class ReservationInternalService {
     private static final int MAX_RESERVATIONS_PER_TIME_SLOT = 3;
     private static final int TIME_PERIOD = 30;
 
-    // TODO: 향후 개선 - Payment 도메인과 연동하여 실제 결제 금액 기반으로 포인트 차감
-    // TODO: 또는 Hospital 엔티티에 consultationFee 필드 추가하여 병원별 진료비 관리
-    // 현재는 테스트용으로 1000 포인트 고정
-    private static final Long RESERVATION_COST_POINTS = 1000L;
-
-
     //예약 조회 (단건) - 권한 체크 포함
     public ReservationResponse getReservation(Long id, Long userId) {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
@@ -171,7 +165,7 @@ public class ReservationInternalService {
 
         try {
             PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(user.getId());
-            pointAccountExternalService.spendPointAccount(pointAccount.getId(), RESERVATION_COST_POINTS);
+            pointAccountExternalService.spendPointAccount(pointAccount.getId(), hospital.getReservationCost());
         } catch (IllegalStateException e) {
             // PointAccount.spend()에서 발생하는 "잔액이 부족합니다" 예외를 비즈니스 예외로 변환
             throw new GlobalException(ReservationErrorCode.INSUFFICIENT_POINTS);
@@ -181,7 +175,7 @@ public class ReservationInternalService {
                 hospital,
                 user,
                 request.appointmentDate(),
-                RESERVATION_COST_POINTS
+                hospital.getReservationCost()
         );
 
         Reservation savedReservation = reservationRepository.save(reservation);
