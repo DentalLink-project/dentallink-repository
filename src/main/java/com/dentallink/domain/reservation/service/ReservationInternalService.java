@@ -163,7 +163,8 @@ public class ReservationInternalService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
 
-        if (hospital.getReservationCost() > 0) {
+        // 예약비가 있고 0보다 클 때만 포인트 차감
+        if (hospital.getReservationCost() != null && hospital.getReservationCost() > 0) {
             try {
                 PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(user.getId());
                 pointAccountExternalService.spendPointAccount(pointAccount.getId(), hospital.getReservationCost());
