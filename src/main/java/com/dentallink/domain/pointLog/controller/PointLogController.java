@@ -54,6 +54,11 @@ public class PointLogController {
         LocalDateTime start = startDate != null ? startDate : LocalDateTime.MIN;
         LocalDateTime end = endDate != null ? endDate : LocalDateTime.now();
 
+        if (start.isAfter(end)) {
+            throw new IllegalArgumentException("조회 시작일시는 종료일시보다 늦을 수 없습니다.");
+        }
+
+
         PageResponse<PointLogResponse> response =
                 pointLogInternalService.getLogsByUser(userId, page, size, sort, start, end);
 
