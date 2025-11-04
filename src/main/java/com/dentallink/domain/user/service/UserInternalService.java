@@ -120,9 +120,25 @@ public class UserInternalService {
 
     // 유저 전체 조회
     @Transactional(readOnly = true)
-    public PageResponse<UserResponse> getUsers(int page, int size) {
+    public PageResponse<UserResponse> getUsers(int page, int size, String role) {
+
         Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
-        Page<User> users = userRepository.findAllByDeletedFalse(pageable);
+        Page<User> users;
+
+        if (role.equals("none")) {
+            users = userRepository.findAllByDeletedFalse(pageable);
+        } else {
+            try {
+                users = userRepository
+                        .findAllByUserRoleAndDeletedFalse(
+                                pageable,
+                                UserRole.valueOf("ROLE_" + role.toUpperCase())
+                        );
+            } catch (IllegalArgumentException e) {
+                throw new GlobalException(UserErrorCode.INVALID_ROLE);
+            }
+        }
+
         Page<UserResponse> response = users.map(UserResponse::from);
         return PageResponse.fromPage(response);
     }
