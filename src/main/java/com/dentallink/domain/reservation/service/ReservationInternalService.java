@@ -163,12 +163,13 @@ public class ReservationInternalService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
 
-        try {
-            PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(user.getId());
-            pointAccountExternalService.spendPointAccount(pointAccount.getId(), hospital.getReservationCost());
-        } catch (IllegalStateException e) {
-            // PointAccount.spend()에서 발생하는 "잔액이 부족합니다" 예외를 비즈니스 예외로 변환
-            throw new GlobalException(ReservationErrorCode.INSUFFICIENT_POINTS);
+        if (hospital.getReservationCost() > 0) {
+            try {
+                PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(user.getId());
+                pointAccountExternalService.spendPointAccount(pointAccount.getId(), hospital.getReservationCost());
+            } catch (IllegalStateException e) {
+                throw new GlobalException(ReservationErrorCode.INSUFFICIENT_POINTS);
+            }
         }
 
         Reservation reservation = Reservation.create(
