@@ -58,10 +58,13 @@ public class HospitalController {
     @GetMapping
     public ResponseEntity<CommonApiResponse<PageResponse<HospitalListResponse>>> getAllHospitals(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal AuthUser authUser
     ) {
-        return success (
-                hospitalInternalService.findAllHospitals(page, size),
+        Long userId = (authUser != null) ? authUser.getUserId() : null;
+
+        return success(
+                hospitalInternalService.findAllHospitals(page, size, userId),
                 "병원 목록을 조회했습니다."
         );
     }
@@ -73,11 +76,15 @@ public class HospitalController {
             @ApiResponse(responseCode = "404", description = "병원을 찾을 수 없음")
     })
     @GetMapping("/{id}")
-    public ResponseEntity<CommonApiResponse<HospitalDetailResponse>> getHospitalById(@PathVariable Long id) {
-        HospitalDetailResponse hospital = hospitalInternalService.findHospitalById(id);
-        return success(
-                hospital, "병원 상세 정보를 조회했습니다."
-        );
+    public ResponseEntity<CommonApiResponse<HospitalDetailResponse>> getHospitalById(
+            @PathVariable Long id,
+            @AuthenticationPrincipal AuthUser authUser
+    ) {
+        Long userId = (authUser != null) ? authUser.getUserId() : null;
+
+        HospitalDetailResponse hospital = hospitalInternalService.findHospitalById(id, userId);
+
+        return success(hospital, "병원 상세 정보를 조회했습니다.");
     }
 
     // 병원 수정
