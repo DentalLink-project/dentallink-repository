@@ -58,10 +58,13 @@ public class HospitalController {
     @GetMapping
     public ResponseEntity<CommonApiResponse<PageResponse<HospitalListResponse>>> getAllHospitals(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @AuthenticationPrincipal AuthUser authUser
     ) {
-        return success (
-                hospitalInternalService.findAllHospitals(page, size),
+        Long userId = (authUser != null) ? authUser.getUserId() : null;
+
+        return success(
+                hospitalInternalService.findAllHospitals(page, size, userId),
                 "병원 목록을 조회했습니다."
         );
     }

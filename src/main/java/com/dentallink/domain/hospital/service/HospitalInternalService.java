@@ -2,6 +2,7 @@ package com.dentallink.domain.hospital.service;
 
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.common.response.PageResponse;
+import com.dentallink.domain.favorite.repository.FavoriteRepository;
 import com.dentallink.domain.hospital.dto.request.*;
 import com.dentallink.domain.hospital.dto.response.*;
 import com.dentallink.domain.hospital.entity.Hospital;
@@ -35,6 +36,7 @@ public class HospitalInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
     private final HospitalReservationTimeRepository hospitalReservationTimeRepository;
+    private final FavoriteRepository favoriteRepository;
 
 
     // -------------------- 공용 조회 메서드 --------------------
@@ -57,11 +59,24 @@ public class HospitalInternalService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<HospitalListResponse> findAllHospitals(int page, int size) {
+    public PageResponse<HospitalListResponse> findAllHospitals(int page, int size, Long userId) {
         Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
         Page<Hospital> hospitals = hospitalRepository.findAll(pageable);
-        Page<HospitalListResponse> hospitalResponse = hospitals.map(HospitalListResponse::from);
-        return PageResponse.fromPage(hospitalResponse);
+
+        Page<HospitalListResponse> response = hospitals.map(hospital -> {
+            boolean isFavorite = false;
+
+            // 로그인한 사용자인 경우만 즐겨찾기 조회
+            if (userId != null) {
+                isFavorite = favoriteRepository
+                        .findByHospitalIdAndUserId(hospital.getId(), userId)
+                        .isPresent();
+            }
+
+            return HospitalListResponse.of(hospital, isFavorite);
+        });
+
+        return PageResponse.fromPage(response);
     }
 
     // -------------------- 병원 CRUD --------------------
