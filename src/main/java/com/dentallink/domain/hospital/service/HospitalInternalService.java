@@ -2,6 +2,7 @@ package com.dentallink.domain.hospital.service;
 
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.common.response.PageResponse;
+import com.dentallink.domain.favorite.repository.FavoriteRepository;
 import com.dentallink.domain.hospital.dto.request.*;
 import com.dentallink.domain.hospital.dto.response.*;
 import com.dentallink.domain.hospital.entity.Hospital;
@@ -27,6 +28,8 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -35,6 +38,7 @@ public class HospitalInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
     private final HospitalReservationTimeRepository hospitalReservationTimeRepository;
+    private final FavoriteRepository favoriteRepository;
 
 
     // -------------------- 공용 조회 메서드 --------------------
@@ -57,11 +61,36 @@ public class HospitalInternalService {
     }
 
     @Transactional(readOnly = true)
-    public PageResponse<HospitalListResponse> findAllHospitals(int page, int size) {
+    public PageResponse<HospitalListResponse> findAllHospitals(int page, int size, Long userId) {
         Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
+
+        // 병원 목록 조회 (페이징)
         Page<Hospital> hospitals = hospitalRepository.findAll(pageable);
-        Page<HospitalListResponse> hospitalResponse = hospitals.map(HospitalListResponse::from);
-        return PageResponse.fromPage(hospitalResponse);
+
+        // 로그인하지 않은 사용자 → 즐겨찾기 정보 없음
+        if (userId == null) {
+            return PageResponse.fromPage(
+                    hospitals.map(h -> HospitalListResponse.of(h, false))
+            );
+        }
+
+        // 병원 ID 목록 추출
+        List<Long> hospitalIds = hospitals.stream()
+                .map(Hospital::getId)
+                .toList();
+
+        // 해당 유저가 즐겨찾기한 병원들 한 번에 조회
+        Set<Long> favoriteHospitalIds = favoriteRepository.findAll().stream()
+                .filter(f -> f.getUser().getId().equals(userId) && hospitalIds.contains(f.getHospital().getId()))
+                .map(f -> f.getHospital().getId())
+                .collect(Collectors.toSet());
+
+        // 병원 + 즐겨찾기 여부 매핑
+        Page<HospitalListResponse> responsePage = hospitals.map(
+                h -> HospitalListResponse.of(h, favoriteHospitalIds.contains(h.getId()))
+        );
+
+        return PageResponse.fromPage(responsePage);
     }
 
     // -------------------- 병원 CRUD --------------------
@@ -93,9 +122,17 @@ public class HospitalInternalService {
     }
 
     @Transactional(readOnly = true)
-    public HospitalDetailResponse findHospitalById(Long id) {
+    public HospitalDetailResponse findHospitalById(Long id, Long userId) {
         Hospital hospital = getHospitalById(id);
-        return HospitalDetailResponse.of(hospital, hospital.getHospitalSchedule());
+
+        boolean isFavorite = false;
+
+        // 로그인 사용자인 경우만 즐겨찾기 여부 확인
+        if (userId != null) {
+            isFavorite = favoriteRepository.findByHospitalIdAndUserId(id, userId).isPresent();
+        }
+
+        return HospitalDetailResponse.of(hospital, hospital.getHospitalSchedule(), isFavorite);
     }
 
     // 병원 수정
