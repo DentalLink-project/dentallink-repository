@@ -23,12 +23,12 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
             h.hospitalName,
             h.doctorName,
             h.hospitalIsOpen,
-            CASE WHEN f.id IS NOT NULL THEN true ELSE false END
+            (f.id IS NOT NULL)
         )
         FROM Hospital h
         LEFT JOIN Favorite f
             ON f.hospital = h
-            AND (:userId IS NOT NULL AND f.user.id = :userId)
+            AND f.user.id = :userId
         ORDER BY h.id DESC
     """,
             countQuery = "SELECT COUNT(h) FROM Hospital h")
@@ -46,13 +46,13 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
             s.closeTime,
             s.breakStart,
             s.breakEnd,
-            CASE WHEN f.id IS NOT NULL THEN true ELSE false END
+            (f.id IS NOT NULL)
         )
         FROM Hospital h
         LEFT JOIN h.hospitalSchedule s
         LEFT JOIN Favorite f
             ON f.hospital = h
-            AND (:userId IS NOT NULL AND f.user.id = :userId)
+            AND f.user.id = :userId
         WHERE h.id = :hospitalId
     """)
     Optional<HospitalDetailResponse> findHospitalDetailWithOptionalFavorite(
