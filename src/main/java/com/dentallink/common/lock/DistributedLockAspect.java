@@ -37,39 +37,34 @@ public class DistributedLockAspect {
 
             Object result = joinPoint.proceed();
 
-            // 트랜잭션 커밋 이후 해제
-            if (TransactionSynchronizationManager.isSynchronizationActive()) {
-                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                    @Override
-                    public void afterCommit() {
-                        if (lock.isHeldByCurrentThread()) {
-                            lock.unlock();
-                            log.info(" 락 해제 완료(afterCommit): {}", key);
-                        }
-                    }
-                });
-            } else {
-                // 트랜잭션이 없는 경우 즉시 해제
-                if (lock.isHeldByCurrentThread()) {
-                    lock.unlock();
-                    log.info("락 해제 완료(no-tx): {}", key);
-                }
-            }
-
             return result;
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new RuntimeException("락 획득 중 인터럽트 발생", e);
 
-        } catch (Exception e) {
-            throw e;
-
         } finally {
-            // 예외 발생 시 (rollback 등) 즉시 해제
-            if (!TransactionSynchronizationManager.isSynchronizationActive() && acquired && lock.isHeldByCurrentThread()) {
-                lock.unlock();
-                log.info("락 해제 완료(rollback): {}", key);
+            if (TransactionSynchronizationManager.isSynchronizationActive()) {
+                // 트랜잭션이 존재하면 commit/rollback 모두 끝난 뒤 해제
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                    @Override
+                    public void afterCompletion(int status) {
+                        if (lock.isHeldByCurrentThread()) {
+                            lock.unlock();
+                            if (status == STATUS_COMMITTED) {
+                                log.info("락 해제 완료(afterCommit): {}", key);
+                            } else {
+                                log.warn("락 해제 완료(afterRollback): {}", key);
+                            }
+                        }
+                    }
+                });
+            } else {
+                // 트랜잭션이 없는 경우 즉시 해제
+                if (acquired && lock.isHeldByCurrentThread()) {
+                    lock.unlock();
+                    log.info("락 해제 완료(noTx): {}", key);
+                }
             }
         }
     }
