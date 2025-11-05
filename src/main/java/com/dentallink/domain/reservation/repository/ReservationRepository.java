@@ -111,7 +111,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             countQuery = "SELECT COUNT(r) FROM Reservation r " +
                     "WHERE r.hospital.id = :hospitalId " +
                     "AND r.deletedAt IS NULL")
-    Page<Reservation> findByHospitalIdWithFetchJoin(@Param("hospitalId") Long hospitalId, Pageable pageable);
+    Page<Reservation> findByHospitalIdWithFetchJoin (@Param("hospitalId") Long hospitalId, Pageable pageable);
 
     boolean existsByHospitalIdAndAppointmentDate(Long hospitalId, LocalDateTime appointmentDate);
 }
