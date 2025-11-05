@@ -7,7 +7,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -111,7 +110,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             countQuery = "SELECT COUNT(r) FROM Reservation r " +
                     "WHERE r.hospital.id = :hospitalId " +
                     "AND r.deletedAt IS NULL")
-    Page<Reservation> findByHospitalIdWithFetchJoin(@Param("hospitalId") Long hospitalId, Pageable pageable);
+    Page<Reservation> findByHospitalIdWithFetchJoin (@Param("hospitalId") Long hospitalId, Pageable pageable);
 
     boolean existsByHospitalIdAndAppointmentDate(Long hospitalId, LocalDateTime appointmentDate);
 }
