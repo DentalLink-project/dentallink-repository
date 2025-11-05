@@ -28,8 +28,6 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -38,7 +36,6 @@ public class HospitalInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
     private final HospitalReservationTimeRepository hospitalReservationTimeRepository;
-    private final FavoriteRepository favoriteRepository;
 
 
     // -------------------- 공용 조회 메서드 --------------------
