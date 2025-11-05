@@ -50,8 +50,8 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
         )
         FROM Hospital h
         LEFT JOIN h.hospitalSchedule s
-        LEFT JOIN Favorite f 
-            ON f.hospital = h 
+        LEFT JOIN Favorite f
+            ON f.hospital = h
             AND (:userId IS NOT NULL AND f.user.id = :userId)
         WHERE h.id = :hospitalId
     """)
