@@ -73,6 +73,10 @@ dependencies {
     implementation 'com.google.guava:guava:33.0.0-jre'
 
     implementation 'org.springframework.security:spring-security-messaging'
+    
+    
+    // Distributed Lock(분산락)
+    implementation 'org.redisson:redisson-spring-boot-starter:3.27.2'
 
     // ---------- 모니터링 의존성 ----------
 
