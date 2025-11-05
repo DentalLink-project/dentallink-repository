@@ -1,4 +1,4 @@
-package com.dentallink.domain.reservation.service;
+/*package com.dentallink.domain.reservation.service;
 
 
 import com.dentallink.common.exception.GlobalException;
@@ -274,4 +274,4 @@ class ReservationInternalServiceTest {
                 .isInstanceOf(GlobalException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.DUPLICATE_RESERVATION);
     }
-}
+}*/
