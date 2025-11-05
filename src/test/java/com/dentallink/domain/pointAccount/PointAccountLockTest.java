@@ -76,7 +76,7 @@ class PointAccountLockTest {
         PointAccount result = pointAccountRepository.findById(accountId)
                 .orElseThrow();
 
-        System.out.println("💰 최종 잔액 = " + result.getBalance());
+        System.out.println("최종 잔액 = " + result.getBalance());
         assertThat(result.getBalance()).isEqualTo(30_000L);
     }
 }
