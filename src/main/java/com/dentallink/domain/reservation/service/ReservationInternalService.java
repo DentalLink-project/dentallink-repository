@@ -1,7 +1,7 @@
 package com.dentallink.domain.reservation.service;
 
-
 import com.dentallink.common.exception.GlobalException;
+import com.dentallink.common.lock.DistributedLock; // ✅ (분산락) 락 어노테이션 import 추가
 import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
 import com.dentallink.domain.reservation.dto.AvailableTimeSlotResponse;
@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -47,17 +48,13 @@ public class ReservationInternalService {
     private static final int MAX_RESERVATIONS_PER_TIME_SLOT = 3;
     private static final int TIME_PERIOD = 30;
 
-    //예약 조회 (단건) - 권한 체크 포함
+    //예약 조회 (단건)
     public ReservationResponse getReservation(Long id, Long userId) {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
-
-        // 권한 체크: 본인 예약 or 병원 관리자 or 시스템 관리자
         validateReservationAccess(reservation, userId);
-
         return ReservationResponse.from(reservation);
     }
-
 
     //내 예약 목록 조회
     public Page<ReservationResponse> getMyReservations(Long userId, Pageable pageable) {
@@ -65,45 +62,26 @@ public class ReservationInternalService {
         return reservations.map(ReservationResponse::from);
     }
 
-    /**
-     * 병원의 예약 목록 조회 (병원 관리자)
-     */
-    public Page<ReservationResponse> getHospitalReservations(
-            Long hospitalId,
-            Long hospitalAdminId,
-            Pageable pageable) {
-
-        // 병원 소유권 확인 (@PreAuthorize로 역할은 체크됨)
+    //병원 예약 목록 조회
+    public Page<ReservationResponse> getHospitalReservations(Long hospitalId, Long hospitalAdminId, Pageable pageable) {
         validateHospitalOwnership(hospitalId, hospitalAdminId);
-
         Page<Reservation> reservations = reservationRepository.findByHospitalIdWithFetchJoin(hospitalId, pageable);
         return reservations.map(ReservationResponse::from);
     }
 
-    //예약 상태 변경 (병원 관리자)
+    //예약 상태 변경
     @Transactional
-    public ReservationResponse updateReservationStatus(
-            Long id,
-            ReservationUpdateStatusRequest request,
-            Long hospitalAdminId) {
-
+    public ReservationResponse updateReservationStatus(Long id, ReservationUpdateStatusRequest request, Long hospitalAdminId) {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
-
         // 병원 소유권 확인 (@PreAuthorize로 역할은 체크됨)
         validateHospitalOwnership(reservation.getHospital().getId(), hospitalAdminId);
 
-        // 상태 변경
         switch (request.status()) {
             case APPROVED -> reservation.approve();
             case REJECTED -> {
-                // 환불 가능 포인트 계산
                 Long refundablePoints = reservation.getRefundablePoints();
-
-                // 예약 거절
                 reservation.reject();
-
-                // 포인트 환불 (환불 가능한 경우만)
                 refundPoints(reservation.getUser().getId(), refundablePoints);
             }
             case COMPLETED -> reservation.complete();
@@ -113,53 +91,49 @@ public class ReservationInternalService {
         return ReservationResponse.from(reservation);
     }
 
-    /**
-     * 예약 취소 - 포인트 환불 포함
-     */
+    //예약 취소 - 포인트 환불
     @Transactional
     public void cancelReservation(Long id, Long userId) {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
 
-        // 예약 소유자 확인
         validateReservationOwner(reservation, userId);
-
-        // 예약 시간 확인 (과거 예약 취소 불가)
         validateAppointmentTime(reservation);
 
-        // 환불할 포인트 계산 (완료된 예약은 환불 불가)
         Long refundablePoints = reservation.getRefundablePoints();
-
-        // 예약 취소
         reservation.cancel();
-
-        // 포인트 환불 (환불 가능한 경우만)
         refundPoints(reservation.getUser().getId(), refundablePoints);
     }
 
     /**
-     * 예약 생성 - 포인트 차감 포함
+     * 예약 생성 (분산락 적용)
+     * 병원 ID + 예약 시간대 조합으로 락을 걸어 중복 예약 방지
      */
-    @Transactional
+    @DistributedLock(
+            key = "'reservation:' + #request.hospitalId() + ':' + "
+                    + "T(java.time.format.DateTimeFormatter).ofPattern('yyyyMMddHHmm').format(#request.appointmentDate)",
+            waitTime = 10,
+            leaseTime = 15
+    )
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ReservationResponse createReservation(ReservationCreateRequest request, Long userId) {
+
+        // (분산락) — Redisson이 reservation:{hospitalId}:{time} 키로 락을 획득한 상태에서만 아래 코드가 실행됨
 
         Hospital hospital = hospitalRepository.findById(request.hospitalId())
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_NOT_FOUND));
 
         validateHospitalIsOpen(hospital);
-
         validateAppointmentDateTime(request.appointmentDate());
 
         HospitalSchedule schedule = hospitalScheduleRepository.findByHospitalId(request.hospitalId())
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_SCHEDULE_NOT_FOUND));
 
         validateBusinessHours(request.appointmentDate(), schedule);
-
         validateTimeSlotAvailability(request.hospitalId(), request.appointmentDate());
-
         validateDuplicateUserReservation(userId, request.appointmentDate());
 
-        // User 조회
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
 
@@ -181,13 +155,11 @@ public class ReservationInternalService {
         );
 
         Reservation savedReservation = reservationRepository.save(reservation);
-
         return ReservationResponse.from(savedReservation);
     }
 
     //예약 가능한 시간대 조회
     public List<AvailableTimeSlotResponse> getAvailableTimePeriod(Long hospitalId, LocalDate date) {
-
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_NOT_FOUND));
 
@@ -206,7 +178,6 @@ public class ReservationInternalService {
                 hospitalId, startDay, endDay
         );
 
-        // Map으로 변환
         Map<LocalDateTime, Long> reservationCountMap = reservationCounts.stream()
                 .collect(Collectors.toMap(
                         ReservationCountDto::getTimeSlot,
@@ -219,16 +190,13 @@ public class ReservationInternalService {
             long existingCount = reservationCountMap.getOrDefault(timeSlot, 0L);
             int availableCount = MAX_RESERVATIONS_PER_TIME_SLOT - (int) existingCount;
 
-            AvailableTimeSlotResponse response = AvailableTimeSlotResponse.of(
-                    timeSlot,
-                    Math.max(0, availableCount)
-            );
-
-            availableTimeSlots.add(response);
+            availableTimeSlots.add(AvailableTimeSlotResponse.of(timeSlot, Math.max(0, availableCount)));
         }
 
         return availableTimeSlots;
     }
+
+    // ======================= 유효성 및 공통 메서드 =======================
 
     private void validateHospitalIsOpen(Hospital hospital) {
         if (!hospital.getHospitalIsOpen()) {
@@ -240,7 +208,6 @@ public class ReservationInternalService {
         if (appointmentDate.isBefore(LocalDateTime.now())) {
             throw new GlobalException(ReservationErrorCode.PAST_APPOINTMENT_TIME);
         }
-
         if (appointmentDate.getMinute() % TIME_PERIOD != 0 || appointmentDate.getSecond() != 0) {
             throw new GlobalException(ReservationErrorCode.INVALID_TIME_UNIT);
         }
@@ -249,7 +216,6 @@ public class ReservationInternalService {
     private void validateBusinessHours(LocalDateTime appointmentDate, HospitalSchedule schedule) {
         LocalTime appointmentTime = appointmentDate.toLocalTime();
 
-        // 마감 시간은 초과하면 안 됨 (closeTime 이상이면 예외)
         if (appointmentTime.isBefore(schedule.getOpenTime()) ||
                 !appointmentTime.isBefore(schedule.getCloseTime())) {
             throw new GlobalException(ReservationErrorCode.OUTSIDE_BUSINESS_HOURS);
@@ -265,20 +231,14 @@ public class ReservationInternalService {
     }
 
     private void validateTimeSlotAvailability(Long hospitalId, LocalDateTime appointmentDate) {
-        int currentReservationCount = reservationRepository.countByHospitalIdAndAppointmentDate(
-                hospitalId, appointmentDate
-        );
-
+        int currentReservationCount = reservationRepository.countByHospitalIdAndAppointmentDate(hospitalId, appointmentDate);
         if (currentReservationCount >= MAX_RESERVATIONS_PER_TIME_SLOT) {
             throw new GlobalException(ReservationErrorCode.RESERVATION_FULL);
         }
     }
 
     private void validateDuplicateUserReservation(Long userId, LocalDateTime appointmentDate) {
-        boolean exists = reservationRepository.existsByUserIdAndAppointmentDate(
-                userId, appointmentDate
-        );
-
+        boolean exists = reservationRepository.existsByUserIdAndAppointmentDate(userId, appointmentDate);
         if (exists) {
             throw new GlobalException(ReservationErrorCode.DUPLICATE_RESERVATION);
         }
@@ -287,7 +247,6 @@ public class ReservationInternalService {
     private List<LocalDateTime> generateTimePeriod(LocalDate date, HospitalSchedule schedule) {
         List<LocalDateTime> timePeriod = new ArrayList<>();
         LocalTime currentTime = schedule.getOpenTime();
-
         // 마감 시간 30분 전까지만 예약 가능
         LocalTime lastSlot = schedule.getCloseTime().minusMinutes(TIME_PERIOD);
 
@@ -296,17 +255,14 @@ public class ReservationInternalService {
             if (schedule.getBreakStart() == null || schedule.getBreakEnd() == null ||
                     currentTime.isBefore(schedule.getBreakStart()) ||
                     !currentTime.isBefore(schedule.getBreakEnd())) {
-
                 // 과거 시간이 아닌 경우에만 추가
                 LocalDateTime timeSlot = LocalDateTime.of(date, currentTime);
                 if (!timeSlot.isBefore(LocalDateTime.now())) {
                     timePeriod.add(timeSlot);
                 }
             }
-
             currentTime = currentTime.plusMinutes(TIME_PERIOD);
         }
-
         return timePeriod;
     }
 
@@ -319,12 +275,8 @@ public class ReservationInternalService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
 
-        // ADMIN은 모든 병원 접근 가능 (이미 @PreAuthorize에서 체크됨)
-        if (user.getUserRole() == UserRole.ROLE_ADMIN) {
-            return;
-        }
+        if (user.getUserRole() == UserRole.ROLE_ADMIN) return;
 
-        // HOSPITAL_OWNER는 자기 병원만 접근 가능 (비즈니스 로직)
         Hospital hospital = hospitalRepository.findById(hospitalId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_NOT_FOUND));
 
@@ -344,22 +296,13 @@ public class ReservationInternalService {
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
 
         // 1. 시스템 관리자는 모든 예약 조회 가능
-        if (user.getUserRole() == UserRole.ROLE_ADMIN) {
-            return;
-        }
-
+        if (user.getUserRole() == UserRole.ROLE_ADMIN) return;
         // 2. 본인 예약은 조회 가능
-        if (reservation.isOwnedBy(userId)) {
-            return;
-        }
-
+        if (reservation.isOwnedBy(userId)) return;
         // 3. 해당 병원의 관리자는 조회 가능
         if (user.getUserRole() == UserRole.ROLE_HOSPITAL
-                && reservation.getHospital().getUserId().equals(userId)) {
-            return;
-        }
+                && reservation.getHospital().getUserId().equals(userId)) return;
 
-        // 4. 그 외는 조회 불가
         throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
     }
 
@@ -377,13 +320,9 @@ public class ReservationInternalService {
         }
     }
 
-    /**
-     * 포인트 환불 (중복 제거)
-     */
+    // 포인트 환불 (중복 제거)
     private void refundPoints(Long userId, Long points) {
-        if (points <= 0) {
-            return;
-        }
+        if (points <= 0) return;
         PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(userId);
         pointAccountExternalService.refundPointAccount(pointAccount.getId(), points);
     }
