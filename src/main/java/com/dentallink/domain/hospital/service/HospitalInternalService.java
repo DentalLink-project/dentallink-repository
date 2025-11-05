@@ -2,7 +2,6 @@ package com.dentallink.domain.hospital.service;
 
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.common.response.PageResponse;
-import com.dentallink.domain.favorite.repository.FavoriteRepository;
 import com.dentallink.domain.hospital.dto.request.*;
 import com.dentallink.domain.hospital.dto.response.*;
 import com.dentallink.domain.hospital.entity.Hospital;
