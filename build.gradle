@@ -73,6 +73,18 @@ dependencies {
     implementation 'com.google.guava:guava:33.0.0-jre'
 
     implementation 'org.springframework.security:spring-security-messaging'
+    
+    
+    // Distributed Lock(분산락)
+    implementation 'org.redisson:redisson-spring-boot-starter:3.27.2'
+
+    // ---------- 모니터링 의존성 ----------
+
+    // Actuator 의존성
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // Prometheus 의존성
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 }
 
 tasks.named('test') {

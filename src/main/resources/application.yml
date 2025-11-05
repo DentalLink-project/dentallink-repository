@@ -82,6 +82,19 @@ kakao:
 toss:
   secret-key: test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6
 
+# Actuator 설정
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics,prometheus" #외부로 노출할 엔드포인트 목록 (기본 : health, Info)
+  endpoint:
+    health:
+      show-details: always #헬스 상태를 자세히 보여줄지 여부
+  metrics:
+    tags:
+      application: spring-app #모든 메트릭에 공통으로 붙는 태그 설정
+
 # 로그 레벨 설정
 logging:
   level:
