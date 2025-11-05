@@ -1,7 +1,7 @@
 package com.dentallink.domain.reservation.service;
 
 import com.dentallink.common.exception.GlobalException;
-import com.dentallink.common.lock.DistributedLock; // ✅ (분산락) 락 어노테이션 import 추가
+import com.dentallink.common.lock.DistributedLock; //(분산락) 락 어노테이션 import 추가
 import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
 import com.dentallink.domain.reservation.dto.AvailableTimeSlotResponse;
@@ -25,7 +25,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
