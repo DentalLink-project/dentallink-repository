@@ -6,14 +6,16 @@ public record HospitalListResponse (
         Long id,
         String hospitalName,
         String doctorName,
-        Boolean hospitalIsOpen
+        Boolean hospitalIsOpen,
+        Boolean isFavorite
 ) {
-    public static HospitalListResponse from(Hospital hospital) {
+    public static HospitalListResponse of(Hospital hospital, boolean isFavorite) {
         return new HospitalListResponse(
                 hospital.getId(),
                 hospital.getHospitalName(),
                 hospital.getDoctorName(),
-                hospital.getHospitalIsOpen()
+                hospital.getHospitalIsOpen(),
+                isFavorite
         );
     }
 }
