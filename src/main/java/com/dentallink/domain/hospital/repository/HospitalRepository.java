@@ -5,6 +5,7 @@ import com.dentallink.domain.hospital.dto.response.HospitalListResponse;
 import com.dentallink.domain.hospital.entity.Hospital;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,7 +16,18 @@ import java.util.Optional;
 @Repository
 public interface HospitalRepository extends JpaRepository<Hospital, Long> {
 
-    Page<Hospital> findAllByHospitalNameContainingAndDeletedIsFalse(Pageable pageable, String keyword);
+    @EntityGraph(attributePaths = "hospitalSchedule")
+    @Query("""
+    select h from Hospital h
+    where h.deleted IS false
+    and (
+        :keyword IS NULL
+        or h.hospitalName like concat('%', :keyword, '%')
+        or h.hospitalAddress like concat('%', :keyword, '%')
+        or h.doctorName like concat('%', :keyword, '%')
+    )
+    """)
+    Page<Hospital> findAllWithHospitalSchedule(Pageable pageable, String keyword);
 
     @Query(value = """
     SELECT new com.dentallink.domain.hospital.dto.response.HospitalListResponse(
@@ -59,4 +71,5 @@ public interface HospitalRepository extends JpaRepository<Hospital, Long> {
             @Param("hospitalId") Long hospitalId,
             @Param("userId") Long userId
     );
+
 }
