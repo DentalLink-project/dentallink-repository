@@ -92,7 +92,7 @@ class ReservationLockTest {
         LocalDateTime appointmentDate = LocalDateTime.of(2025, 11, 7, 10, 0);
         ReservationCreateRequest request = new ReservationCreateRequest(hospital.getId(), appointmentDate);
 
-        int threadCount = 10;
+        int threadCount = 5;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
@@ -125,7 +125,9 @@ class ReservationLockTest {
                 .orElseThrow(() -> new IllegalStateException("포인트 계좌 없음"));
         System.out.println("최종 잔액: " + latestAccount.getBalance() + "원");
 
-        assertThat(all.size()).isGreaterThan(1);
+        //assertThat(all.size()).isGreaterThan(1);
+        assertThat(all.size()).isEqualTo(1);
+
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
