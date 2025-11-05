@@ -12,7 +12,7 @@ env:
   AWS_REGION: ap-northeast-2
   ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
   ECR_REPO: ${{ secrets.ECR_REPO }}
-  IMAGE_TAG: ${{ github.sha }}-${{ github.run_number }}
+  IMAGE_TAG: ${{ github.sha }}
   EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
   CONTAINER_NAME: app
   APP_PORT: "8080"
@@ -24,7 +24,7 @@ jobs:
     concurrency:
       group: deploy-dev
       cancel-in-progress: true
-
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -37,7 +37,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/github-oidc-role
           aws-region: ${{ env.AWS_REGION }}
-
+      
       - name: Build & Push to ECR
         id: push
         run: |
@@ -54,7 +54,7 @@ jobs:
           aws ssm send-command \
             --document-name "AWS-RunShellScript" \
             --targets "Key=instanceIds,Values=${EC2_INSTANCE_ID}" \
-            --parameters commands="[ \
-              \"docker ps --format 'table {{.Names}}\\t{{.Image}}\\t{{.Status}}'\" \
+            --parameters commands="[
+              \"docker ps --format 'table {{.Names}}\\t{{.Image}}\\t{{.Status}}'\"
             ]" \
             --region $AWS_REGION --output json
