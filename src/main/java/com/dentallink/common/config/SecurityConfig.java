@@ -18,6 +18,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -73,21 +75,59 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOriginPattern("http://localhost:8000");
-        configuration.addAllowedOriginPattern("http://127.0.0.1:8000");
-        configuration.addAllowedOriginPattern("http://localhost");
-        configuration.addAllowedOriginPattern("http://localhost:63342");
-        configuration.addAllowedOriginPattern("http://127.0.0.1:63342");
-        configuration.addAllowedOriginPattern("http://localhost:3000");
-        configuration.addAllowedHeader("*");
-        configuration.addAllowedMethod("*");
+
+        // 1. 명시적 Origin 지정 (로컬 개발 포트)
+        configuration.setAllowedOrigins(List.of(
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+            "http://localhost:63342",
+            "http://127.0.0.1:63342",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000"
+        ));
+
+        // 2. 필요한 헤더만 명시
+        configuration.setAllowedHeaders(List.of(
+            "Content-Type",
+            "Authorization",
+            "Accept",
+            "Origin",
+            "Refresh-Token"
+        ));
+
+        // 3. 필요한 HTTP 메서드만 명시
+        configuration.setAllowedMethods(List.of(
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "PATCH",
+            "OPTIONS"
+        ));
+
+        // 4. 인증정보 포함 허용
         configuration.setAllowCredentials(true);
-        configuration.addExposedHeader("Authorization");
-        configuration.addExposedHeader("Refresh-Token");
-        configuration.addExposedHeader("Content-Disposition");
+
+        // 5. 클라이언트에 노출할 헤더
+        configuration.setExposedHeaders(List.of(
+            "Authorization",
+            "Refresh-Token",
+            "Content-Disposition"
+        ));
+
+        // 6. preflight 요청 캐시 시간 (1시간)
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+
+        // 7. 공개 API 경로만 CORS 허용 (관리자/민감한 엔드포인트 제외)
+        source.registerCorsConfiguration("/api/hospitals/**", configuration);
+        source.registerCorsConfiguration("/api/auth/**", configuration);
+        source.registerCorsConfiguration("/api/reservations/**", configuration);
+        source.registerCorsConfiguration("/api/point-logs/**", configuration);
+        source.registerCorsConfiguration("/api/reviews/**", configuration);
+        source.registerCorsConfiguration("/ws/**", configuration);
+
         return source;
     }
 }
