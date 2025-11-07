@@ -40,7 +40,7 @@
 ### 🔧 개선 전 코드
 
 ```java
-// 병원 전체 조쇠
+// 병원 전체 조회
 @Transactional(readOnly = true)
 public PageResponse<HospitalListResponse> findAllHospitals(int page, int size) {
     Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
@@ -293,15 +293,16 @@ API 2:  ██████████████ 210ms → ███ 48ms (77%
 ### 배운 점
 1. Fetch Join + DTO Projection 으로도 충분히 복잡한 데이터 관계를 효율적으로 조회 가능
 2. Fetch Join은 로그인 사용자 컨텍스트 기반 조인에도 활용 가능
-3. N+1 문제 제거가 곧 TPS 개선과 서버 부하 감소로 이어짐
-3. 단순한 쿼리 최적화로도 실사용 성능이 크게 향상될 수 있음
-4. 단일 DTO Projection으로 복합 관계 데이터를 한 번에 처리 가능
-5. Controller → Service → Repository 간 userId 전달 구조로 유지보수성 향상
+3. N+1 문제 제거가 곧 TPS 개선과 서버 부하 감소로 이어짐 
+4. 단순한 쿼리 최적화로도 실사용 성능이 크게 향상될 수 있음 
+5. 단일 DTO Projection으로 복합 관계 데이터를 한 번에 처리 가능 
+6. Controller → Service → Repository 간 userId 전달 구조로 유지보수성 향상
 
 ### 향후 개선 가능 사항
 1. 검색 기능 연계 최적화 – 병원명 검색 시에도 동일한 Fetch Join 적용
 2. 캐싱 도입 – 자주 조회되는 병원 목록에 Redis 캐싱 검토
 3. DB 인덱스 튜닝 – hospital_id, user_id 복합 인덱스 최적화
+
 ---
 
 ## 📚 참고 자료
