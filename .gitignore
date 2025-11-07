@@ -49,7 +49,6 @@ FRONTEND_SUMMARY.md
 dump.rdb
 
 # 프론트엔드 폴더
-frontend/
 
 # WebConfig (로컬 설정)
 src/main/java/com/dentallink/common/config/WebConfig.java

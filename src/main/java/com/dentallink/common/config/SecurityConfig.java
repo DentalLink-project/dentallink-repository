@@ -76,10 +76,14 @@ public class SecurityConfig {
         configuration.addAllowedOriginPattern("http://localhost:8000");
         configuration.addAllowedOriginPattern("http://127.0.0.1:8000");
         configuration.addAllowedOriginPattern("http://localhost");
+        configuration.addAllowedOriginPattern("http://localhost:63342");
+        configuration.addAllowedOriginPattern("http://127.0.0.1:63342");
+        configuration.addAllowedOriginPattern("http://localhost:3000");
         configuration.addAllowedHeader("*");
         configuration.addAllowedMethod("*");
         configuration.setAllowCredentials(true);
         configuration.addExposedHeader("Authorization");
+        configuration.addExposedHeader("Refresh-Token");
         configuration.addExposedHeader("Content-Disposition");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
