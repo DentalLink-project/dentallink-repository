@@ -1,7 +1,7 @@
 package com.dentallink.domain.auth.service;
 
 import com.dentallink.common.exception.GlobalException;
-import com.dentallink.common.response.RedisDao;
+import com.dentallink.common.utility.RedisDao;
 import com.dentallink.common.utility.JwtTokenProvider;
 import com.dentallink.domain.auth.exception.AuthErrorCode;
 import com.dentallink.domain.user.entity.User;

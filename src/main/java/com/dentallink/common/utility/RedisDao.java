@@ -1,4 +1,4 @@
-package com.dentallink.common.response;
+package com.dentallink.common.utility;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;

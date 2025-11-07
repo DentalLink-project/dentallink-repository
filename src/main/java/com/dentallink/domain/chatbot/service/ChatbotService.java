@@ -17,10 +17,13 @@ import com.dentallink.domain.user.entity.User;
 import com.dentallink.domain.user.repository.UserRepository;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSerializer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +50,19 @@ public class ChatbotService {
     private final FunctionCallHandler functionCallHandler;
     private final ConsultantService consultantService;
     private final GeminiConfig geminiConfig;
-    private final Gson gson = new Gson();
+    private final SimpMessagingTemplate messagingTemplate;
+
+    private final Gson gson = new GsonBuilder()
+            .registerTypeAdapter(java.time.LocalDateTime.class,
+                    (JsonSerializer<java.time.LocalDateTime>) (src, typeOfSrc, context) ->
+                            new com.google.gson.JsonPrimitive(src.toString()))
+            .registerTypeAdapter(java.time.LocalDate.class,
+                    (JsonSerializer<java.time.LocalDate>) (src, typeOfSrc, context) ->
+                            new com.google.gson.JsonPrimitive(src.toString()))
+            .registerTypeAdapter(java.time.LocalTime.class,
+                    (JsonSerializer<java.time.LocalTime>) (src, typeOfSrc, context) ->
+                            new com.google.gson.JsonPrimitive(src.toString()))
+            .create();
 
     // 글로벌 Rate Limiter (Gemini API 전체 제한)
     private final RateLimiter globalRateLimiter = RateLimiter.create(15.0 / 60.0); // 분당 15회
@@ -56,7 +71,8 @@ public class ChatbotService {
     private final ConcurrentHashMap<Long, RateLimiter> userRateLimiters = new ConcurrentHashMap<>();
 
     /**
-     * 메시지 처리 및 AI 응답 생성
+     * 메시지 처리 및 AI 응답 생성 (WebSocket용)
+     * - 상담원 모드 체크 포함
      */
     @Transactional
     public ChatResponse processMessage(ChatRequest request, Long userId) {
@@ -67,18 +83,23 @@ public class ChatbotService {
         // 2. 세션 가져오기 또는 생성
         ChatSession session = getOrCreateSession(request.sessionId(), userId);
 
-        // 3. 사용자 메시지 저장
+        // 3. 상담원 모드 체크
+        if (session.isConsultantMode()) {
+            return handleConsultantMessage(session, request, userId);
+        }
+
+        // 4. 사용자 메시지 저장
         ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
         messageRepository.save(userMessage);
 
-        // 4. Rate Limit 체크
+        // 5. Rate Limit 체크
         if (!checkRateLimit(userId)) {
             // Rate Limit 초과 → 상담원 전환
             return handleRateLimitExceeded(session, userId);
         }
 
         try {
-            // 5. AI 응답 생성
+            // 6. AI 응답 생성
             return generateAIResponse(session, userId);
 
         } catch (GlobalException e) {
@@ -87,6 +108,28 @@ public class ChatbotService {
             }
             throw e;
         }
+    }
+
+    /**
+     * 상담원 모드 메시지 처리
+     */
+    private ChatResponse handleConsultantMessage(ChatSession session, ChatRequest request, Long userId) {
+        log.info("상담원 모드 메시지 처리: sessionId={}, userId={}", session.getId(), userId);
+
+        // 사용자 메시지 저장
+        ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
+        messageRepository.save(userMessage);
+
+        // 상담원에게 메시지 전달
+        if (session.getConsultant() != null) {
+            messagingTemplate.convertAndSendToUser(
+                    session.getConsultant().getId().toString(),
+                    "/queue/reply",
+                    ChatResponse.from(userMessage)
+            );
+        }
+
+        return ChatResponse.from(userMessage);
     }
 
     /**
