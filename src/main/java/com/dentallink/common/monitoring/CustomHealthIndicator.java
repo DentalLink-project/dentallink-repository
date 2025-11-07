@@ -1,4 +1,4 @@
-package com.dentallink.common.monitering;
+package com.dentallink.common.monitoring;
 
 import com.dentallink.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

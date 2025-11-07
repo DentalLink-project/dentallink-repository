@@ -1,15 +1,8 @@
 package com.dentallink.domain.chatbot.controller;
 
-import com.dentallink.common.exception.GlobalException;
 import com.dentallink.common.security.JwtAuthenticationToken;
 import com.dentallink.domain.chatbot.dto.ChatRequest;
 import com.dentallink.domain.chatbot.dto.ChatResponse;
-import com.dentallink.domain.chatbot.entity.ChatMessage;
-import com.dentallink.domain.chatbot.entity.ChatSession;
-import com.dentallink.domain.chatbot.enums.MessageType;
-import com.dentallink.domain.chatbot.exception.ChatbotErrorCode;
-import com.dentallink.domain.chatbot.repository.ChatMessageRepository;
-import com.dentallink.domain.chatbot.repository.ChatSessionRepository;
 import com.dentallink.domain.chatbot.service.ChatbotService;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import jakarta.validation.Valid;
@@ -19,16 +12,13 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * 챗봇 WebSocket Controller
@@ -41,9 +31,6 @@ import java.util.Optional;
 public class ChatbotWebSocketController {
 
     private final ChatbotService chatbotService;
-    private final SimpMessagingTemplate messagingTemplate;
-    private final ChatSessionRepository chatSessionRepository;
-    private final ChatMessageRepository chatMessageRepository;
 
     // ===== WebSocket 메시지 핸들러 =====
 
@@ -64,38 +51,16 @@ public class ChatbotWebSocketController {
                 userId, request.sessionId(), request.content());
 
         try {
-            // 상담원 모드 확인
-            if (request.sessionId() != null) {
-                ChatSession session = chatSessionRepository.findById(request.sessionId())
-                        .orElse(null);
-                if (session != null && session.isConsultantMode()) {
-                    // 사용자 메시지 저장
-                    ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
-                    chatMessageRepository.save(userMessage);
-
-                    // ✅ 수정: /queue/reply로 통일
-                    messagingTemplate.convertAndSendToUser(
-                            session.getConsultant().getId().toString(),
-                            "/queue/reply",
-                            ChatResponse.from(userMessage)
-                    );
-                    return ChatResponse.from(userMessage);
-                }
-            }
-
-            // AI 처리
-            ChatResponse response = chatbotService.processMessage(request, userId);
-            return response;
+            // 서비스에서 모든 로직 처리 (상담원 모드 포함)
+            return chatbotService.processMessage(request, userId);
 
         } catch (Exception e) {
             log.error("메시지 처리 중 오류 발생", e);
 
-            ChatResponse errorResponse = ChatResponse.builder()
+            return ChatResponse.builder()
                     .sessionId(request.sessionId())
                     .content("죄송합니다. 오류가 발생했습니다: " + e.getMessage())
                     .build();
-
-            return errorResponse;
         }
     }
 
@@ -114,14 +79,6 @@ public class ChatbotWebSocketController {
 
         try {
             chatbotService.closeSession(sessionId, userId);
-
-            ChatResponse response = ChatResponse.createSessionClosedResponse(sessionId);
-
-            messagingTemplate.convertAndSendToUser(
-                    userId.toString(),
-                    "/queue/reply",
-                    response
-            );
 
         } catch (Exception e) {
             log.error("세션 종료 중 오류 발생", e);
@@ -144,6 +101,13 @@ public class ChatbotWebSocketController {
 
     // ===== REST API (Postman 테스트용) =====
 
+    /**
+     * 🧪 Postman 테스트: 메시지 전송 (REST API)
+     *
+     * POST /api/chatbot/messages
+     * Authorization: Bearer {JWT_TOKEN}
+     * Body: { "sessionId": 1, "content": "안녕하세요" }
+     */
     @PostMapping("/api/chatbot/messages")
     @ResponseBody
     public ChatResponse sendMessageRest(
@@ -159,7 +123,7 @@ public class ChatbotWebSocketController {
 
     /**
      * 🧪 Postman 테스트: 세션 종료 (REST API)
-     * <p>
+     *
      * POST /api/chatbot/sessions/{sessionId}/close
      * Authorization: Bearer {JWT_TOKEN}
      */
@@ -176,8 +140,8 @@ public class ChatbotWebSocketController {
     }
 
     /**
-     * 세션 메시지 히스토리 조회 (REST)
-     * <p>
+     * 🧪 Postman 테스트: 세션 메시지 히스토리 조회 (REST)
+     *
      * GET /api/chatbot/sessions/{sessionId}/messages
      * Authorization: Bearer {JWT_TOKEN}
      */
@@ -194,7 +158,7 @@ public class ChatbotWebSocketController {
     // ===== Private Helper Methods =====
 
     /**
-     * 개선: 헤더에서 사용자 ID 추출 (타입 체크 강화)
+     * 헤더에서 사용자 ID 추출 (타입 체크 강화)
      */
     private Long getUserIdFromHeader(SimpMessageHeaderAccessor headerAccessor) {
         Principal principal = headerAccessor.getUser();
