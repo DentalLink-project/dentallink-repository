@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DentalLink - 치과 예약 시스템</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="container">
+                <div class="logo">
+                    <a href="#" onclick="navigateTo('home')">🦷 DentalLink</a>
+                </div>
+                <ul class="nav-menu" id="navMenu">
+                    <li><a href="#" onclick="navigateTo('home')">홈</a></li>
+                    <li id="customerMenu">
+                        <a href="#" onclick="navigateTo('hospitals')">병원 찾기</a>
+                    </li>
+                    <li id="customerReservations">
+                        <a href="#" onclick="navigateTo('reservations')">내 예약</a>
+                    </li>
+                    <li id="hospitalMenu" style="display:none;">
+                        <a href="#" onclick="navigateTo('hospitalReservations')">병원 예약 관리</a>
+                    </li>
+                    <li><a href="#" onclick="navigateTo('points')">포인트</a></li>
+                    <li><a href="#" onclick="navigateTo('chatbot')">💬 채팅</a></li>
+                    <li id="adminMenu" style="display:none;">
+                        <a href="#" onclick="navigateTo('hospitalCreate')">병원 등록</a>
+                    </li>
+                    <li id="loginMenu"><a href="#" onclick="navigateTo('login')">로그인</a></li>
+                    <li id="logoutMenu" style="display:none;">
+                        <a href="#" onclick="logout()">로그아웃</a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Home Page -->
+            <div id="home" class="page active">
+                <div class="hero">
+                    <h1>치과 예약을 쉽게</h1>
+                    <p>DentalLink에서 근처 치과를 찾고 예약하세요</p>
+                    <button class="btn btn-primary" onclick="navigateTo('hospitals')">병원 찾기</button>
+                </div>
+            </div>
+
+            <!-- Login Page -->
+            <div id="login" class="page">
+                <div class="container">
+                    <div class="form-container">
+                        <h2>로그인</h2>
+                        <form id="loginForm" onsubmit="handleLogin(event)">
+                            <div class="form-group">
+                                <label>이메일</label>
+                                <input type="email" id="loginEmail" placeholder="user@example.com" required>
+                                <span class="form-error" id="loginEmailError"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>비밀번호</label>
+                                <div class="password-input-wrapper">
+                                    <input type="password" id="loginPassword" placeholder="비밀번호" required>
+                                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('loginPassword')">👁️</button>
+                                </div>
+                                <span class="form-error" id="loginPasswordError"></span>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="loginSubmitBtn">로그인</button>
+                        </form>
+                        <p>계정이 없으신가요? <a href="#" onclick="navigateTo('signup')">회원가입</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Signup Page -->
+            <div id="signup" class="page">
+                <div class="container">
+                    <div class="form-container">
+                        <h2>회원가입</h2>
+                        <form id="signupForm" onsubmit="handleSignup(event)">
+                            <div class="form-group">
+                                <label>이메일</label>
+                                <input type="email" id="signupEmail" placeholder="user@example.com" oninput="validateEmail('signupEmail')" required>
+                                <span class="form-error" id="signupEmailError"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>사용자명</label>
+                                <input type="text" id="signupUsername" placeholder="사용자명" oninput="validateUsername('signupUsername')" required>
+                                <span class="form-error" id="signupUsernameError"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>비밀번호</label>
+                                <div class="password-input-wrapper">
+                                    <input type="password" id="signupPassword" placeholder="최소 8자" oninput="validatePassword('signupPassword')" required>
+                                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('signupPassword')">👁️</button>
+                                </div>
+                                <span class="form-error" id="signupPasswordError"></span>
+                            </div>
+                            <div class="form-group">
+                                <label>사용자 유형</label>
+                                <select id="signupRole" required>
+                                    <option value="">선택해주세요</option>
+                                    <option value="CUSTOMER">일반 사용자</option>
+                                    <option value="HOSPITAL">병원 관리자</option>
+                                </select>
+                                <span class="form-error" id="signupRoleError"></span>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="signupSubmitBtn">회원가입</button>
+                        </form>
+                        <p>이미 계정이 있으신가요? <a href="#" onclick="navigateTo('login')">로그인</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hospitals List Page -->
+            <div id="hospitals" class="page">
+                <div class="container">
+                    <h2>병원 목록</h2>
+                    <div class="search-bar">
+                        <input type="text" id="searchInput" placeholder="병원명 검색..." oninput="searchHospitals()" autocomplete="off">
+                        <button type="button" id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()" style="display: none;">✕</button>
+                    </div>
+                    <div id="hospitalsList" class="hospitals-grid">
+                        <!-- Hospitals will be loaded here -->
+                    </div>
+                    <div id="hospitalsPagination" class="pagination"></div>
+                </div>
+            </div>
+
+            <!-- Hospital Details Page -->
+            <div id="hospitalDetail" class="page">
+                <div class="container">
+                    <button class="btn btn-secondary" onclick="navigateTo('hospitals')">← 돌아가기</button>
+                    <div id="hospitalDetailContent">
+                        <!-- Hospital details will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reservations Page -->
+            <div id="reservations" class="page">
+                <div class="container">
+                    <h2>내 예약</h2>
+                    <div id="reservationsList">
+                        <!-- Reservations will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Points Page -->
+            <div id="points" class="page">
+                <div class="container">
+                    <h2>포인트 계정</h2>
+                    <div id="pointsContent">
+                        <!-- Points info will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chatbot Page -->
+            <div id="chatbot" class="page">
+                <div class="chat-container">
+                    <!-- 헤더 -->
+                    <div class="chat-header">
+                        <h2>🤖 AI 상담사</h2>
+                        <div class="connection-status">
+                            <span id="connection-dot" class="connection-dot"></span>
+                            <span id="connection-text">연결 중...</span>
+                        </div>
+                        <button id="chat-close-btn" class="icon-btn" onclick="navigateTo('home')">✕</button>
+                    </div>
+
+                    <!-- 메시지 영역 -->
+                    <div id="chat-messages" class="chat-messages">
+                        <!-- 메시지들이 여기에 동적으로 추가됨 -->
+                    </div>
+
+                    <!-- Typing Indicator -->
+                    <div id="typing-indicator" class="typing-indicator" style="display:none;">
+                        <span></span><span></span><span></span>
+                        <span style="margin-left: 8px; color: #999;">AI가 입력 중...</span>
+                    </div>
+
+                    <!-- 입력 영역 -->
+                    <div class="chat-input-container">
+                        <textarea
+                            id="message-input"
+                            placeholder="메시지를 입력하세요... (최대 2000자)"
+                            maxlength="2000"
+                            rows="2"
+                        ></textarea>
+                        <div class="input-actions">
+                            <span id="char-count">0/2000</span>
+                            <button id="send-btn" class="btn-send" disabled>
+                                ➤ 전송
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hospital Reservations Page -->
+            <div id="hospitalReservations" class="page">
+                <div class="container">
+                    <h2>병원 예약 관리</h2>
+                    <div id="hospitalReservationsContent">
+                        <!-- Hospital reservations will be loaded here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hospital Create (Admin Only) -->
+            <div id="hospitalCreate" class="page">
+                <div class="container">
+                    <div class="form-container">
+                        <h2>병원 등록</h2>
+                        <form id="hospitalCreateForm" onsubmit="handleHospitalCreate(event)">
+                            <!-- 기본 정보 -->
+                            <fieldset>
+                                <legend>기본 정보</legend>
+                                <div class="form-group">
+                                    <label>병원명</label>
+                                    <input type="text" id="hcName" placeholder="병원명" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>주소</label>
+                                    <input type="text" id="hcAddress" placeholder="주소" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>의사명</label>
+                                    <input type="text" id="hcDoctor" placeholder="의사명">
+                                </div>
+                                <div class="form-group">
+                                    <label>설명</label>
+                                    <textarea id="hcDescription" placeholder="병원 설명" rows="3"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" id="hcOpen"> 영업 중
+                                    </label>
+                                </div>
+                            </fieldset>
+
+                            <!-- 진료 시간 -->
+                            <fieldset>
+                                <legend>진료 시간</legend>
+                                <div class="form-group">
+                                    <label>월~금 진료 시간</label>
+                                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                        <input type="time" id="hcOpenTime" value="09:00" required>
+                                        <span>~</span>
+                                        <input type="time" id="hcCloseTime" value="18:00" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>점심 시간</label>
+                                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                        <input type="time" id="hcBreakStart" value="12:30" required>
+                                        <span>~</span>
+                                        <input type="time" id="hcBreakEnd" value="13:30" required>
+                                    </div>
+                                </div>
+                            </fieldset>
+
+                            <!-- 진료비 -->
+                            <fieldset>
+                                <legend>예약 정보</legend>
+                                <div class="form-group">
+                                    <label>예약 비용 (포인트)</label>
+                                    <input type="number" id="hcReservationCost" placeholder="예약 비용" min="0" value="1000" required>
+                                    <small style="color: #666; display: block; margin-top: 0.5rem;">
+                                        예약 시 사용자가 소비할 포인트 금액
+                                    </small>
+                                </div>
+                            </fieldset>
+
+                            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;">병원 등록</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2024 DentalLink. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Chatbot Widget -->
+    <div id="chatbotWidget" class="chatbot-widget">
+        <div class="chat-header" onclick="toggleChatbot()">
+            <span>💬 DentalLink 챗봇</span>
+            <span id="chatStatus" class="status-dot offline"></span>
+        </div>
+        <div id="chatBody" class="chat-body">
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-input">
+                <input id="chatInput" type="text" placeholder="메시지를 입력하세요..." onkeydown="if(event.key==='Enter'){sendChatMessage()}" />
+                <button class="btn btn-primary" onclick="sendChatMessage()">전송</button>
+            </div>
+        </div>
+    </div>
+
+    <button id="chatFab" class="chat-fab" onclick="toggleChatbot()">💬</button>
+    <button id="adminFab" class="admin-fab" title="병원 등록" onclick="navigateTo('hospitalCreate')">🏥</button>
+
+    <script src="api.js?v=2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script src="app.js?v=2"></script>
+</body>
+</html>
