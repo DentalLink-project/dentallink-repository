@@ -1492,7 +1492,10 @@ function appendFabChatMessage(sender, text) {
  */
 function connectFabChatbot() {
     try {
-        const socket = new WebSocket('ws://localhost:9999/ws/chat');
+        // 현재 호스트 기반 WebSocket URL 동적 생성
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
         window.fabChatStompClient = Stomp.over(socket);
         window.fabChatStompClient.debug = null;
 
@@ -1992,7 +1995,10 @@ function connectChatbot() {
     const connectionText = document.getElementById('connection-text');
 
     try {
-        const socket = new WebSocket('ws://localhost:9999/ws/chat');
+        // 현재 호스트 기반 WebSocket URL 동적 생성
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
         chatbotStompClient = Stomp.over(socket);
         chatbotStompClient.debug = null; // 디버그 로그 비활성화
 
