@@ -81,14 +81,15 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. 명시적 Origin 지정 (로컬 개발 포트)
+        // 1. 명시적 Origin 지정 (로컬 개발 포트 + 외부 서버)
         configuration.setAllowedOrigins(List.of(
             "http://localhost:8000",
             "http://127.0.0.1:8000",
             "http://localhost:63342",
             "http://127.0.0.1:63342",
             "http://localhost:3000",
-            "http://127.0.0.1:3000"
+            "http://127.0.0.1:3000",
+            "http://43.203.215.197:8080"
         ));
 
         // 2. 필요한 헤더만 명시
