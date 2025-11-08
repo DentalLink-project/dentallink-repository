@@ -48,6 +48,11 @@ public class SecurityConfig {
         // 요청 권한 설정
         http.authorizeHttpRequests((authorizeHttpRequests) ->
                 authorizeHttpRequests
+
+                        .requestMatchers("/", "/index.html").permitAll()
+                        .requestMatchers("/*.css", "/*.js", "/*.ico").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
+
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()//Swagger 접근허용
                         .requestMatchers("/ws/**").permitAll() //챗봇 접근허용
                         .requestMatchers("/api/users/signup", "/api/auth/login/**").permitAll() // 회원가입/로그인만 허용
