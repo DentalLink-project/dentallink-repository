@@ -66,6 +66,15 @@ function navigateTo(page) {
             setTimeout(() => {
                 initChatPage();
             }, 100);
+        } else if (page === 'consultantDashboard') {
+            if (authToken && currentUser && (currentUser.role && String(currentUser.role).includes('ADMIN'))) {
+                setTimeout(() => {
+                    initConsultantDashboard();
+                }, 100);
+            } else {
+                showAlert('관리자만 접근할 수 있습니다', 'error');
+                navigateTo('home');
+            }
         }
     }
 
@@ -379,10 +388,9 @@ function renderHospitals(hospitalsList) {
         <div class="hospital-card" onclick="viewHospitalDetail(${hospital.id})">
             <div class="hospital-card-body">
                 <h3>${hospital.hospitalName || '병원 이름'}</h3>
-                <p>🏥 ${hospital.address || '주소 없음'}</p>
+                <p>🏥 ${hospital.hospitalAddress || '주소 없음'}</p>
                 <p>👨‍⚕️ ${hospital.doctorName || '의사 정보 없음'}</p>
-                <p>${hospital.description ? hospital.description.substring(0, 100) + '...' : '설명 없음'}</p>
-                <p>${hospital.isOpen ? '✅ 영업 중' : '❌ 영업 종료'}</p>
+                <p>${hospital.hospitalIsOpen ? '✅ 영업 중' : '❌ 영업 종료'}</p>
             </div>
             <div class="hospital-card-footer">
                 <button class="btn btn-primary" onclick="viewHospitalDetail(${hospital.id})">자세히 보기</button>
@@ -1524,10 +1532,7 @@ function appendFabChatMessage(sender, text) {
  */
 function connectFabChatbot() {
     try {
-        // 현재 호스트 기반 WebSocket URL 동적 생성
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
+        const socket = new WebSocket('ws://localhost:9999/ws/chat');
         window.fabChatStompClient = Stomp.over(socket);
         window.fabChatStompClient.debug = null;
 
@@ -2027,10 +2032,7 @@ function connectChatbot() {
     const connectionText = document.getElementById('connection-text');
 
     try {
-        // 현재 호스트 기반 WebSocket URL 동적 생성
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
+        const socket = new WebSocket('ws://localhost:9999/ws/chat');
         chatbotStompClient = Stomp.over(socket);
         chatbotStompClient.debug = null; // 디버그 로그 비활성화
 
@@ -2402,59 +2404,381 @@ function addFormEnterKeySupport() {
     });
 }
 
+// ===== 상담원 연결 처리 함수 =====
+
 /**
- * 상담원 전환 핸들러
- * - 사용자가 상담원으로 전환될 때 호출
- * - 대기 순번에 따라 다른 메시지 표시
+ * 상담원 전환 처리
+ * - AI Rate Limit 초과 시 호출됨
+ * - 즉시 연결 또는 대기열에 추가
  */
 function handleConsultantTransfer(response) {
-    const waitingPosition = response.waitingPosition || 0;
+    console.log('상담원 전환 처리:', response);
 
-    if (waitingPosition === 0) {
-        // 즉시 연결
-        appendChatMessage('bot', '🎧 상담원을 연결하고 있습니다. 잠시만 기다려주세요.');
-    } else {
-        // 대기 큐에 들어감
-        appendChatMessage('bot', `📊 현재 대기 순번: ${waitingPosition}번입니다. 순서가 되면 상담원이 연결됩니다.`);
-    }
-
-    // 메시지 전송 버튼 비활성화 (상담원 연결 중)
-    const sendBtn = document.getElementById('chatbot-send-btn');
-    if (sendBtn) {
-        sendBtn.disabled = true;
-    }
-
-    // 스크롤
-    scrollChatToBottom();
-}
-
-/**
- * 세션 종료 핸들러
- * - 채팅 세션이 종료되었을 때 호출
- * - UI를 비활성화하고 종료 메시지 표시
- */
-function handleSessionClosed(response) {
-    appendChatMessage('bot', '👋 상담이 종료되었습니다. 이용해주셔서 감사합니다.');
-
-    // 입력 필드 비활성화
-    const chatInput = document.getElementById('chatbot-message-input');
-    if (chatInput) {
-        chatInput.disabled = true;
-        chatInput.placeholder = '상담이 종료되었습니다.';
-    }
-
-    // 전송 버튼 비활성화
-    const sendBtn = document.getElementById('chatbot-send-btn');
-    if (sendBtn) {
-        sendBtn.disabled = true;
-    }
-
-    // Typing 표시 제거
-    const typingIndicator = document.getElementById('chatbot-typing');
+    const typingIndicator = document.getElementById('typing-indicator');
     if (typingIndicator) {
         typingIndicator.style.display = 'none';
     }
 
-    // 스크롤
+    // 응답 메시지 표시
+    if (response.waitingPosition === 0) {
+        // 즉시 연결됨
+        appendChatMessage('system', '🎧 상담원을 연결하고 있습니다...');
+        appendChatMessage('bot', response.content || '상담원이 곧 응답할 예정입니다.');
+    } else {
+        // 대기열에 추가됨
+        appendChatMessage('system', `📊 현재 대기 순번: ${response.waitingPosition}번`);
+        appendChatMessage('bot', response.content || '상담원과 연결되기 전까지 잠시만 기다려주세요.');
+    }
+
     scrollChatToBottom();
+
+    // 입력창 비활성화 (상담원 연결 후 활성화)
+    const sendBtn = document.getElementById('send-btn');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+    }
+
+    isSendingChatMessage = false;
+}
+
+/**
+ * 세션 종료 처리
+ */
+function handleSessionClosed(response) {
+    console.log('세션 종료:', response);
+
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        typingIndicator.style.display = 'none';
+    }
+
+    appendChatMessage('system', '👋 ' + (response.content || '상담이 종료되었습니다. 이용해주셔서 감사합니다.'));
+
+    // 입력창 비활성화
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    if (messageInput) {
+        messageInput.disabled = true;
+    }
+    if (sendBtn) {
+        sendBtn.disabled = true;
+    }
+
+    scrollChatToBottom();
+    isSendingChatMessage = false;
+}
+
+// ===== 상담원 대시보드 구현 =====
+
+let consultantStompClient = null;
+let consultantConnected = false;
+let currentSessionId = null;
+let waitingSessions = [];
+let activeSessions = [];
+
+/**
+ * 상담원 대시보드 초기화
+ */
+function initConsultantDashboard() {
+    connectConsultantWebSocket();
+    setupConsultantUI();
+    loadConsultantSessions();
+}
+
+/**
+ * 상담원 WebSocket 연결
+ */
+function connectConsultantWebSocket() {
+    const connectionDot = document.getElementById('consultant-connection-dot');
+    const connectionText = document.getElementById('consultant-connection-text');
+
+    try {
+        // 현재 호스트 기반 WebSocket URL 동적 생성
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
+        consultantStompClient = Stomp.over(socket);
+        consultantStompClient.debug = null;
+
+        const headers = {};
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+
+        consultantStompClient.connect(headers,
+            () => {
+                // 연결 성공
+                consultantConnected = true;
+                if (connectionDot) {
+                    connectionDot.classList.remove('offline');
+                    connectionDot.classList.add('online');
+                }
+                if (connectionText) {
+                    connectionText.textContent = '연결됨';
+                }
+
+                // 할당된 세션 구독
+                consultantStompClient.subscribe('/user/queue/assigned', (message) => {
+                    try {
+                        const event = JSON.parse(message.body);
+                        console.log('새 세션 할당:', event);
+                        if (event.sessionId) {
+                            currentSessionId = event.sessionId;
+                            selectSession(event.sessionId);
+                            loadSessionMessages(event.sessionId);
+                        }
+                    } catch (e) {
+                        console.error('Session assignment parse error:', e);
+                    }
+                });
+
+                // 주기적으로 대기 세션 업데이트
+                setInterval(loadConsultantSessions, 5000);
+            },
+            (error) => {
+                // 연결 실패
+                consultantConnected = false;
+                if (connectionDot) {
+                    connectionDot.classList.remove('online');
+                    connectionDot.classList.add('offline');
+                }
+                if (connectionText) {
+                    connectionText.textContent = '연결 실패';
+                }
+                console.error('Consultant STOMP error:', error);
+            }
+        );
+    } catch (e) {
+        consultantConnected = false;
+        console.error('Consultant WebSocket error:', e);
+    }
+}
+
+/**
+ * 상담원 UI 설정
+ */
+function setupConsultantUI() {
+    const messageInput = document.getElementById('consultant-message-input');
+    const sendBtn = document.getElementById('consultant-send-btn');
+    const charCount = document.getElementById('consultant-char-count');
+
+    if (!messageInput || !sendBtn) return;
+
+    // 메시지 입력 시
+    messageInput.addEventListener('input', (e) => {
+        const text = e.target.value.trim();
+        sendBtn.disabled = !currentSessionId || text.length === 0;
+        charCount.textContent = `${e.target.value.length}/2000`;
+    });
+
+    // Enter 키로 전송
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendConsultantMessage();
+        }
+    });
+}
+
+/**
+ * 상담원 대기/활성 세션 로드
+ */
+async function loadConsultantSessions() {
+    try {
+        // 1. 대기열 상태 조회
+        const statusResponse = await fetch('/api/consultant/queue/status', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (statusResponse.ok) {
+            const status = await statusResponse.json();
+            document.getElementById('waitingCount').textContent = status.waitingCount || 0;
+            document.getElementById('activeCount').textContent = status.activeConsultants || 0;
+        }
+
+        // 2. 대기 중인 세션 목록 조회
+        const sessionsResponse = await fetch('/api/consultant/waiting-sessions', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (sessionsResponse.ok) {
+            waitingSessions = await sessionsResponse.json();
+        }
+    } catch (error) {
+        console.error('Failed to load sessions:', error);
+        waitingSessions = [];
+    }
+
+    // 대기 세션 목록 업데이트
+    renderWaitingSessions();
+}
+
+/**
+ * 대기 세션 목록 렌더링
+ */
+function renderWaitingSessions() {
+    const container = document.getElementById('waitingSessionsList');
+
+    if (!waitingSessions || waitingSessions.length === 0) {
+        container.innerHTML = '<p style="color: #999;">대기 중인 세션이 없습니다</p>';
+        return;
+    }
+
+    container.innerHTML = waitingSessions.map((session) => `
+        <div style="padding: 1rem; background: white; border-radius: 4px; margin-bottom: 0.5rem; cursor: pointer; border-left: 3px solid #667eea;"
+             onclick="selectSession(${session.sessionId})">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h4 style="margin: 0 0 0.5rem 0;">${session.username || '사용자'}</h4>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;">대기 순번: ${session.waitingPosition || '-'}</p>
+                    <p style="margin: 0.25rem 0 0 0; color: #999; font-size: 0.85rem;">${new Date(session.startedAt).toLocaleTimeString('ko-KR')}</p>
+                </div>
+                <button class="btn btn-primary" onclick="pickSession(${session.sessionId})" style="margin: 0;">수락</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * 세션 선택
+ */
+function selectSession(sessionId) {
+    currentSessionId = sessionId;
+    const info = document.getElementById('activeSessionInfo');
+
+    if (info) {
+        info.innerHTML = `세션 ID: ${sessionId} | 상담 중...`;
+    }
+
+    const messageInput = document.getElementById('consultant-message-input');
+    const sendBtn = document.getElementById('consultant-send-btn');
+    if (messageInput) {
+        messageInput.disabled = false;
+    }
+    if (sendBtn) {
+        sendBtn.disabled = false;
+    }
+
+    loadSessionMessages(sessionId);
+}
+
+/**
+ * 세션 수락 (대기열에서 가져오기)
+ */
+function pickSession(sessionId) {
+    if (!consultantStompClient || !consultantConnected) {
+        showAlert('연결이 끊어졌습니다', 'error');
+        return;
+    }
+
+    try {
+        const headers = {};
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+
+        consultantStompClient.send('/app/consultant/pick', headers, JSON.stringify({}));
+        selectSession(sessionId);
+    } catch (error) {
+        console.error('Error picking session:', error);
+        showAlert('세션 수락 중 오류가 발생했습니다', 'error');
+    }
+}
+
+/**
+ * 세션 메시지 로드
+ */
+async function loadSessionMessages(sessionId) {
+    const container = document.getElementById('consultant-chat-messages');
+    container.innerHTML = '';
+
+    try {
+        const response = await fetch(`/api/chat/sessions/${sessionId}/messages`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (response.ok) {
+            const messages = await response.json();
+            messages.forEach(msg => {
+                const sender = msg.type === 'USER' ? 'user' : (msg.type === 'CONSULTANT' ? 'consultant' : 'system');
+                appendConsultantChatMessage(sender, msg.content);
+            });
+
+            // 스크롤
+            container.scrollTop = container.scrollHeight;
+        }
+    } catch (error) {
+        console.error('Failed to load messages:', error);
+    }
+}
+
+/**
+ * 상담원 채팅 메시지 추가
+ */
+function appendConsultantChatMessage(sender, text) {
+    const container = document.getElementById('consultant-chat-messages');
+    if (!container || !text) return;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}`;
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.textContent = text;
+
+    messageDiv.appendChild(contentDiv);
+    container.appendChild(messageDiv);
+
+    // 스크롤
+    container.scrollTop = container.scrollHeight;
+}
+
+/**
+ * 상담원 메시지 전송
+ */
+function sendConsultantMessage() {
+    if (!currentSessionId) {
+        showAlert('선택된 세션이 없습니다', 'error');
+        return;
+    }
+
+    if (!consultantStompClient || !consultantConnected) {
+        showAlert('연결이 끊어졌습니다', 'error');
+        return;
+    }
+
+    const messageInput = document.getElementById('consultant-message-input');
+    const text = messageInput.value.trim();
+
+    if (!text) return;
+
+    try {
+        // 사용자 메시지 표시
+        appendConsultantChatMessage('consultant', text);
+        messageInput.value = '';
+        document.getElementById('consultant-char-count').textContent = '0/2000';
+
+        // 메시지 전송
+        const payload = {
+            sessionId: currentSessionId,
+            userId: 0, // 사용자 ID는 백엔드에서 처리
+            content: text
+        };
+
+        const headers = {};
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+
+        consultantStompClient.send('/app/consultant/send', headers, JSON.stringify(payload));
+    } catch (error) {
+        console.error('Error sending message:', error);
+        showAlert('메시지 전송 중 오류가 발생했습니다', 'error');
+    }
 }

@@ -186,6 +186,31 @@ public class ConsultantService {
         return new QueueStatus(waitingCount != null ? waitingCount.intValue() : 0, activeConsultants);
     }
 
+    /**
+     * 대기 중인 세션 목록 조회 (Redis 기반)
+     */
+    public List<WaitingSessionInfo> getWaitingSessions() {
+        List<Object> sessionIds = redisTemplate.opsForList().range(WAITING_QUEUE_KEY, 0, -1);
+        if (sessionIds == null || sessionIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<WaitingSessionInfo> waitingSessions = new ArrayList<>();
+        long position = 1;
+
+        for (Object sessionIdObj : sessionIds) {
+            Long sessionId = Long.parseLong(sessionIdObj.toString());
+            Optional<ChatSession> session = sessionRepository.findById(sessionId);
+
+            if (session.isPresent() && session.get().getStatus() == SessionStatus.WAITING) {
+                waitingSessions.add(WaitingSessionInfo.from(session.get(), position));
+            }
+            position++;
+        }
+
+        return waitingSessions;
+    }
+
     // ===== Private Helper Methods =====
 
     /**
@@ -263,4 +288,25 @@ public class ConsultantService {
             int waitingCount,
             int activeConsultants
     ) {}
+
+    /**
+     * 대기 중인 세션 정보
+     */
+    public record WaitingSessionInfo(
+            Long sessionId,
+            Long userId,
+            String username,
+            Long waitingPosition,
+            java.time.LocalDateTime startedAt
+    ) {
+        public static WaitingSessionInfo from(ChatSession session, long position) {
+            return new WaitingSessionInfo(
+                    session.getId(),
+                    session.getUser().getId(),
+                    session.getUser().getUsername(),
+                    position,
+                    session.getStartedAt()
+            );
+        }
+    }
 }
