@@ -73,7 +73,7 @@ function navigateTo(page) {
                 initChatPage();
             }, 100);
         } else if (page === 'consultantDashboard') {
-            if (authToken && currentUser && (currentUser.role && String(currentUser.role).includes('ADMIN'))) {
+            if (authToken && currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'))) {
                 setTimeout(() => {
                     initConsultantDashboard();
                 }, 100);
@@ -111,13 +111,13 @@ function updateNavbar() {
         if (logoutMenu) logoutMenu.style.display = 'block';
 
         // Show/hide menus based on user role
-        if (currentUser.role && String(currentUser.role).includes('HOSPITAL')) {
+        if (currentUser.userRole && String(currentUser.userRole).includes('HOSPITAL')) {
             if (customerMenu) customerMenu.style.display = 'none';
             if (customerReservations) customerReservations.style.display = 'none';
             if (hospitalMenu) hospitalMenu.style.display = 'block';
             if (adminMenu) adminMenu.style.display = 'none';
             if (adminFab) adminFab.style.display = 'none';
-        } else if ((currentUser.role && String(currentUser.role).includes('ADMIN')) || currentUser.email === 'admin@example.com' || currentUser.userId === 1) {
+        } else if (currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) {
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'none';
@@ -1857,7 +1857,7 @@ let isCreatingHospital = false;
 async function handleHospitalCreate(event) {
     event.preventDefault();
 
-    const isAdmin = currentUser && ((currentUser.role && String(currentUser.role).includes('ADMIN')) || currentUser.email === 'admin@example.com' || currentUser.userId === 1);
+    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
     if (!authToken || !currentUser || !isAdmin) {
         showAlert('관리자만 병원 등록이 가능합니다', 'error');
         return;
