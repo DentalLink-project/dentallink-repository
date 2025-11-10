@@ -10,6 +10,7 @@ import com.dentallink.domain.reservation.service.ReservationInternalService;
 import com.google.gson.Gson;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -159,8 +160,9 @@ public class FunctionCallHandler {
 
         log.info("병원 검색 (이름): keyword={}", keyword);
 
-        // 1. DB에서 직접 검색 (최적화됨)
-        var hospitals = hospitalRepository.searchHospitalsByName(keyword).stream()
+        // 1. DB에서 직접 검색 (Pageable 사용, 최대 5개)
+        var hospitals = hospitalRepository.searchHospitalsByName(keyword, PageRequest.of(0, 5))
+                .stream()
                 .map(h -> Map.of(
                         "id", h.getId(),
                         "name", h.getHospitalName(),
@@ -172,8 +174,9 @@ public class FunctionCallHandler {
         // 2. 검색 결과가 없으면 초성 검색 시도
         if (hospitals.isEmpty()) {
             log.info("정확 검색 결과 없음, 초성 검색 시도: keyword={}", keyword);
-            var allHospitals = hospitalRepository.findAll();
-            hospitals = allHospitals.stream()
+            // 초성 검색도 DB 쿼리 최적화: 제한된 범위에서만 조회
+            var potentialMatches = hospitalRepository.searchHospitalsByName("", PageRequest.of(0, 50))
+                    .stream()
                     .filter(h -> h.getHospitalName() != null &&
                                KoreanSearchUtil.matches(h.getHospitalName(), keyword))
                     .limit(5)
@@ -184,6 +187,7 @@ public class FunctionCallHandler {
                             "doctorName", h.getDoctorName() != null ? h.getDoctorName() : ""
                     ))
                     .toList();
+            hospitals = potentialMatches;
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -209,8 +213,9 @@ public class FunctionCallHandler {
 
         log.info("병원 검색 (위치): location={}", location);
 
-        // 1. DB에서 직접 검색 (최적화됨)
-        var hospitals = hospitalRepository.searchHospitalsByLocation(location).stream()
+        // 1. DB에서 직접 검색 (Pageable 사용, 최대 5개)
+        var hospitals = hospitalRepository.searchHospitalsByLocation(location, PageRequest.of(0, 5))
+                .stream()
                 .map(h -> Map.of(
                         "id", h.getId(),
                         "name", h.getHospitalName(),
@@ -222,8 +227,9 @@ public class FunctionCallHandler {
         // 2. 검색 결과가 없으면 초성 검색 시도
         if (hospitals.isEmpty()) {
             log.info("정확 검색 결과 없음, 초성 검색 시도: location={}", location);
-            var allHospitals = hospitalRepository.findAll();
-            hospitals = allHospitals.stream()
+            // 초성 검색도 DB 쿼리 최적화: 제한된 범위에서만 조회
+            var potentialMatches = hospitalRepository.searchHospitalsByLocation("", PageRequest.of(0, 50))
+                    .stream()
                     .filter(h -> h.getHospitalAddress() != null &&
                                KoreanSearchUtil.matches(h.getHospitalAddress(), location))
                     .limit(5)
@@ -234,6 +240,7 @@ public class FunctionCallHandler {
                             "doctorName", h.getDoctorName() != null ? h.getDoctorName() : ""
                     ))
                     .toList();
+            hospitals = potentialMatches;
         }
 
         Map<String, Object> result = new HashMap<>();
@@ -259,8 +266,9 @@ public class FunctionCallHandler {
 
         log.info("병원 검색 (의사명): doctorName={}", doctorName);
 
-        // 1. DB에서 직접 검색 (최적화됨)
-        var hospitals = hospitalRepository.searchHospitalsByDoctor(doctorName).stream()
+        // 1. DB에서 직접 검색 (Pageable 사용, 최대 5개)
+        var hospitals = hospitalRepository.searchHospitalsByDoctor(doctorName, PageRequest.of(0, 5))
+                .stream()
                 .map(h -> Map.of(
                         "id", h.getId(),
                         "name", h.getHospitalName(),
@@ -272,8 +280,9 @@ public class FunctionCallHandler {
         // 2. 검색 결과가 없으면 초성 검색 시도
         if (hospitals.isEmpty()) {
             log.info("정확 검색 결과 없음, 초성 검색 시도: doctorName={}", doctorName);
-            var allHospitals = hospitalRepository.findAll();
-            hospitals = allHospitals.stream()
+            // 초성 검색도 DB 쿼리 최적화: 제한된 범위에서만 조회
+            var potentialMatches = hospitalRepository.searchHospitalsByDoctor("", PageRequest.of(0, 50))
+                    .stream()
                     .filter(h -> h.getDoctorName() != null &&
                                KoreanSearchUtil.matches(h.getDoctorName(), doctorName))
                     .limit(5)
@@ -284,6 +293,7 @@ public class FunctionCallHandler {
                             "doctorName", h.getDoctorName()
                     ))
                     .toList();
+            hospitals = potentialMatches;
         }
 
         Map<String, Object> result = new HashMap<>();

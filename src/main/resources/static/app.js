@@ -27,6 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Navigation Functions
 function navigateTo(page) {
+    // 현재 상담원 대시보드에서 벗어나는 경우 정리
+    const currentPage = document.querySelector('.page.active');
+    if (currentPage && currentPage.id === 'consultantDashboard') {
+        cleanupConsultantDashboard();
+    }
+
     // Hide all pages
     document.querySelectorAll('.page').forEach(p => {
         p.classList.remove('active');
@@ -2475,6 +2481,7 @@ let consultantConnected = false;
 let currentSessionId = null;
 let waitingSessions = [];
 let activeSessions = [];
+let consultantSessionsIntervalId = null;  // setInterval ID 저장
 
 /**
  * 상담원 대시보드 초기화
@@ -2483,6 +2490,34 @@ function initConsultantDashboard() {
     connectConsultantWebSocket();
     setupConsultantUI();
     loadConsultantSessions();
+}
+
+/**
+ * 상담원 대시보드 정리 (페이지 벗어날 때 호출)
+ */
+function cleanupConsultantDashboard() {
+    // setInterval 정리
+    if (consultantSessionsIntervalId) {
+        clearInterval(consultantSessionsIntervalId);
+        consultantSessionsIntervalId = null;
+    }
+
+    // WebSocket 연결 종료
+    if (consultantStompClient && consultantConnected) {
+        try {
+            consultantStompClient.disconnect(() => {
+                console.log('상담원 WebSocket 연결 종료');
+            });
+        } catch (e) {
+            console.error('WebSocket 종료 중 오류:', e);
+        }
+    }
+
+    // 상태 초기화
+    consultantConnected = false;
+    currentSessionId = null;
+    waitingSessions = [];
+    activeSessions = [];
 }
 
 /**
@@ -2532,8 +2567,11 @@ function connectConsultantWebSocket() {
                     }
                 });
 
-                // 주기적으로 대기 세션 업데이트
-                setInterval(loadConsultantSessions, 5000);
+                // 주기적으로 대기 세션 업데이트 (기존 타이머 정리 후 시작)
+                if (consultantSessionsIntervalId) {
+                    clearInterval(consultantSessionsIntervalId);
+                }
+                consultantSessionsIntervalId = setInterval(loadConsultantSessions, 5000);
             },
             (error) => {
                 // 연결 실패
@@ -2668,6 +2706,7 @@ function selectSession(sessionId) {
 
 /**
  * 세션 수락 (대기열에서 가져오기)
+ * 서버 응답(/user/queue/assigned)을 받은 후 selectSession이 호출됨
  */
 function pickSession(sessionId) {
     if (!consultantStompClient || !consultantConnected) {
@@ -2681,8 +2720,9 @@ function pickSession(sessionId) {
             headers['Authorization'] = `Bearer ${authToken}`;
         }
 
+        // 메시지 전송 (실제 UI 업데이트는 /user/queue/assigned 응답에서)
         consultantStompClient.send('/app/consultant/pick', headers, JSON.stringify({}));
-        selectSession(sessionId);
+        console.log('세션 수락 요청 전송:', sessionId);
     } catch (error) {
         console.error('Error picking session:', error);
         showAlert('세션 수락 중 오류가 발생했습니다', 'error');
