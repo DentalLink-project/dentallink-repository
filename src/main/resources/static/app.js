@@ -2058,7 +2058,16 @@ function connectChatbot() {
                         if (body && body.sessionId && !chatbotSessionId) {
                             chatbotSessionId = body.sessionId;
                         }
-                        appendChatMessage('bot', body?.content || '');
+
+                        // 상담원 연결 처리
+                        if (body?.actionType === 'TRANSFER_TO_CONSULTANT') {
+                            handleConsultantTransfer(body);
+                        } else if (body?.actionType === 'SESSION_CLOSED') {
+                            handleSessionClosed(body);
+                        } else {
+                            // 일반 메시지
+                            appendChatMessage('bot', body?.content || '');
+                        }
 
                         // 사용자가 스크롤 중이면 새 메시지 표시, 아니면 자동 스크롤
                         if (isUserScrolling) {
@@ -2391,4 +2400,61 @@ function addFormEnterKeySupport() {
             });
         });
     });
+}
+
+/**
+ * 상담원 전환 핸들러
+ * - 사용자가 상담원으로 전환될 때 호출
+ * - 대기 순번에 따라 다른 메시지 표시
+ */
+function handleConsultantTransfer(response) {
+    const waitingPosition = response.waitingPosition || 0;
+
+    if (waitingPosition === 0) {
+        // 즉시 연결
+        appendChatMessage('bot', '🎧 상담원을 연결하고 있습니다. 잠시만 기다려주세요.');
+    } else {
+        // 대기 큐에 들어감
+        appendChatMessage('bot', `📊 현재 대기 순번: ${waitingPosition}번입니다. 순서가 되면 상담원이 연결됩니다.`);
+    }
+
+    // 메시지 전송 버튼 비활성화 (상담원 연결 중)
+    const sendBtn = document.getElementById('chatbot-send-btn');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+    }
+
+    // 스크롤
+    scrollChatToBottom();
+}
+
+/**
+ * 세션 종료 핸들러
+ * - 채팅 세션이 종료되었을 때 호출
+ * - UI를 비활성화하고 종료 메시지 표시
+ */
+function handleSessionClosed(response) {
+    appendChatMessage('bot', '👋 상담이 종료되었습니다. 이용해주셔서 감사합니다.');
+
+    // 입력 필드 비활성화
+    const chatInput = document.getElementById('chatbot-message-input');
+    if (chatInput) {
+        chatInput.disabled = true;
+        chatInput.placeholder = '상담이 종료되었습니다.';
+    }
+
+    // 전송 버튼 비활성화
+    const sendBtn = document.getElementById('chatbot-send-btn');
+    if (sendBtn) {
+        sendBtn.disabled = true;
+    }
+
+    // Typing 표시 제거
+    const typingIndicator = document.getElementById('chatbot-typing');
+    if (typingIndicator) {
+        typingIndicator.style.display = 'none';
+    }
+
+    // 스크롤
+    scrollChatToBottom();
 }
