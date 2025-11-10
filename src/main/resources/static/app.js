@@ -104,6 +104,7 @@ function updateNavbar() {
     const customerReservations = document.getElementById('customerReservations');
     const hospitalMenu = document.getElementById('hospitalMenu');
     const adminMenu = document.getElementById('adminMenu');
+    const adminConsultantMenu = document.getElementById('adminConsultantMenu');
     const adminFab = document.getElementById('adminFab');
 
     if (authToken && currentUser) {
@@ -116,18 +117,21 @@ function updateNavbar() {
             if (customerReservations) customerReservations.style.display = 'none';
             if (hospitalMenu) hospitalMenu.style.display = 'block';
             if (adminMenu) adminMenu.style.display = 'none';
+            if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
             if (adminFab) adminFab.style.display = 'none';
         } else if (currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) {
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'none';
             if (adminMenu) adminMenu.style.display = 'block';
+            if (adminConsultantMenu) adminConsultantMenu.style.display = 'block';
             if (adminFab) adminFab.style.display = 'block';
         } else {
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'none';
             if (adminMenu) adminMenu.style.display = 'none';
+            if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
             if (adminFab) adminFab.style.display = 'none';
         }
     } else {
@@ -137,6 +141,7 @@ function updateNavbar() {
         if (customerReservations) customerReservations.style.display = 'block';
         if (hospitalMenu) hospitalMenu.style.display = 'none';
         if (adminMenu) adminMenu.style.display = 'none';
+        if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
         if (adminFab) adminFab.style.display = 'none';
     }
 }
