@@ -1,6 +1,7 @@
 package com.dentallink.domain.chatbot.service;
 
 import com.dentallink.domain.chatbot.dto.GeminiFunction;
+import com.dentallink.domain.chatbot.util.KoreanSearchUtil;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.reservation.dto.AvailableTimeSlotResponse;
 import com.dentallink.domain.reservation.dto.ReservationCreateRequest;
@@ -150,14 +151,16 @@ public class FunctionCallHandler {
 
     /**
      * 병원 검색 (이름으로 검색)
+     * - DB 쿼리로 최적화
+     * - 한글 초성 검색 지원
      */
     private Object handleSearchHospitals(Map<String, Object> arguments) {
         String keyword = getStringValue(arguments, "keyword");
 
-        // 간단한 버전: 이름으로만 검색
-        var hospitals = hospitalRepository.findAll().stream()
-                .filter(h -> h.getHospitalName().contains(keyword))
-                .limit(5)
+        log.info("병원 검색 (이름): keyword={}", keyword);
+
+        // 1. DB에서 직접 검색 (최적화됨)
+        var hospitals = hospitalRepository.searchHospitalsByName(keyword).stream()
                 .map(h -> Map.of(
                         "id", h.getId(),
                         "name", h.getHospitalName(),
@@ -166,23 +169,48 @@ public class FunctionCallHandler {
                 ))
                 .toList();
 
+        // 2. 검색 결과가 없으면 초성 검색 시도
+        if (hospitals.isEmpty()) {
+            log.info("정확 검색 결과 없음, 초성 검색 시도: keyword={}", keyword);
+            var allHospitals = hospitalRepository.findAll();
+            hospitals = allHospitals.stream()
+                    .filter(h -> h.getHospitalName() != null &&
+                               KoreanSearchUtil.matches(h.getHospitalName(), keyword))
+                    .limit(5)
+                    .map(h -> Map.of(
+                            "id", h.getId(),
+                            "name", h.getHospitalName(),
+                            "address", h.getHospitalAddress() != null ? h.getHospitalAddress() : "",
+                            "doctorName", h.getDoctorName() != null ? h.getDoctorName() : ""
+                    ))
+                    .toList();
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("keyword", keyword);
         result.put("hospitals", hospitals);
-        result.put("message", String.format("'%s' 검색 결과: %d개의 병원을 찾았습니다.", keyword, hospitals.size()));
+
+        if (hospitals.isEmpty()) {
+            result.put("message", String.format("'%s'에 해당하는 병원을 찾을 수 없습니다. 다른 키워드로 검색해주세요.", keyword));
+        } else {
+            result.put("message", String.format("'%s' 검색 결과: %d개의 병원을 찾았습니다.", keyword, hospitals.size()));
+        }
 
         return result;
     }
 
     /**
      * 병원 검색 (위치/주소로 검색)
+     * - DB 쿼리로 최적화
+     * - 한글 초성 검색 지원
      */
     private Object handleSearchHospitalsByLocation(Map<String, Object> arguments) {
         String location = getStringValue(arguments, "location");
 
-        var hospitals = hospitalRepository.findAll().stream()
-                .filter(h -> h.getHospitalAddress() != null && h.getHospitalAddress().contains(location))
-                .limit(5)
+        log.info("병원 검색 (위치): location={}", location);
+
+        // 1. DB에서 직접 검색 (최적화됨)
+        var hospitals = hospitalRepository.searchHospitalsByLocation(location).stream()
                 .map(h -> Map.of(
                         "id", h.getId(),
                         "name", h.getHospitalName(),
@@ -191,23 +219,48 @@ public class FunctionCallHandler {
                 ))
                 .toList();
 
+        // 2. 검색 결과가 없으면 초성 검색 시도
+        if (hospitals.isEmpty()) {
+            log.info("정확 검색 결과 없음, 초성 검색 시도: location={}", location);
+            var allHospitals = hospitalRepository.findAll();
+            hospitals = allHospitals.stream()
+                    .filter(h -> h.getHospitalAddress() != null &&
+                               KoreanSearchUtil.matches(h.getHospitalAddress(), location))
+                    .limit(5)
+                    .map(h -> Map.of(
+                            "id", h.getId(),
+                            "name", h.getHospitalName(),
+                            "address", h.getHospitalAddress(),
+                            "doctorName", h.getDoctorName() != null ? h.getDoctorName() : ""
+                    ))
+                    .toList();
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("location", location);
         result.put("hospitals", hospitals);
-        result.put("message", String.format("'%s' 지역 검색 결과: %d개의 병원을 찾았습니다.", location, hospitals.size()));
+
+        if (hospitals.isEmpty()) {
+            result.put("message", String.format("'%s' 지역에 해당하는 병원을 찾을 수 없습니다. 다른 지역명으로 검색해주세요.", location));
+        } else {
+            result.put("message", String.format("'%s' 지역 검색 결과: %d개의 병원을 찾았습니다.", location, hospitals.size()));
+        }
 
         return result;
     }
 
     /**
      * 병원 검색 (의사이름으로 검색)
+     * - DB 쿼리로 최적화
+     * - 한글 초성 검색 지원
      */
     private Object handleSearchHospitalsByDoctor(Map<String, Object> arguments) {
         String doctorName = getStringValue(arguments, "doctor_name");
 
-        var hospitals = hospitalRepository.findAll().stream()
-                .filter(h -> h.getDoctorName() != null && h.getDoctorName().contains(doctorName))
-                .limit(5)
+        log.info("병원 검색 (의사명): doctorName={}", doctorName);
+
+        // 1. DB에서 직접 검색 (최적화됨)
+        var hospitals = hospitalRepository.searchHospitalsByDoctor(doctorName).stream()
                 .map(h -> Map.of(
                         "id", h.getId(),
                         "name", h.getHospitalName(),
@@ -216,10 +269,32 @@ public class FunctionCallHandler {
                 ))
                 .toList();
 
+        // 2. 검색 결과가 없으면 초성 검색 시도
+        if (hospitals.isEmpty()) {
+            log.info("정확 검색 결과 없음, 초성 검색 시도: doctorName={}", doctorName);
+            var allHospitals = hospitalRepository.findAll();
+            hospitals = allHospitals.stream()
+                    .filter(h -> h.getDoctorName() != null &&
+                               KoreanSearchUtil.matches(h.getDoctorName(), doctorName))
+                    .limit(5)
+                    .map(h -> Map.of(
+                            "id", h.getId(),
+                            "name", h.getHospitalName(),
+                            "address", h.getHospitalAddress() != null ? h.getHospitalAddress() : "",
+                            "doctorName", h.getDoctorName()
+                    ))
+                    .toList();
+        }
+
         Map<String, Object> result = new HashMap<>();
         result.put("doctorName", doctorName);
         result.put("hospitals", hospitals);
-        result.put("message", String.format("'%s' 의사 검색 결과: %d개의 병원을 찾았습니다.", doctorName, hospitals.size()));
+
+        if (hospitals.isEmpty()) {
+            result.put("message", String.format("'%s' 의사를 찾을 수 없습니다. 정확한 의사명으로 다시 검색해주세요.", doctorName));
+        } else {
+            result.put("message", String.format("'%s' 의사 검색 결과: %d개의 병원을 찾았습니다.", doctorName, hospitals.size()));
+        }
 
         return result;
     }
