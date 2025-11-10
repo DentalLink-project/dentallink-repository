@@ -301,6 +301,38 @@ public class ChatbotService {
     }
 
     /**
+     * 로그아웃 시 사용자의 모든 활성 세션 종료
+     * - 사용자가 로그아웃할 때 호출
+     * - ACTIVE 상태인 세션을 모두 CLOSED로 변경
+     */
+    @Transactional
+    public void closeAllSessionsForUser(Long userId) {
+        log.info("사용자 로그아웃 - 활성 세션 정리: userId={}", userId);
+
+        // ACTIVE 상태인 세션만 조회
+        List<ChatSession> activeSessions = sessionRepository.findByUserIdAndStatus(
+                userId,
+                SessionStatus.ACTIVE
+        ).getContent(); // Page를 List로 변환
+
+        for (ChatSession session : activeSessions) {
+            session.close();
+
+            // 시스템 메시지 저장
+            ChatMessage systemMessage = ChatMessage.createSystemMessage(
+                    session,
+                    "사용자 로그아웃으로 세션이 종료되었습니다."
+            );
+            messageRepository.save(systemMessage);
+
+            log.info("세션 종료: sessionId={}, userId={}", session.getId(), userId);
+        }
+
+        // 변경사항 모두 저장
+        sessionRepository.saveAll(activeSessions);
+    }
+
+    /**
      * 세션의 메시지 목록 조회
      */
     public List<ChatResponse> getSessionMessages(Long sessionId, Long userId) {
