@@ -47,6 +47,8 @@ public class FunctionCallHandler {
                 case "get_my_reservations" -> handleGetMyReservations(userId);
                 case "cancel_reservation" -> handleCancelReservation(arguments, userId);
                 case "search_hospitals" -> handleSearchHospitals(arguments);
+                case "search_hospitals_by_location" -> handleSearchHospitalsByLocation(arguments);
+                case "search_hospitals_by_doctor" -> handleSearchHospitalsByDoctor(arguments);
                 default -> Map.of("error", "알 수 없는 함수입니다: " + functionName);
             };
         } catch (Exception e) {
@@ -147,7 +149,7 @@ public class FunctionCallHandler {
     }
 
     /**
-     * 병원 검색
+     * 병원 검색 (이름으로 검색)
      */
     private Object handleSearchHospitals(Map<String, Object> arguments) {
         String keyword = getStringValue(arguments, "keyword");
@@ -159,7 +161,8 @@ public class FunctionCallHandler {
                 .map(h -> Map.of(
                         "id", h.getId(),
                         "name", h.getHospitalName(),
-                        "address", h.getHospitalAddress() != null ? h.getHospitalAddress() : ""
+                        "address", h.getHospitalAddress() != null ? h.getHospitalAddress() : "",
+                        "doctorName", h.getDoctorName() != null ? h.getDoctorName() : ""
                 ))
                 .toList();
 
@@ -167,6 +170,56 @@ public class FunctionCallHandler {
         result.put("keyword", keyword);
         result.put("hospitals", hospitals);
         result.put("message", String.format("'%s' 검색 결과: %d개의 병원을 찾았습니다.", keyword, hospitals.size()));
+
+        return result;
+    }
+
+    /**
+     * 병원 검색 (위치/주소로 검색)
+     */
+    private Object handleSearchHospitalsByLocation(Map<String, Object> arguments) {
+        String location = getStringValue(arguments, "location");
+
+        var hospitals = hospitalRepository.findAll().stream()
+                .filter(h -> h.getHospitalAddress() != null && h.getHospitalAddress().contains(location))
+                .limit(5)
+                .map(h -> Map.of(
+                        "id", h.getId(),
+                        "name", h.getHospitalName(),
+                        "address", h.getHospitalAddress(),
+                        "doctorName", h.getDoctorName() != null ? h.getDoctorName() : ""
+                ))
+                .toList();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("location", location);
+        result.put("hospitals", hospitals);
+        result.put("message", String.format("'%s' 지역 검색 결과: %d개의 병원을 찾았습니다.", location, hospitals.size()));
+
+        return result;
+    }
+
+    /**
+     * 병원 검색 (의사이름으로 검색)
+     */
+    private Object handleSearchHospitalsByDoctor(Map<String, Object> arguments) {
+        String doctorName = getStringValue(arguments, "doctor_name");
+
+        var hospitals = hospitalRepository.findAll().stream()
+                .filter(h -> h.getDoctorName() != null && h.getDoctorName().contains(doctorName))
+                .limit(5)
+                .map(h -> Map.of(
+                        "id", h.getId(),
+                        "name", h.getHospitalName(),
+                        "address", h.getHospitalAddress() != null ? h.getHospitalAddress() : "",
+                        "doctorName", h.getDoctorName()
+                ))
+                .toList();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("doctorName", doctorName);
+        result.put("hospitals", hospitals);
+        result.put("message", String.format("'%s' 의사 검색 결과: %d개의 병원을 찾았습니다.", doctorName, hospitals.size()));
 
         return result;
     }
@@ -242,7 +295,7 @@ public class FunctionCallHandler {
                         ))
                         .build(),
 
-                // 5. 병원 검색
+                // 5. 병원 검색 (이름)
                 GeminiFunction.FunctionDeclaration.builder()
                         .name("search_hospitals")
                         .description("병원을 이름으로 검색합니다.")
@@ -255,6 +308,38 @@ public class FunctionCallHandler {
                                         )
                                 ),
                                 "required", List.of("keyword")
+                        ))
+                        .build(),
+
+                // 6. 병원 검색 (위치/주소)
+                GeminiFunction.FunctionDeclaration.builder()
+                        .name("search_hospitals_by_location")
+                        .description("병원을 위치/주소로 검색합니다. 지역명(예: 강남, 서초, 강북)이나 구체적인 주소를 입력할 수 있습니다.")
+                        .parameters(Map.of(
+                                "type", "object",
+                                "properties", Map.of(
+                                        "location", Map.of(
+                                                "type", "string",
+                                                "description", "검색할 지역명 또는 주소 (예: 강남구, 서초동, 송파)"
+                                        )
+                                ),
+                                "required", List.of("location")
+                        ))
+                        .build(),
+
+                // 7. 병원 검색 (의사)
+                GeminiFunction.FunctionDeclaration.builder()
+                        .name("search_hospitals_by_doctor")
+                        .description("특정 의사가 근무하는 병원을 검색합니다.")
+                        .parameters(Map.of(
+                                "type", "object",
+                                "properties", Map.of(
+                                        "doctor_name", Map.of(
+                                                "type", "string",
+                                                "description", "검색할 의사 이름"
+                                        )
+                                ),
+                                "required", List.of("doctor_name")
                         ))
                         .build()
         );
