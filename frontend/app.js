@@ -347,10 +347,9 @@ function renderHospitals(hospitalsList) {
         <div class="hospital-card" onclick="viewHospitalDetail(${hospital.id})">
             <div class="hospital-card-body">
                 <h3>${hospital.hospitalName || '병원 이름'}</h3>
-                <p>🏥 ${hospital.address || '주소 없음'}</p>
+                <p>🏥 ${hospital.hospitalAddress || '주소 없음'}</p>
                 <p>👨‍⚕️ ${hospital.doctorName || '의사 정보 없음'}</p>
-                <p>${hospital.description ? hospital.description.substring(0, 100) + '...' : '설명 없음'}</p>
-                <p>${hospital.isOpen ? '✅ 영업 중' : '❌ 영업 종료'}</p>
+                <p>${hospital.hospitalIsOpen ? '✅ 영업 중' : '❌ 영업 종료'}</p>
             </div>
             <div class="hospital-card-footer">
                 <button class="btn btn-primary" onclick="viewHospitalDetail(${hospital.id})">자세히 보기</button>
