@@ -1561,7 +1561,18 @@ function connectFabChatbot() {
                         if (body && body.sessionId && !window.fabChatSessionId) {
                             window.fabChatSessionId = body.sessionId;
                         }
-                        appendFabChatMessage('bot', body?.content || '');
+
+                        // 메시지 타입 확인 (상담사 vs AI)
+                        const messageType = body?.type || 'AI';
+                        let sender = 'bot'; // 기본값은 챗봇
+
+                        if (messageType === 'CONSULTANT') {
+                            sender = 'consultant'; // 상담사 메시지
+                        } else if (messageType === 'SYSTEM') {
+                            sender = 'system'; // 시스템 메시지
+                        }
+
+                        appendFabChatMessage(sender, body?.content || '');
                     } catch (e) {
                         console.error('Message parse error:', e);
                         appendFabChatMessage('bot', message.body || '');
@@ -2083,8 +2094,17 @@ function connectChatbot() {
                         } else if (body?.actionType === 'SESSION_CLOSED') {
                             handleSessionClosed(body);
                         } else {
-                            // 일반 메시지
-                            appendChatMessage('bot', body?.content || '');
+                            // 메시지 타입 확인 (상담사 vs AI)
+                            const messageType = body?.type || 'AI';
+                            let sender = 'bot'; // 기본값은 챗봇
+
+                            if (messageType === 'CONSULTANT') {
+                                sender = 'consultant'; // 상담사 메시지
+                            } else if (messageType === 'SYSTEM') {
+                                sender = 'system'; // 시스템 메시지
+                            }
+
+                            appendChatMessage(sender, body?.content || '');
                         }
 
                         // 사용자가 스크롤 중이면 새 메시지 표시, 아니면 자동 스크롤
@@ -2730,8 +2750,11 @@ function pickSession(sessionId) {
             headers['Authorization'] = `Bearer ${authToken}`;
         }
 
-        // 메시지 전송 (실제 UI 업데이트는 /user/queue/assigned 응답에서)
-        consultantStompClient.send('/app/consultant/pick', headers, JSON.stringify({}));
+        // 메시지 전송 (sessionId를 반드시 포함해야 함)
+        const payload = {
+            sessionId: sessionId
+        };
+        consultantStompClient.send('/app/consultant/pick', headers, JSON.stringify(payload));
         console.log('세션 수락 요청 전송:', sessionId);
     } catch (error) {
         console.error('Error picking session:', error);
