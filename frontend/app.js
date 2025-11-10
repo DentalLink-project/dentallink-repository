@@ -2585,19 +2585,32 @@ function setupConsultantUI() {
  */
 async function loadConsultantSessions() {
     try {
-        const response = await fetch('/api/consultant/queue/status', {
+        // 1. 대기열 상태 조회
+        const statusResponse = await fetch('/api/consultant/queue/status', {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
         });
 
-        if (response.ok) {
-            const status = await response.json();
+        if (statusResponse.ok) {
+            const status = await statusResponse.json();
             document.getElementById('waitingCount').textContent = status.waitingCount || 0;
             document.getElementById('activeCount').textContent = status.activeConsultants || 0;
         }
+
+        // 2. 대기 중인 세션 목록 조회
+        const sessionsResponse = await fetch('/api/consultant/waiting-sessions', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (sessionsResponse.ok) {
+            waitingSessions = await sessionsResponse.json();
+        }
     } catch (error) {
-        console.error('Failed to load queue status:', error);
+        console.error('Failed to load sessions:', error);
+        waitingSessions = [];
     }
 
     // 대기 세션 목록 업데이트
@@ -2615,15 +2628,16 @@ function renderWaitingSessions() {
         return;
     }
 
-    container.innerHTML = waitingSessions.map((session, index) => `
+    container.innerHTML = waitingSessions.map((session) => `
         <div style="padding: 1rem; background: white; border-radius: 4px; margin-bottom: 0.5rem; cursor: pointer; border-left: 3px solid #667eea;"
-             onclick="selectSession(${session.id})">
+             onclick="selectSession(${session.sessionId})">
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <h4 style="margin: 0 0 0.5rem 0;">${session.user?.username || '사용자'}</h4>
+                    <h4 style="margin: 0 0 0.5rem 0;">${session.username || '사용자'}</h4>
                     <p style="margin: 0; color: #666; font-size: 0.9rem;">대기 순번: ${session.waitingPosition || '-'}</p>
+                    <p style="margin: 0.25rem 0 0 0; color: #999; font-size: 0.85rem;">${new Date(session.startedAt).toLocaleTimeString('ko-KR')}</p>
                 </div>
-                <button class="btn btn-primary" onclick="pickSession(${session.id})" style="margin: 0;">수락</button>
+                <button class="btn btn-primary" onclick="pickSession(${session.sessionId})" style="margin: 0;">수락</button>
             </div>
         </div>
     `).join('');
