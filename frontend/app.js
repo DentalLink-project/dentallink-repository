@@ -244,13 +244,45 @@ async function handleSignup(event) {
 
 async function logout() {
     try {
+        // 1. 채팅 페이지의 WebSocket 연결 종료
+        if (chatbotStompClient) {
+            console.log('채팅 페이지 WebSocket 연결 종료');
+            chatbotStompClient.disconnect();
+            chatbotStompClient = null;
+            chatbotConnected = false;
+            chatbotSessionId = null;
+        }
+
+        // 2. FAB 챗봇의 WebSocket 연결 종료
+        if (window.fabChatStompClient) {
+            console.log('FAB 챗봇 WebSocket 연결 종료');
+            window.fabChatStompClient.disconnect();
+            window.fabChatStompClient = null;
+            window.fabChatConnected = false;
+            window.fabChatSessionId = null;
+        }
+
+        // 3. 채팅 UI 초기화 (채팅 페이지가 열려있는 경우)
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+            chatMessages.innerHTML = ''; // 이전 메시지 제거
+        }
+
+        // 4. 백엔드 로그아웃 API 호출
         await authAPI.logout();
+
+        // 5. 프론트엔드 상태 초기화
         currentUser = null;
         updateNavbar();
+
         showAlert('로그아웃 되었습니다', 'success');
         navigateTo('home');
     } catch (error) {
         console.error('Logout error:', error);
+        // 에러가 발생해도 UI는 초기화
+        currentUser = null;
+        updateNavbar();
+        navigateTo('home');
     }
 }
 
