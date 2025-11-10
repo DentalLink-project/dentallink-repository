@@ -104,6 +104,7 @@ function updateNavbar() {
     const customerReservations = document.getElementById('customerReservations');
     const hospitalMenu = document.getElementById('hospitalMenu');
     const adminMenu = document.getElementById('adminMenu');
+    const adminConsultantMenu = document.getElementById('adminConsultantMenu');
     const adminFab = document.getElementById('adminFab');
 
     if (authToken && currentUser) {
@@ -116,18 +117,21 @@ function updateNavbar() {
             if (customerReservations) customerReservations.style.display = 'none';
             if (hospitalMenu) hospitalMenu.style.display = 'block';
             if (adminMenu) adminMenu.style.display = 'none';
+            if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
             if (adminFab) adminFab.style.display = 'none';
         } else if (currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) {
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'none';
             if (adminMenu) adminMenu.style.display = 'block';
+            if (adminConsultantMenu) adminConsultantMenu.style.display = 'block';
             if (adminFab) adminFab.style.display = 'block';
         } else {
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'none';
             if (adminMenu) adminMenu.style.display = 'none';
+            if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
             if (adminFab) adminFab.style.display = 'none';
         }
     } else {
@@ -137,6 +141,7 @@ function updateNavbar() {
         if (customerReservations) customerReservations.style.display = 'block';
         if (hospitalMenu) hospitalMenu.style.display = 'none';
         if (adminMenu) adminMenu.style.display = 'none';
+        if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
         if (adminFab) adminFab.style.display = 'none';
     }
 }
@@ -277,16 +282,51 @@ async function logout() {
             window.fabChatSessionId = null;
         }
 
-        // 3. 채팅 UI 초기화 (채팅 페이지가 열려있는 경우)
-        const chatMessages = document.getElementById('chatMessages');
-        if (chatMessages) {
-            chatMessages.innerHTML = ''; // 이전 메시지 제거
+        // 3. 상담원 대시보드의 WebSocket 연결 종료
+        if (consultantStompClient && consultantConnected) {
+            console.log('상담원 WebSocket 연결 종료');
+            try {
+                consultantStompClient.disconnect(() => {});
+            } catch (e) {
+                console.error('Consultant WebSocket 종료 중 오류:', e);
+            }
+            consultantStompClient = null;
+            consultantConnected = false;
+            currentSessionId = null;
         }
 
-        // 4. 백엔드 로그아웃 API 호출
+        // 4. 모든 채팅 메시지 컨테이너 초기화 (일반 채팅, FAB 채팅, 상담원 채팅)
+        const chatContainers = [
+            'chat-messages',      // 채팅 페이지
+            'chatMessages',       // FAB 챗봇
+            'consultant-chat-messages' // 상담원 대시보드
+        ];
+
+        chatContainers.forEach(id => {
+            const container = document.getElementById(id);
+            if (container) {
+                container.innerHTML = ''; // 모든 이전 메시지 제거
+            }
+        });
+
+        // 5. 채팅 상태 변수 초기화
+        window.chatbotFabInitialized = false; // FAB 초기화 상태 리셋
+        isUserScrolling = false;
+        hasNewMessages = false;
+        isSendingChatMessage = false;
+        waitingSessions = [];
+        activeSessions = [];
+
+        // 6. 상담원 대시보드 타이머 정리
+        if (consultantSessionsIntervalId) {
+            clearInterval(consultantSessionsIntervalId);
+            consultantSessionsIntervalId = null;
+        }
+
+        // 7. 백엔드 로그아웃 API 호출
         await authAPI.logout();
 
-        // 5. 프론트엔드 상태 초기화
+        // 8. 프론트엔드 상태 초기화
         currentUser = null;
         updateNavbar();
 
@@ -822,8 +862,11 @@ async function createReservation(hospitalId) {
 // Reviews Functions
 async function loadReviews(hospitalId) {
     try {
-        const reviews = await reviewsAPI.getByHospital(hospitalId);
+        const response = await reviewsAPI.getByHospital(hospitalId);
         const reviewsList = document.getElementById('reviewsList');
+
+        // API 응답이 배열이 아닐 수 있으므로 처리
+        let reviews = Array.isArray(response) ? response : (response?.content || []);
 
         if (!reviews || reviews.length === 0) {
             reviewsList.innerHTML = '<p>리뷰가 없습니다</p>';
@@ -2594,6 +2637,56 @@ function connectConsultantWebSocket() {
                         }
                     } catch (e) {
                         console.error('Session assignment parse error:', e);
+                    }
+                });
+
+                // 상담원이 받을 메시지 구독 (사용자로부터의 메시지)
+                consultantStompClient.subscribe('/user/queue/messages', (message) => {
+                    try {
+                        const msg = JSON.parse(message.body);
+                        console.log('새 메시지 수신:', msg);
+
+                        if (msg && msg.sessionId === currentSessionId) {
+                            // 현재 선택된 세션의 메시지만 추가
+                            const sender = msg.type === 'USER' ? 'user' : (msg.type === 'CONSULTANT' ? 'consultant' : 'system');
+                            appendConsultantChatMessage(sender, msg.content);
+
+                            // 자동 스크롤
+                            const container = document.getElementById('consultant-chat-messages');
+                            if (container) {
+                                container.scrollTop = container.scrollHeight;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Message receive parse error:', e);
+                    }
+                });
+
+                // 세션 종료 알림 구독
+                consultantStompClient.subscribe('/user/queue/session-closed', (message) => {
+                    try {
+                        const event = JSON.parse(message.body);
+                        console.log('세션 종료:', event);
+
+                        if (event.sessionId === currentSessionId) {
+                            appendConsultantChatMessage('system', '👋 ' + (event.content || '사용자가 세션을 종료했습니다.'));
+
+                            // 입력 비활성화
+                            const messageInput = document.getElementById('consultant-message-input');
+                            const sendBtn = document.getElementById('consultant-send-btn');
+                            if (messageInput) messageInput.disabled = true;
+                            if (sendBtn) sendBtn.disabled = true;
+
+                            // 3초 후 세션 초기화
+                            setTimeout(() => {
+                                currentSessionId = null;
+                                const info = document.getElementById('activeSessionInfo');
+                                if (info) info.innerHTML = '세션을 선택해주세요';
+                                loadConsultantSessions();
+                            }, 3000);
+                        }
+                    } catch (e) {
+                        console.error('Session closed parse error:', e);
                     }
                 });
 
