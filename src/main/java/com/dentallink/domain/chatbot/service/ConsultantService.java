@@ -231,23 +231,21 @@ public class ConsultantService {
         List<Object> sessionIds = redisTemplate.opsForList().range(WAITING_QUEUE_KEY, 0, -1);
         if (sessionIds == null) return;
 
-        Long position = 1L;
+        // Lambda에서 사용할 수 있도록 index를 별도로 추적
+        int[] positionCounter = {1};
         for (Object sessionIdObj : sessionIds) {
             Long sessionId = Long.parseLong(sessionIdObj.toString());
+            final long position = positionCounter[0];
+
             sessionRepository.findById(sessionId).ifPresent(session -> {
                 session.updateWaitingPosition(position);
                 redisTemplate.opsForValue().set(SESSION_POSITION_KEY + sessionId, position);
             });
-            position++;
+            positionCounter[0]++;
         }
     }
 
-    // ===== Inner Classes =====
-
-    /**
-     * 대기 중인 세션 정보
-     */
-    private record WaitingSession(Long sessionId, Long userId) {}
+    // ===== Inner Classes (Records) =====
 
     /**
      * 상담원 매칭 결과
