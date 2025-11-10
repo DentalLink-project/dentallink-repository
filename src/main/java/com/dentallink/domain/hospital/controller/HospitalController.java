@@ -78,11 +78,11 @@ public class HospitalController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<CommonApiResponse<HospitalCreateResponse>> createHospital(
-            @AuthenticationPrincipal AuthUser authUser,
+//            @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalCreateRequest request
     ) {
         return created(
-                hospitalInternalService.createHospital(authUser.getUserId(), request),
+                hospitalInternalService.createHospital(request),
                 "병원이 성공적으로 등록되었습니다."
         );
     }
