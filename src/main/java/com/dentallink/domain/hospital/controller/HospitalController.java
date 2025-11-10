@@ -30,26 +30,6 @@ import static com.dentallink.common.response.CommonApiResponse.*;
 public class HospitalController {
     private final HospitalInternalService hospitalInternalService;
 
-    // 병원 등록
-    @Operation(summary = "병원 등록", description = "새로운 병원을 등록합니다. 시스템 관리자만 가능")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "병원 등록 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @ApiResponse(responseCode = "401", description = "인증 실패"),
-            @ApiResponse(responseCode = "403", description = "권한 없음")
-    })
-    @PostMapping
-    @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<CommonApiResponse<HospitalCreateResponse>> createHospital(
-            @AuthenticationPrincipal AuthUser authUser,
-            @Valid @RequestBody HospitalCreateRequest request
-    ) {
-        return created(
-                hospitalInternalService.createHospital(authUser.getUserId(), request),
-                "병원이 성공적으로 등록되었습니다."
-        );
-    }
-
     // 병원 전체 조회
     @Operation(summary = "병원 전체 조회", description = "등록된 모든 병원을 조회합니다.")
     @ApiResponses(value = {
@@ -87,8 +67,46 @@ public class HospitalController {
         return success(hospital, "병원 상세 정보를 조회했습니다.");
     }
 
+    // 병원 등록
+    @Operation(summary = "병원 등록", description = "새로운 병원을 등록합니다. 시스템 관리자만 가능")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "병원 등록 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
+            @ApiResponse(responseCode = "401", description = "인증 실패"),
+            @ApiResponse(responseCode = "403", description = "권한 없음")
+    })
+    @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN')")
+    public ResponseEntity<CommonApiResponse<HospitalCreateResponse>> createHospital(
+            @AuthenticationPrincipal AuthUser authUser,
+            @Valid @RequestBody HospitalCreateRequest request
+    ) {
+        return created(
+                hospitalInternalService.createHospital(authUser.getUserId(), request),
+                "병원이 성공적으로 등록되었습니다."
+        );
+    }
+
+    // 병원 관계자 지정(등록)
+    @Operation(summary = "병원 관계자 지정", description = "특정 유저를 병원 관계자로 지정합니다. 시스템 관리자 또는 병원 관계자만 가능")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "병원 관계자 등록 성공")
+    })
+    @PatchMapping("/{hospitalId}/assign/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'HOSPITAL')")
+    public ResponseEntity<CommonApiResponse<String>> assignHospitalMember(
+            @PathVariable Long hospitalId,
+            @PathVariable Long userId,
+            @AuthenticationPrincipal AuthUser authUser
+    ) {
+        return success(
+                hospitalInternalService.assignHospitalMember(hospitalId, userId, authUser.getUserId()),
+                "해당 사용자가 병원 관계자로 등록되었습니다."
+        );
+    }
+
     // 병원 수정
-    @Operation(summary = "병원 수정", description = "병원 정보를 수정합니다. 병원 관리자, 시스템 관리자만 가능")
+    @Operation(summary = "병원 수정", description = "병원 정보를 수정합니다. 병원 관리자, 시스템 관리자 또는 병원 관계자만 가능")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "수정 성공"),
             @ApiResponse(responseCode = "400", description = "잘못된 요청"),

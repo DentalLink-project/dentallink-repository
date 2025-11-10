@@ -11,6 +11,9 @@ import com.dentallink.domain.hospital.exception.HospitalErrorCode;
 import com.dentallink.domain.hospital.repository.HospitalReservationTimeRepository;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
+import com.dentallink.domain.user.entity.User;
+import com.dentallink.domain.user.repository.UserRepository;
+import com.dentallink.domain.user.enums.UserRole;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +38,7 @@ public class HospitalInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
     private final HospitalReservationTimeRepository hospitalReservationTimeRepository;
+    private final UserRepository userRepository;
 
 
     // -------------------- 공용 조회 메서드 --------------------
@@ -61,6 +65,12 @@ public class HospitalInternalService {
         Pageable pageable = PageRequest.of(page > 0 ? page - 1 : 0, size);
         Page<HospitalListResponse> hospitals = hospitalRepository.findAllWithOptionalFavorite(userId, pageable);
         return PageResponse.fromPage(hospitals);
+    }
+
+    @Transactional(readOnly = true)
+    public HospitalDetailResponse findHospitalById(Long id, Long userId) {
+        return hospitalRepository.findHospitalDetailWithOptionalFavorite(id, userId)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
     }
 
     // -------------------- 병원 CRUD --------------------
@@ -91,17 +101,40 @@ public class HospitalInternalService {
         return HospitalCreateResponse.of(savedHospital, savedSchedule);
     }
 
-    @Transactional(readOnly = true)
-    public HospitalDetailResponse findHospitalById(Long id, Long userId) {
-        return hospitalRepository.findHospitalDetailWithOptionalFavorite(id, userId)
-                .orElseThrow(() -> new GlobalException(HospitalErrorCode.HOSPITAL_NOT_FOUND));
+    // 병원 관계자 지정(등록)
+    @Transactional
+    public String assignHospitalMember(Long hospitalId, Long targetUserId, Long currentUserId) {
+        Hospital hospital = getHospitalById(hospitalId);
+
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER)); // 또는 USER_NOT_FOUND
+
+        // 권한: 시스템 관리자(ADMIN) 또는 해당 병원의 등록자(병원 대표)만 관계자 지정 가능
+        boolean isAdmin = currentUser.getUserRole() == UserRole.ROLE_ADMIN;
+        boolean isHospitalOwner = hospital.getUserId().equals(currentUser.getId());
+
+        if (!isAdmin && !isHospitalOwner) {
+            throw new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER);
+        }
+
+        User targetUser = userRepository.findById(targetUserId)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER)); // 혹은 USER_NOT_FOUND
+
+        // 병원 관계자 지정
+        targetUser.assignToHospital(hospital.getId());
+
+        userRepository.save(targetUser);
+
+        return "userId=" + targetUserId + " assigned to hospitalId=" + hospitalId;
     }
 
     // 병원 수정
     @Transactional
     public HospitalUpdateResponse updateHospital(Long id, Long userId, HospitalUpdateRequest req) {
         Hospital hospital = getHospitalById(id);
-        checkHospitalOwner(hospital, userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER));
+        checkHospitalOwner(hospital, user);
 
         hospital.updateHospital(
                 req.hospitalName(),
@@ -127,7 +160,10 @@ public class HospitalInternalService {
     @Transactional
     public void deleteHospital(Long id, Long userId) {
         Hospital hospital = getHospitalById(id);
-        checkHospitalOwner(hospital, userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER));
+
+        checkHospitalOwner(hospital, user);
         hospitalRepository.delete(hospital);
     }
 
@@ -137,7 +173,10 @@ public class HospitalInternalService {
     @Transactional
     public HospitalScheduleCreateResponse createHospitalSchedule(Long hospitalId, Long userId, HospitalScheduleCreateRequest req) {
         Hospital hospital = getHospitalById(hospitalId);
-        checkHospitalOwner(hospital, userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER));
+
+        checkHospitalOwner(hospital, user);
 
         if (findScheduleByHospitalId(hospitalId).isPresent()) {
             throw new GlobalException(HospitalErrorCode.DUPLICATE_SCHEDULE);
@@ -159,7 +198,10 @@ public class HospitalInternalService {
     @Transactional
     public HospitalScheduleUpdateResponse updateHospitalSchedule(Long hospitalId, Long userId, HospitalScheduleUpdateRequest req) {
         Hospital hospital = getHospitalById(hospitalId);
-        checkHospitalOwner(hospital, userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER));
+
+        checkHospitalOwner(hospital, user);
 
         HospitalSchedule schedule = getScheduleByHospitalId(hospitalId);
         schedule.updateSchedule(
@@ -176,7 +218,10 @@ public class HospitalInternalService {
     @Transactional
     public void deleteHospitalSchedule(Long hospitalId, Long userId) {
         Hospital hospital = getHospitalById(hospitalId);
-        checkHospitalOwner(hospital, userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER));
+
+        checkHospitalOwner(hospital, user);
 
         HospitalSchedule schedule = getScheduleByHospitalId(hospitalId);
         hospitalScheduleRepository.delete(schedule);
@@ -185,10 +230,18 @@ public class HospitalInternalService {
 
     // -------------------- 유틸 --------------------
 
-    private void checkHospitalOwner(Hospital hospital, Long userId) {
-        if (!hospital.getUserId().equals(userId)) {
-            throw new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER);
-        }
+    private void checkHospitalOwner(Hospital hospital, User user) {
+        // 시스템 관리자면 통과
+        if (user.getUserRole() == UserRole.ROLE_ADMIN) return;
+
+        // 병원 관계자면 통과
+        if (hospital.getUserId().equals(user.getId())) return;
+
+        // 유저의 hospitalId가 병원 id와 같으면 통과
+        if (user.getHospitalId() != null && user.getHospitalId().equals(hospital.getId())) return;
+
+        // 그 외는 권한 없음
+        throw new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER);
     }
 
     // -------------------- 병원 예약 시간 CRUD --------------------
