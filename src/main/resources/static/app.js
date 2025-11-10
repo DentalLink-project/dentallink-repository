@@ -394,7 +394,6 @@ function renderHospitals(hospitalsList) {
         <div class="hospital-card" onclick="viewHospitalDetail(${hospital.id})">
             <div class="hospital-card-body">
                 <h3>${hospital.hospitalName || '병원 이름'}</h3>
-                <p>🏥 ${hospital.hospitalAddress || '주소 없음'}</p>
                 <p>👨‍⚕️ ${hospital.doctorName || '의사 정보 없음'}</p>
                 <p>${hospital.hospitalIsOpen ? '✅ 영업 중' : '❌ 영업 종료'}</p>
             </div>
@@ -564,7 +563,7 @@ async function viewHospitalDetail(hospitalId) {
                         </div>
                         <div class="info-item">
                             <strong>상태</strong>
-                            ${currentHospital.isOpen ? '✅ 영업 중' : '❌ 영업 종료'}
+                            ${currentHospital.hospitalIsOpen ? '✅ 영업 중' : '❌ 영업 종료'}
                         </div>
                     </div>
                     <p>${currentHospital.description || '설명이 없습니다'}</p>
@@ -1538,7 +1537,10 @@ function appendFabChatMessage(sender, text) {
  */
 function connectFabChatbot() {
     try {
-        const socket = new WebSocket('ws://localhost:9999/ws/chat');
+        // 현재 호스트 기반 WebSocket URL 동적 생성
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
         window.fabChatStompClient = Stomp.over(socket);
         window.fabChatStompClient.debug = null;
 
@@ -2038,13 +2040,21 @@ function connectChatbot() {
     const connectionText = document.getElementById('connection-text');
 
     try {
-        const socket = new WebSocket('ws://localhost:9999/ws/chat');
+        // 현재 호스트 기반 WebSocket URL 동적 생성
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
         chatbotStompClient = Stomp.over(socket);
-        chatbotStompClient.debug = null; // 디버그 로그 비활성화
+        chatbotStompClient.debug = function(msg) {
+            console.log('STOMP DEBUG:', msg);
+        }; // 디버그 로그 활성화
 
         const headers = {};
         if (authToken) {
             headers['Authorization'] = `Bearer ${authToken}`;
+            console.log('WebSocket 연결 시도 - Token 포함:', authToken.substring(0, 20) + '...');
+        } else {
+            console.warn('WebSocket 연결 시도 - Token 없음!');
         }
 
         chatbotStompClient.connect(headers,
