@@ -12,13 +12,13 @@ import com.dentallink.domain.user.enums.UserRole;
 import com.dentallink.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.Set;
 
 /**
  * 상담원 서비스
@@ -34,9 +34,12 @@ public class ConsultantService {
     private final ChatSessionRepository sessionRepository;
     private final ChatMessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final RedisTemplate<String, Object> redisTemplate;
 
-    // 대기 큐 (실제 프로덕션에서는 Redis 등 사용)
-    private final Queue<WaitingSession> waitingQueue = new ConcurrentLinkedQueue<>();
+    // Redis 키 상수
+    private static final String WAITING_QUEUE_KEY = "chatbot:waiting:queue";
+    private static final String SESSION_POSITION_KEY = "chatbot:session:position:";
+    private static final String ACTIVE_CONSULTANTS_KEY = "chatbot:active:consultants:";
 
     /**
      * 상담원에게 전환
@@ -69,15 +72,16 @@ public class ConsultantService {
             return new ConsultantMatchResult(true, consultant.getId(), 0L);
         }
 
-        // 대기열에 추가
-        WaitingSession waitingSession = new WaitingSession(sessionId, userId);
-        waitingQueue.offer(waitingSession);
+        // Redis 대기열에 추가
+        redisTemplate.opsForList().rightPush(WAITING_QUEUE_KEY, sessionId.toString());
 
-        long position = waitingQueue.size();
+        // 세션 위치 저장
+        Long position = (Long) redisTemplate.opsForList().size(WAITING_QUEUE_KEY);
+        redisTemplate.opsForValue().set(SESSION_POSITION_KEY + sessionId, position);
 
         session.moveToWaitingPosition(position);
 
-        log.info("상담원 대기열 추가: sessionId={}, position={}", sessionId, position);
+        log.info("상담원 대기열 추가 (Redis): sessionId={}, position={}", sessionId, position);
         return new ConsultantMatchResult(false, null, position);
     }
 
@@ -130,21 +134,23 @@ public class ConsultantService {
     }
 
     /**
-     * 상담원이 대기 중인 세션 가져오기
+     * 상담원이 대기 중인 세션 가져오기 (Redis 기반)
      */
     @Transactional
     public Optional<ChatSession> pickNextWaitingSession(Long consultantId) {
-        WaitingSession waitingSession = waitingQueue.poll();
+        // Redis에서 대기열의 첫 번째 sessionId 가져오기
+        Object sessionIdObj = redisTemplate.opsForList().leftPop(WAITING_QUEUE_KEY);
 
-        if (waitingSession == null) {
+        if (sessionIdObj == null) {
             return Optional.empty();
         }
 
-        ChatSession session = sessionRepository.findById(waitingSession.sessionId())
-                .orElse(null);
+        Long sessionId = Long.parseLong(sessionIdObj.toString());
+        ChatSession session = sessionRepository.findById(sessionId).orElse(null);
 
         if (session == null || session.getStatus() != SessionStatus.WAITING) {
-            // 유효하지 않은 세션이면 다음 것 시도
+            // 유효하지 않은 세션이면 위치 정보 삭제 후 다음 것 시도
+            redisTemplate.delete(SESSION_POSITION_KEY + sessionId);
             return pickNextWaitingSession(consultantId);
         }
 
@@ -160,21 +166,24 @@ public class ConsultantService {
         );
         messageRepository.save(systemMessage);
 
+        // 세션 위치 정보 삭제
+        redisTemplate.delete(SESSION_POSITION_KEY + sessionId);
+
         // 대기 순번 업데이트 (남은 세션들)
         updateWaitingPositions();
 
-        log.info("상담원이 대기 세션 가져옴: sessionId={}, consultantId={}", session.getId(), consultantId);
+        log.info("상담원이 대기 세션 가져옴 (Redis): sessionId={}, consultantId={}", session.getId(), consultantId);
         return Optional.of(session);
     }
 
     /**
-     * 대기열 상태 조회
+     * 대기열 상태 조회 (Redis 기반)
      */
     public QueueStatus getQueueStatus() {
-        int waitingCount = waitingQueue.size();
+        Long waitingCount = redisTemplate.opsForList().size(WAITING_QUEUE_KEY);
         int activeConsultants = countActiveConsultants();
 
-        return new QueueStatus(waitingCount, activeConsultants);
+        return new QueueStatus(waitingCount != null ? waitingCount.intValue() : 0, activeConsultants);
     }
 
     // ===== Private Helper Methods =====
@@ -212,14 +221,24 @@ public class ConsultantService {
     }
 
     /**
-     * 대기 순번 업데이트
+     * 대기 순번 업데이트 (Redis 기반)
      */
     private void updateWaitingPositions() {
+        Long size = redisTemplate.opsForList().size(WAITING_QUEUE_KEY);
+        if (size == null || size == 0) return;
+
+        // Redis의 모든 sessionId 조회
+        List<Object> sessionIds = redisTemplate.opsForList().range(WAITING_QUEUE_KEY, 0, -1);
+        if (sessionIds == null) return;
+
         Long position = 1L;
-        for (WaitingSession ws : waitingQueue) {
-            sessionRepository.findById(ws.sessionId()).ifPresent(session -> {
+        for (Object sessionIdObj : sessionIds) {
+            Long sessionId = Long.parseLong(sessionIdObj.toString());
+            sessionRepository.findById(sessionId).ifPresent(session -> {
                 session.updateWaitingPosition(position);
+                redisTemplate.opsForValue().set(SESSION_POSITION_KEY + sessionId, position);
             });
+            position++;
         }
     }
 
