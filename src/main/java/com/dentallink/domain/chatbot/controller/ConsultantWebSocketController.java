@@ -173,6 +173,15 @@ public class ConsultantWebSocketController {
         return consultantService.getQueueStatus();
     }
 
+    /**
+     * 대기 중인 세션 목록 조회
+     */
+    @GetMapping("/api/consultant/waiting-sessions")
+    @ResponseBody
+    public List<ConsultantService.WaitingSessionInfo> getWaitingSessions() {
+        return consultantService.getWaitingSessions();
+    }
+
     // ===== Private Helper Methods =====
 
     private Long getConsultantIdFromHeader(SimpMessageHeaderAccessor headerAccessor) {
