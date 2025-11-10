@@ -79,7 +79,7 @@ public class HospitalInternalService {
     @Transactional
     public HospitalCreateResponse createHospital(Long userId, HospitalCreateRequest req) {
         Hospital hospital = new Hospital(
-                userId,
+//                userId,
                 req.hospitalName(),
                 req.hospitalDescription(),
                 req.hospitalAddress(),
@@ -107,18 +107,18 @@ public class HospitalInternalService {
         Hospital hospital = getHospitalById(hospitalId);
 
         User currentUser = userRepository.findById(currentUserId)
-                .orElseThrow(() -> new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER)); // 또는 USER_NOT_FOUND
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER));
 
         // 권한: 시스템 관리자(ADMIN) 또는 해당 병원의 등록자(병원 대표)만 관계자 지정 가능
         boolean isAdmin = currentUser.getUserRole() == UserRole.ROLE_ADMIN;
-        boolean isHospitalOwner = hospital.getUserId().equals(currentUser.getId());
+        boolean isHospitalOwner = currentUser.getHospitalId().equals(hospital.getId());
 
         if (!isAdmin && !isHospitalOwner) {
             throw new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER);
         }
 
         User targetUser = userRepository.findById(targetUserId)
-                .orElseThrow(() -> new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER)); // 혹은 USER_NOT_FOUND
+                .orElseThrow(() -> new GlobalException(HospitalErrorCode.NOT_HOSPITAL_OWNER));
 
         // 병원 관계자 지정
         targetUser.assignToHospital(hospital.getId());
@@ -235,7 +235,7 @@ public class HospitalInternalService {
         if (user.getUserRole() == UserRole.ROLE_ADMIN) return;
 
         // 병원 관계자면 통과
-        if (hospital.getUserId().equals(user.getId())) return;
+        //if (hospital.getUserId().equals(user.getId())) return;
 
         // 유저의 hospitalId가 병원 id와 같으면 통과
         if (user.getHospitalId() != null && user.getHospitalId().equals(hospital.getId())) return;

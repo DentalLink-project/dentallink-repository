@@ -13,8 +13,8 @@ public class Hospital extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+//    @Column(name = "user_id", nullable = false)
+//    private Long userId;
 
     private String hospitalName;
     private String hospitalDescription;
@@ -27,7 +27,7 @@ public class Hospital extends BaseEntity {
     private HospitalSchedule hospitalSchedule;
 
     public Hospital(
-            Long userId,
+//            Long userId,
             String hospitalName,
             String hospitalDescription,
             String hospitalAddress,
@@ -35,7 +35,7 @@ public class Hospital extends BaseEntity {
             String doctorName,
             Long reservationCost
     ) {
-        this.userId = userId;
+//        this.userId = userId;
         this.hospitalName = hospitalName;
         this.hospitalDescription = hospitalDescription;
         this.hospitalAddress = hospitalAddress;
