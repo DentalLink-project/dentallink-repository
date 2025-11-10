@@ -394,7 +394,6 @@ function renderHospitals(hospitalsList) {
         <div class="hospital-card" onclick="viewHospitalDetail(${hospital.id})">
             <div class="hospital-card-body">
                 <h3>${hospital.hospitalName || '병원 이름'}</h3>
-                <p>🏥 ${hospital.hospitalAddress || '주소 없음'}</p>
                 <p>👨‍⚕️ ${hospital.doctorName || '의사 정보 없음'}</p>
                 <p>${hospital.hospitalIsOpen ? '✅ 영업 중' : '❌ 영업 종료'}</p>
             </div>
