@@ -77,7 +77,7 @@ public class HospitalInternalService {
 
     // 병원 등록
     @Transactional
-    public HospitalCreateResponse createHospital(Long userId, HospitalCreateRequest req) {
+    public HospitalCreateResponse createHospital(HospitalCreateRequest req) {
         Hospital hospital = new Hospital(
 //                userId,
                 req.hospitalName(),
