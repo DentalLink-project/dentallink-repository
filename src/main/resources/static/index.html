@@ -27,8 +27,8 @@
                     </li>
                     <li><a href="#" onclick="navigateTo('points')">포인트</a></li>
                     <li><a href="#" onclick="navigateTo('chatbot')">💬 채팅</a></li>
-                    <li id="adminMenu" style="display:none;">
-                        <a href="#" onclick="navigateTo('hospitalCreate')">병원 등록</a>
+                    <li id="adminHospitalManagementMenu" style="display:none;">
+                        <a href="#" onclick="navigateTo('hospitalManagement')">🏥 병원 관리</a>
                     </li>
                     <li id="adminConsultantMenu" style="display:none;">
                         <a href="#" onclick="navigateTo('consultantDashboard')">🎧 상담원 대시보드</a>
@@ -215,9 +215,28 @@
                 </div>
             </div>
 
+            <!-- Hospital Management (Admin Only) -->
+            <div id="hospitalManagement" class="page">
+                <div class="container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2>🏥 병원 관리</h2>
+                        <button class="btn btn-primary" onclick="navigateTo('hospitalCreate')">+ 병원 등록</button>
+                    </div>
+                    <div class="search-bar">
+                        <input type="text" id="adminSearchInput" placeholder="병원명 검색..." oninput="adminSearchHospitals()" autocomplete="off">
+                        <button type="button" id="adminSearchClearBtn" class="search-clear-btn" onclick="adminClearSearch()" style="display: none;">✕</button>
+                    </div>
+                    <div id="hospitalManagementList" class="hospitals-grid">
+                        <!-- Hospitals will be loaded here -->
+                    </div>
+                    <div id="hospitalManagementPagination" class="pagination"></div>
+                </div>
+            </div>
+
             <!-- Hospital Create (Admin Only) -->
             <div id="hospitalCreate" class="page">
                 <div class="container">
+                    <button class="btn btn-secondary" onclick="navigateTo('hospitalManagement')">← 돌아가기</button>
                     <div class="form-container">
                         <h2>병원 등록</h2>
                         <form id="hospitalCreateForm" onsubmit="handleHospitalCreate(event)">

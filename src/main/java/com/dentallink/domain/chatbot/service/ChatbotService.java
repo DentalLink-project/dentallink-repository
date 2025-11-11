@@ -73,6 +73,7 @@ public class ChatbotService {
     /**
      * 메시지 처리 및 AI 응답 생성 (WebSocket용)
      * - 상담원 모드 체크 포함
+     * - 상담원 연결 키워드 감지
      */
     @Transactional
     public ChatResponse processMessage(ChatRequest request, Long userId) {
@@ -92,14 +93,31 @@ public class ChatbotService {
         ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
         messageRepository.save(userMessage);
 
-        // 5. Rate Limit 체크
+        // 5. 상담원 연결 키워드 감지
+        if (isConsultantRequestKeyword(request.content())) {
+            log.info("상담원 연결 요청 감지 - 상담원 전환: userId={}", userId);
+
+            // 시스템 메시지 저장
+            ChatMessage systemMessage = ChatMessage.createSystemMessage(
+                    session,
+                    "상담원 연결을 요청하셨습니다. 상담원을 연결해드리겠습니다."
+            );
+            messageRepository.save(systemMessage);
+
+            // 상담원 연결 시도
+            var matchResult = consultantService.transferToConsultant(session.getId(), userId);
+
+            return ChatResponse.createTransferResponse(session.getId(), matchResult.waitingPosition());
+        }
+
+        // 6. Rate Limit 체크
         if (!checkRateLimit(userId)) {
             // Rate Limit 초과 → 상담원 전환
             return handleRateLimitExceeded(session, userId);
         }
 
         try {
-            // 6. AI 응답 생성
+            // 7. AI 응답 생성
             return generateAIResponse(session, userId);
 
         } catch (GlobalException e) {
@@ -449,5 +467,78 @@ public class ChatbotService {
                 .role("user")
                 .content(systemPrompt)
                 .build();
+    }
+
+    /**
+     * 상담원 연결 키워드 감지
+     * 사용자 입력에서 상담원 연결 요청 키워드를 확인합니다.
+     *
+     * @param content 사용자 입력 텍스트
+     * @return 상담원 연결 요청 키워드가 포함되어 있으면 true
+     */
+    private boolean isConsultantRequestKeyword(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            return false;
+        }
+
+        String lowerText = content.toLowerCase();
+
+        // 상담원 연결 관련 키워드 리스트
+        String[] consultantKeywords = {
+                // 상담원/상담사 관련
+                "상담원",
+                "상담원 연결",
+                "상담원 연결해",
+                "상담원 연결해주",
+                "상담원과",
+                "상담원님",
+                "상담사",
+                "상담사 연결",
+                "상담사와",
+
+                // 직원/담당자 관련
+                "직원",
+                "직원 연결",
+                "담당자",
+                "담당자 연결",
+                "담당자와",
+
+                // 대화/통화 관련
+                "사람과 통화",
+                "사람과 얘기",
+                "사람하고 통화",
+                "사람하고 얘기",
+                "실제 사람",
+                "사람이",
+
+                // 상담 관련
+                "상담 받고",
+                "상담 받고 싶",
+                "상담해",
+                "상담해주",
+
+                // 기타
+                "전화",
+                "직원과",
+                "연결해",
+                "연결해주",
+
+                // 영문 키워드
+                "talk to",
+                "speak to",
+                "connect",
+                "operator",
+                "agent",
+                "representative"
+        };
+
+        // 키워드 매칭 (포함 여부 확인)
+        for (String keyword : consultantKeywords) {
+            if (lowerText.contains(keyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
