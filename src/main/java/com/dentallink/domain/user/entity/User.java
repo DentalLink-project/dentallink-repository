@@ -28,6 +28,10 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private UserRole userRole;
 
+    // 사용자가 소속된 병원 (nullable) -박신희
+    @Column(name = "hospital_id")
+    private Long hospitalId;
+
     private User (String email, String password, String username, UserRole userRole) {
         this.email = email;
         this.password = password;
@@ -50,5 +54,10 @@ public class User extends BaseEntity {
 
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    public void assignToHospital(Long hospitalId) {
+        this.hospitalId = hospitalId;
+        this.userRole = UserRole.ROLE_HOSPITAL;
     }
 }
