@@ -1,5 +1,6 @@
 // API Configuration
 const API_BASE_URL = 'http://43.203.215.197:8080/api';
+const API_BASE_URL = 'http://13.124.156.240:8080/api';
 
 // Storage for token
 let authToken = localStorage.getItem('authToken');

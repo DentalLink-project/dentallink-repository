@@ -9,14 +9,13 @@ let currentHospital = null;
 let reservations = [];
 
 // Initialize App
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Check if user is logged in (auto-login)
     if (authToken) {
-        loadUserProfile();
-        updateNavbar();
-    } else {
-        updateNavbar();
+        await loadUserProfile();
+        console.log('초기화: 프로필 로드 완료, currentUser:', currentUser);
     }
+    updateNavbar();
 
     // Show home page by default
     navigateTo('home');
@@ -27,6 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Navigation Functions
 function navigateTo(page) {
+    // 현재 상담원 대시보드에서 벗어나는 경우 정리
+    const currentPage = document.querySelector('.page.active');
+    if (currentPage && currentPage.id === 'consultantDashboard') {
+        cleanupConsultantDashboard();
+    }
+
     // Hide all pages
     document.querySelectorAll('.page').forEach(p => {
         p.classList.remove('active');
@@ -66,6 +71,22 @@ function navigateTo(page) {
             setTimeout(() => {
                 initChatPage();
             }, 100);
+        } else if (page === 'hospitalManagement') {
+            if (authToken && currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'))) {
+                loadHospitalManagementList(0);
+            } else {
+                showAlert('관리자만 접근할 수 있습니다', 'error');
+                navigateTo('home');
+            }
+        } else if (page === 'consultantDashboard') {
+            if (authToken && currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'))) {
+                setTimeout(() => {
+                    initConsultantDashboard();
+                }, 100);
+            } else {
+                showAlert('관리자만 접근할 수 있습니다', 'error');
+                navigateTo('home');
+            }
         }
     }
 
@@ -76,6 +97,8 @@ function navigateTo(page) {
 async function loadUserProfile() {
     try {
         currentUser = await authAPI.getProfile();
+        console.log('프로필 로드 완료:', currentUser);
+        console.log('사용자 역할:', currentUser.userRole);
         updateNavbar();
     } catch (error) {
         console.error('Failed to load profile:', error);
@@ -87,8 +110,10 @@ function updateNavbar() {
     const logoutMenu = document.getElementById('logoutMenu');
     const customerMenu = document.getElementById('customerMenu');
     const customerReservations = document.getElementById('customerReservations');
+    const chatbotMenu = document.querySelector('li a[onclick="navigateTo(\'chatbot\')"]')?.parentElement;
     const hospitalMenu = document.getElementById('hospitalMenu');
-    const adminMenu = document.getElementById('adminMenu');
+    const adminHospitalManagementMenu = document.getElementById('adminHospitalManagementMenu');
+    const adminConsultantMenu = document.getElementById('adminConsultantMenu');
     const adminFab = document.getElementById('adminFab');
 
     if (authToken && currentUser) {
@@ -96,23 +121,29 @@ function updateNavbar() {
         if (logoutMenu) logoutMenu.style.display = 'block';
 
         // Show/hide menus based on user role
-        if (currentUser.role && String(currentUser.role).includes('HOSPITAL')) {
+        if (currentUser.userRole && String(currentUser.userRole).includes('HOSPITAL')) {
             if (customerMenu) customerMenu.style.display = 'none';
             if (customerReservations) customerReservations.style.display = 'none';
+            if (chatbotMenu) chatbotMenu.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'block';
-            if (adminMenu) adminMenu.style.display = 'none';
+            if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
+            if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
             if (adminFab) adminFab.style.display = 'none';
-        } else if ((currentUser.role && String(currentUser.role).includes('ADMIN')) || currentUser.email === 'admin@example.com' || currentUser.userId === 1) {
+        } else if (currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) {
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
+            if (chatbotMenu) chatbotMenu.style.display = 'none'; // 관리자는 상담원 대시보드 사용
             if (hospitalMenu) hospitalMenu.style.display = 'none';
-            if (adminMenu) adminMenu.style.display = 'block';
+            if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'block';
+            if (adminConsultantMenu) adminConsultantMenu.style.display = 'block';
             if (adminFab) adminFab.style.display = 'block';
         } else {
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
+            if (chatbotMenu) chatbotMenu.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'none';
-            if (adminMenu) adminMenu.style.display = 'none';
+            if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
+            if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
             if (adminFab) adminFab.style.display = 'none';
         }
     } else {
@@ -120,8 +151,10 @@ function updateNavbar() {
         if (logoutMenu) logoutMenu.style.display = 'none';
         if (customerMenu) customerMenu.style.display = 'block';
         if (customerReservations) customerReservations.style.display = 'block';
+        if (chatbotMenu) chatbotMenu.style.display = 'block';
         if (hospitalMenu) hospitalMenu.style.display = 'none';
-        if (adminMenu) adminMenu.style.display = 'none';
+        if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
+        if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
         if (adminFab) adminFab.style.display = 'none';
     }
 }
@@ -244,13 +277,81 @@ async function handleSignup(event) {
 
 async function logout() {
     try {
+        // 1. 채팅 페이지의 WebSocket 연결 종료
+        if (chatbotStompClient) {
+            console.log('채팅 페이지 WebSocket 연결 종료');
+            chatbotStompClient.disconnect();
+            chatbotStompClient = null;
+            chatbotConnected = false;
+            chatbotSessionId = null;
+        }
+
+        // 2. FAB 챗봇의 WebSocket 연결 종료
+        if (window.fabChatStompClient) {
+            console.log('FAB 챗봇 WebSocket 연결 종료');
+            window.fabChatStompClient.disconnect();
+            window.fabChatStompClient = null;
+            window.fabChatConnected = false;
+            window.fabChatSessionId = null;
+        }
+
+        // 3. 상담원 대시보드의 WebSocket 연결 종료
+        if (consultantStompClient && consultantConnected) {
+            console.log('상담원 WebSocket 연결 종료');
+            try {
+                consultantStompClient.disconnect(() => {
+                });
+            } catch (e) {
+                console.error('Consultant WebSocket 종료 중 오류:', e);
+            }
+            consultantStompClient = null;
+            consultantConnected = false;
+            currentSessionId = null;
+        }
+
+        // 4. 모든 채팅 메시지 컨테이너 초기화 (일반 채팅, FAB 채팅, 상담원 채팅)
+        const chatContainers = [
+            'chat-messages',      // 채팅 페이지
+            'chatMessages',       // FAB 챗봇
+            'consultant-chat-messages' // 상담원 대시보드
+        ];
+
+        chatContainers.forEach(id => {
+            const container = document.getElementById(id);
+            if (container) {
+                container.innerHTML = ''; // 모든 이전 메시지 제거
+            }
+        });
+
+        // 5. 채팅 상태 변수 초기화
+        window.chatbotFabInitialized = false; // FAB 초기화 상태 리셋
+        isUserScrolling = false;
+        hasNewMessages = false;
+        isSendingChatMessage = false;
+        waitingSessions = [];
+        activeSessions = [];
+
+        // 6. 상담원 대시보드 타이머 정리
+        if (consultantSessionsIntervalId) {
+            clearInterval(consultantSessionsIntervalId);
+            consultantSessionsIntervalId = null;
+        }
+
+        // 7. 백엔드 로그아웃 API 호출
         await authAPI.logout();
+
+        // 8. 프론트엔드 상태 초기화
         currentUser = null;
         updateNavbar();
+
         showAlert('로그아웃 되었습니다', 'success');
         navigateTo('home');
     } catch (error) {
         console.error('Logout error:', error);
+        // 에러가 발생해도 UI는 초기화
+        currentUser = null;
+        updateNavbar();
+        navigateTo('home');
     }
 }
 
@@ -337,6 +438,7 @@ function showHospitalsSkeletonLoading() {
 
 function renderHospitals(hospitalsList) {
     const container = document.getElementById('hospitalsList');
+    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
 
     if (!hospitalsList || hospitalsList.length === 0) {
         container.innerHTML = '<div class="empty-state"><p>등록된 병원이 없습니다.</p></div>';
@@ -344,16 +446,18 @@ function renderHospitals(hospitalsList) {
     }
 
     container.innerHTML = hospitalsList.map(hospital => `
-        <div class="hospital-card" onclick="viewHospitalDetail(${hospital.id})">
-            <div class="hospital-card-body">
+        <div class="hospital-card">
+            <div class="hospital-card-body" onclick="viewHospitalDetail(${hospital.id})" style="cursor: pointer;">
                 <h3>${hospital.hospitalName || '병원 이름'}</h3>
-                <p>🏥 ${hospital.address || '주소 없음'}</p>
                 <p>👨‍⚕️ ${hospital.doctorName || '의사 정보 없음'}</p>
-                <p>${hospital.description ? hospital.description.substring(0, 100) + '...' : '설명 없음'}</p>
-                <p>${hospital.isOpen ? '✅ 영업 중' : '❌ 영업 종료'}</p>
+                <p>${hospital.hospitalIsOpen ? '✅ 영업 중' : '❌ 영업 종료'}</p>
             </div>
             <div class="hospital-card-footer">
                 <button class="btn btn-primary" onclick="viewHospitalDetail(${hospital.id})">자세히 보기</button>
+                ${isAdmin ? `
+                    <button class="btn btn-secondary" onclick="openHospitalEditModal(${hospital.id})" style="margin-left: 0.5rem;">✏️ 수정</button>
+                    <button class="btn btn-danger" onclick="deleteHospital(${hospital.id})" style="margin-left: 0.5rem;">🗑️ 삭제</button>
+                ` : ''}
             </div>
         </div>
     `).join('');
@@ -485,7 +589,7 @@ function goToHospitalsPage(page) {
     // Smooth scroll to hospital list before loading
     const hospitalsList = document.getElementById('hospitalsList');
     if (hospitalsList) {
-        hospitalsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        hospitalsList.scrollIntoView({behavior: 'smooth', block: 'start'});
     }
 
     loadHospitals(page);
@@ -518,7 +622,7 @@ async function viewHospitalDetail(hospitalId) {
                         </div>
                         <div class="info-item">
                             <strong>상태</strong>
-                            ${currentHospital.isOpen ? '✅ 영업 중' : '❌ 영업 종료'}
+                            ${currentHospital.hospitalIsOpen ? '✅ 영업 중' : '❌ 영업 종료'}
                         </div>
                     </div>
                     <p>${currentHospital.description || '설명이 없습니다'}</p>
@@ -777,8 +881,11 @@ async function createReservation(hospitalId) {
 // Reviews Functions
 async function loadReviews(hospitalId) {
     try {
-        const reviews = await reviewsAPI.getByHospital(hospitalId);
+        const response = await reviewsAPI.getByHospital(hospitalId);
         const reviewsList = document.getElementById('reviewsList');
+
+        // API 응답이 배열이 아닐 수 있으므로 처리
+        let reviews = Array.isArray(response) ? response : (response?.content || []);
 
         if (!reviews || reviews.length === 0) {
             reviewsList.innerHTML = '<p>리뷰가 없습니다</p>';
@@ -1171,7 +1278,7 @@ function goToPointsPage(page) {
     // Smooth scroll to transaction list before loading
     const transactionList = document.querySelector('.transaction-list');
     if (transactionList) {
-        transactionList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        transactionList.scrollIntoView({behavior: 'smooth', block: 'start'});
     }
 
     loadPoints(page);
@@ -1516,7 +1623,18 @@ function connectFabChatbot() {
                         if (body && body.sessionId && !window.fabChatSessionId) {
                             window.fabChatSessionId = body.sessionId;
                         }
-                        appendFabChatMessage('bot', body?.content || '');
+
+                        // 메시지 타입 확인 (상담사 vs AI)
+                        const messageType = body?.type || 'AI';
+                        let sender = 'bot'; // 기본값은 챗봇
+
+                        if (messageType === 'CONSULTANT') {
+                            sender = 'consultant'; // 상담사 메시지
+                        } else if (messageType === 'SYSTEM') {
+                            sender = 'system'; // 시스템 메시지
+                        }
+
+                        appendFabChatMessage(sender, body?.content || '');
                     } catch (e) {
                         console.error('Message parse error:', e);
                         appendFabChatMessage('bot', message.body || '');
@@ -1801,7 +1919,7 @@ let isCreatingHospital = false;
 async function handleHospitalCreate(event) {
     event.preventDefault();
 
-    const isAdmin = currentUser && ((currentUser.role && String(currentUser.role).includes('ADMIN')) || currentUser.email === 'admin@example.com' || currentUser.userId === 1);
+    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
     if (!authToken || !currentUser || !isAdmin) {
         showAlert('관리자만 병원 등록이 가능합니다', 'error');
         return;
@@ -1912,6 +2030,526 @@ async function handleHospitalCreate(event) {
     }
 }
 
+/**
+ * 관리자 병원 관리 페이지 - 병원 목록 로드
+ */
+let adminHospitalsPageNo = 0;
+let adminHospitalsPageSize = 10;
+let adminHospitalsTotalPages = 1;
+let adminHospitalsSearchQuery = '';
+
+async function loadHospitalManagementList(page = 0) {
+    const container = document.getElementById('hospitalManagementList');
+    const pagination = document.getElementById('hospitalManagementPagination');
+
+    if (!container) return;
+
+    // 로딩 상태
+    container.innerHTML = '<div class="loading"><div class="spinner"></div><p>병원 목록 로드 중...</p></div>';
+
+    try {
+        adminHospitalsPageNo = page;
+        let data;
+
+        if (adminHospitalsSearchQuery) {
+            data = await hospitalsAPI.search(adminHospitalsSearchQuery, adminHospitalsPageNo, adminHospitalsPageSize);
+        } else {
+            data = await hospitalsAPI.getAll(adminHospitalsPageNo, adminHospitalsPageSize);
+        }
+
+        // API 응답 처리
+        let hospitals = [];
+        if (Array.isArray(data)) {
+            hospitals = data;
+            adminHospitalsTotalPages = 1;
+        } else {
+            hospitals = data.content || [];
+            adminHospitalsTotalPages = typeof data.totalPages === 'number' ? data.totalPages : 1;
+            adminHospitalsPageNo = typeof data.number === 'number' ? data.number : adminHospitalsPageNo;
+        }
+
+        // 병원 목록 렌더링
+        renderHospitalManagementList(hospitals);
+
+        // 페이지 버튼 렌더링
+        renderAdminHospitalsPagination();
+
+    } catch (error) {
+        console.error('Failed to load hospital management list:', error);
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>병원 목록을 불러올 수 없습니다</p>
+                <button class="btn btn-primary" style="width: auto; margin-top: 1rem;" onclick="loadHospitalManagementList(0)">
+                    다시 시도
+                </button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * 관리자 병원 관리 페이지 - 병원 목록 렌더링
+ */
+function renderHospitalManagementList(hospitalsList) {
+    const container = document.getElementById('hospitalManagementList');
+
+    if (!hospitalsList || hospitalsList.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>등록된 병원이 없습니다.</p></div>';
+        return;
+    }
+
+    container.innerHTML = hospitalsList.map(hospital => `
+        <div class="hospital-card">
+            <div class="hospital-card-body" onclick="viewHospitalDetail(${hospital.id})" style="cursor: pointer;">
+                <h3>${hospital.hospitalName || '병원 이름'}</h3>
+                <p>👨‍⚕️ ${hospital.doctorName || '의사 정보 없음'}</p>
+                <p>${hospital.hospitalIsOpen ? '✅ 영업 중' : '❌ 영업 종료'}</p>
+            </div>
+            <div class="hospital-card-footer">
+                <button class="btn btn-secondary" onclick="openHospitalEditModal(${hospital.id})" style="margin-right: 0.5rem;">✏️ 수정</button>
+                <button class="btn btn-danger" onclick="deleteHospital(${hospital.id})">🗑️ 삭제</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * 관리자 병원 관리 페이지 - 페이지네이션 렌더링
+ */
+function renderAdminHospitalsPagination() {
+    const pagination = document.getElementById('hospitalManagementPagination');
+    if (!pagination) return;
+
+    if (adminHospitalsTotalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+
+    const buttons = [];
+    // Prev
+    buttons.push(`<button ${adminHospitalsPageNo === 0 ? 'disabled' : ''} onclick="goToAdminHospitalsPage(${adminHospitalsPageNo - 1})">이전</button>`);
+
+    // Page numbers
+    const windowSize = 5;
+    const start = Math.max(0, adminHospitalsPageNo - Math.floor(windowSize / 2));
+    const end = Math.min(adminHospitalsTotalPages - 1, start + windowSize - 1);
+    for (let i = start; i <= end; i++) {
+        buttons.push(`<button class="${i === adminHospitalsPageNo ? 'active' : ''}" onclick="goToAdminHospitalsPage(${i})">${i + 1}</button>`);
+    }
+
+    // Next
+    buttons.push(`<button ${adminHospitalsPageNo >= adminHospitalsTotalPages - 1 ? 'disabled' : ''} onclick="goToAdminHospitalsPage(${adminHospitalsPageNo + 1})">다음</button>`);
+
+    pagination.innerHTML = buttons.join('');
+}
+
+function goToAdminHospitalsPage(page) {
+    if (page < 0 || page >= adminHospitalsTotalPages) return;
+    loadHospitalManagementList(page);
+}
+
+/**
+ * 관리자 병원 검색
+ */
+let adminHospitalsSearchTimer = null;
+
+function adminSearchHospitals() {
+    const searchInput = document.getElementById('adminSearchInput');
+    const query = (searchInput.value || '').trim();
+    const container = document.getElementById('hospitalManagementList');
+    const clearBtn = document.getElementById('adminSearchClearBtn');
+
+    // 검색어가 없으면 전체 목록 표시
+    if (!query) {
+        adminHospitalsSearchQuery = '';
+        if (clearBtn) clearBtn.style.display = 'none';
+        loadHospitalManagementList(0);
+        return;
+    }
+
+    // 검색어 있으면 클리어 버튼 표시
+    if (clearBtn) clearBtn.style.display = 'inline-block';
+
+    // 로딩 상태
+    if (container) {
+        container.innerHTML = '<div class="loading"><div class="spinner"></div><p>검색 중...</p></div>';
+    }
+
+    // 기존 타이머 취소
+    if (adminHospitalsSearchTimer) clearTimeout(adminHospitalsSearchTimer);
+
+    // 500ms 디바운스
+    adminHospitalsSearchTimer = setTimeout(async () => {
+        try {
+            adminHospitalsSearchQuery = query;
+            await loadHospitalManagementList(0);
+
+            if (!document.getElementById('hospitalManagementList').innerHTML.includes('hospital-card')) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>검색 결과가 없습니다</p>
+                    </div>
+                `;
+            }
+        } catch (e) {
+            console.error('Search failed:', e);
+            container.innerHTML = '<div class="empty-state"><p>검색 중 오류가 발생했습니다</p></div>';
+        }
+    }, 500);
+}
+
+/**
+ * 관리자 병원 검색 초기화
+ */
+function adminClearSearch() {
+    const searchInput = document.getElementById('adminSearchInput');
+    const clearBtn = document.getElementById('adminSearchClearBtn');
+
+    searchInput.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+
+    adminHospitalsSearchQuery = '';
+    loadHospitalManagementList(0);
+    searchInput.focus();
+}
+
+// ===== Hospital Edit (Admin) =====
+let isUpdatingHospital = false;
+let editingHospitalId = null;
+
+/**
+ * 병원 수정 모달 열기
+ */
+async function openHospitalEditModal(hospitalId) {
+    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    if (!authToken || !currentUser || !isAdmin) {
+        showAlert('관리자만 병원 수정이 가능합니다', 'error');
+        return;
+    }
+
+    try {
+        // 기존 병원 데이터 조회
+        const hospital = await hospitalsAPI.getById(hospitalId);
+        editingHospitalId = hospitalId;
+
+        // 모달 HTML 생성
+        const modalHTML = `
+            <div class="modal" id="hospitalEditModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>병원 정보 수정</h2>
+                        <button type="button" class="modal-close" onclick="closeHospitalEditModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="hospitalEditForm" onsubmit="handleHospitalUpdate(event)">
+                            <!-- 기본 정보 -->
+                            <div class="form-group">
+                                <label for="heId">병원 ID (수정 불가)</label>
+                                <input type="text" id="heId" value="${hospital.id}" readonly disabled>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heName">병원명 *</label>
+                                <input type="text" id="heName" value="${hospital.hospitalName || ''}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heAddress">주소 *</label>
+                                <input type="text" id="heAddress" value="${hospital.hospitalAddress || ''}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heDoctor">의사명</label>
+                                <input type="text" id="heDoctor" value="${hospital.doctorName || ''}">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heDescription">병원 설명</label>
+                                <textarea id="heDescription" rows="3">${hospital.hospitalDescription || ''}</textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heOpen">영업 중</label>
+                                <input type="checkbox" id="heOpen" ${hospital.hospitalIsOpen ? 'checked' : ''}>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heReservationCost">예약 비용</label>
+                                <input type="number" id="heReservationCost" value="${hospital.reservationCost || 0}" min="0">
+                            </div>
+
+                            <!-- 진료 시간 -->
+                            <hr style="margin: 1.5rem 0;">
+                            <h3 style="margin-bottom: 1rem;">진료 시간</h3>
+
+                            <div class="form-group">
+                                <label for="heOpenTime">오픈 시간</label>
+                                <input type="time" id="heOpenTime" value="${hospital.openTime || '09:00'}">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heCloseTime">종료 시간</label>
+                                <input type="time" id="heCloseTime" value="${hospital.closeTime || '18:00'}">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heBreakStart">휴게 시작</label>
+                                <input type="time" id="heBreakStart" value="${hospital.breakStart || '12:00'}">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heBreakEnd">휴게 종료</label>
+                                <input type="time" id="heBreakEnd" value="${hospital.breakEnd || '13:00'}">
+                            </div>
+
+                            <!-- 버튼 -->
+                            <div class="form-actions" style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                                <button type="button" class="btn btn-secondary" onclick="closeHospitalEditModal()">취소</button>
+                                <button type="submit" class="btn btn-primary">수정 완료</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 기존 모달 제거
+        const existingModal = document.getElementById('hospitalEditModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // 모달 추가
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // 모달 표시
+        const modal = document.getElementById('hospitalEditModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.onclick = (event) => {
+                if (event.target === modal) {
+                    closeHospitalEditModal();
+                }
+            };
+        }
+
+    } catch (error) {
+        console.error('Failed to load hospital for editing:', error);
+        if (error instanceof APIError) {
+            if (error.status === 404) {
+                showAlert('병원을 찾을 수 없습니다', 'error');
+            } else if (error.status === 401) {
+                showAlert('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+                navigateTo('login');
+            } else {
+                showAlert('병원 정보 로드 실패: ' + error.message, 'error');
+            }
+        } else {
+            showAlert('병원 정보를 불러올 수 없습니다', 'error');
+        }
+    }
+}
+
+/**
+ * 병원 수정 모달 닫기
+ */
+function closeHospitalEditModal() {
+    const modal = document.getElementById('hospitalEditModal');
+    if (modal) {
+        modal.remove();
+    }
+    editingHospitalId = null;
+}
+
+/**
+ * 병원 정보 수정 처리
+ */
+async function handleHospitalUpdate(event) {
+    event.preventDefault();
+
+    if (!editingHospitalId) {
+        showAlert('수정할 병원 정보가 없습니다', 'error');
+        return;
+    }
+
+    if (isUpdatingHospital) {
+        showAlert('수정이 진행 중입니다. 잠시만 기다려주세요.', 'info');
+        return;
+    }
+
+    // 기본 정보
+    const hospitalName = document.getElementById('heName').value.trim();
+    const address = document.getElementById('heAddress').value.trim();
+    const doctorName = document.getElementById('heDoctor').value.trim();
+    const description = document.getElementById('heDescription').value.trim();
+    const isOpen = document.getElementById('heOpen').checked;
+
+    // 진료 시간
+    const openTime = document.getElementById('heOpenTime').value;
+    const closeTime = document.getElementById('heCloseTime').value;
+    const breakStart = document.getElementById('heBreakStart').value;
+    const breakEnd = document.getElementById('heBreakEnd').value;
+
+    // 예약 비용
+    const reservationCost = parseInt(document.getElementById('heReservationCost').value) || 0;
+
+    // Validate inputs
+    if (!hospitalName) {
+        showAlert('병원명은 필수입력 항목입니다', 'error');
+        return;
+    }
+
+    if (!address) {
+        showAlert('주소는 필수입력 항목입니다', 'error');
+        return;
+    }
+
+    if (hospitalName.length < 2) {
+        showAlert('병원명은 2자 이상이어야 합니다', 'error');
+        return;
+    }
+
+    if (reservationCost < 0) {
+        showAlert('예약 비용은 0 이상이어야 합니다', 'error');
+        return;
+    }
+
+    // Disable submit button
+    const form = document.getElementById('hospitalEditForm');
+    const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '수정 중...';
+    }
+
+    isUpdatingHospital = true;
+
+    try {
+        const payload = {
+            hospitalName: hospitalName,
+            hospitalDescription: description || '',
+            hospitalAddress: address,
+            hospitalIsOpen: !!isOpen,
+            doctorName: doctorName || '',
+            reservationCost: reservationCost,
+            openTime: openTime,
+            closeTime: closeTime,
+            breakStart: breakStart,
+            breakEnd: breakEnd
+        };
+
+        await hospitalsAPI.update(editingHospitalId, payload);
+
+        showAlert(`'${hospitalName}' 병원이 성공적으로 수정되었습니다!`, 'success');
+
+        // 모달 닫기
+        closeHospitalEditModal();
+
+        // 병원 목록 새로고침
+        setTimeout(() => {
+            loadHospitals(0);
+        }, 1500);
+
+    } catch (error) {
+        if (error instanceof APIError) {
+            if (error.status === 400) {
+                showAlert('입력한 병원 정보가 올바르지 않습니다: ' + error.message, 'error');
+            } else if (error.status === 401) {
+                showAlert('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+                navigateTo('login');
+            } else if (error.status === 404) {
+                showAlert('병원을 찾을 수 없습니다', 'error');
+            } else if (error.status === 403) {
+                showAlert('병원을 수정할 권한이 없습니다', 'error');
+            } else {
+                showAlert('병원 수정 실패: ' + error.message, 'error');
+            }
+        } else {
+            showAlert('병원 수정 중 오류가 발생했습니다: ' + error.message, 'error');
+        }
+        console.error('Hospital update error:', error);
+    } finally {
+        isUpdatingHospital = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '수정 완료';
+        }
+    }
+}
+
+// ===== Hospital Delete (Admin) =====
+let isDeletingHospital = false;
+
+/**
+ * 병원 삭제
+ */
+async function deleteHospital(hospitalId) {
+    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    if (!authToken || !currentUser || !isAdmin) {
+        showAlert('관리자만 병원 삭제가 가능합니다', 'error');
+        return;
+    }
+
+    if (isDeletingHospital) {
+        showAlert('삭제가 진행 중입니다. 잠시만 기다려주세요.', 'info');
+        return;
+    }
+
+    // 확인 대화상자
+    const confirmDelete = confirm('정말 이 병원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
+    if (!confirmDelete) {
+        return;
+    }
+
+    isDeletingHospital = true;
+
+    try {
+        // 버튼 비활성화
+        const deleteBtn = document.querySelector(`button[onclick="deleteHospital(${hospitalId})"]`);
+        if (deleteBtn) {
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = '삭제 중...';
+        }
+
+        await hospitalsAPI.delete(hospitalId);
+
+        showAlert('병원이 성공적으로 삭제되었습니다', 'success');
+
+        // 병원 목록 새로고침
+        setTimeout(() => {
+            loadHospitals(0);
+        }, 1500);
+
+    } catch (error) {
+        if (error instanceof APIError) {
+            if (error.status === 404) {
+                showAlert('병원을 찾을 수 없습니다', 'error');
+            } else if (error.status === 401) {
+                showAlert('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+                navigateTo('login');
+            } else if (error.status === 403) {
+                showAlert('병원을 삭제할 권한이 없습니다', 'error');
+            } else if (error.status === 400) {
+                showAlert('삭제할 수 없는 병원입니다. 관련 예약이 있을 수 있습니다: ' + error.message, 'error');
+            } else {
+                showAlert('병원 삭제 실패: ' + error.message, 'error');
+            }
+        } else {
+            showAlert('병원 삭제 중 오류가 발생했습니다: ' + error.message, 'error');
+        }
+        console.error('Hospital delete error:', error);
+
+    } finally {
+        isDeletingHospital = false;
+        // 버튼 다시 활성화
+        const deleteBtn = document.querySelector(`button[onclick="deleteHospital(${hospitalId})"]`);
+        if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = '🗑️ 삭제';
+        }
+    }
+}
+
 console.log('App module loaded');
 
 // ===== Chatbot Page Implementation =====
@@ -2000,11 +2638,16 @@ function connectChatbot() {
         const host = window.location.host;
         const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
         chatbotStompClient = Stomp.over(socket);
-        chatbotStompClient.debug = null; // 디버그 로그 비활성화
+        chatbotStompClient.debug = function (msg) {
+            console.log('STOMP DEBUG:', msg);
+        }; // 디버그 로그 활성화
 
         const headers = {};
         if (authToken) {
             headers['Authorization'] = `Bearer ${authToken}`;
+            console.log('WebSocket 연결 시도 - Token 포함:', authToken.substring(0, 20) + '...');
+        } else {
+            console.warn('WebSocket 연결 시도 - Token 없음!');
         }
 
         chatbotStompClient.connect(headers,
@@ -2026,7 +2669,25 @@ function connectChatbot() {
                         if (body && body.sessionId && !chatbotSessionId) {
                             chatbotSessionId = body.sessionId;
                         }
-                        appendChatMessage('bot', body?.content || '');
+
+                        // 상담원 연결 처리
+                        if (body?.actionType === 'TRANSFER_TO_CONSULTANT') {
+                            handleConsultantTransfer(body);
+                        } else if (body?.actionType === 'SESSION_CLOSED') {
+                            handleSessionClosed(body);
+                        } else {
+                            // 메시지 타입 확인 (상담사 vs AI)
+                            const messageType = body?.type || 'AI';
+                            let sender = 'bot'; // 기본값은 챗봇
+
+                            if (messageType === 'CONSULTANT') {
+                                sender = 'consultant'; // 상담사 메시지
+                            } else if (messageType === 'SYSTEM') {
+                                sender = 'system'; // 시스템 메시지
+                            }
+
+                            appendChatMessage(sender, body?.content || '');
+                        }
 
                         // 사용자가 스크롤 중이면 새 메시지 표시, 아니면 자동 스크롤
                         if (isUserScrolling) {
@@ -2179,7 +2840,7 @@ function initChatObserver() {
             }
         });
 
-        observer.observe(target, { childList: true, subtree: false });
+        observer.observe(target, {childList: true, subtree: false});
         chatbotObserverInitialized = true;
     } catch (e) {
         console.error('MutationObserver init error:', e);
@@ -2359,4 +3020,491 @@ function addFormEnterKeySupport() {
             });
         });
     });
+}
+
+// ===== 상담원 연결 처리 함수 =====
+
+/**
+ * 상담원 전환 처리
+ * - AI Rate Limit 초과 시 호출됨
+ * - 즉시 연결 또는 대기열에 추가
+ */
+function handleConsultantTransfer(response) {
+    console.log('상담원 전환 처리:', response);
+
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        typingIndicator.style.display = 'none';
+    }
+
+    // 응답 메시지 표시
+    if (response.waitingPosition === 0) {
+        // 즉시 연결됨 - 상담원과 실제 연결
+        appendChatMessage('system', '✅ 상담원이 연결되었습니다.');
+        appendChatMessage('bot', response.content || '상담원과의 대화가 시작되었습니다.');
+
+        // 입력창 활성화 (상담원과 실시간 채팅 가능)
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        if (messageInput) messageInput.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
+    } else {
+        // 대기열에 추가됨
+        appendChatMessage('system', `📊 현재 대기 순번: ${response.waitingPosition}번`);
+        appendChatMessage('bot', response.content || '상담원과 연결되기 전까지 잠시만 기다려주세요.');
+
+        // 입력창 비활성화 (대기 중)
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        if (messageInput) messageInput.disabled = true;
+        if (sendBtn) sendBtn.disabled = true;
+    }
+
+    scrollChatToBottom();
+    isSendingChatMessage = false;
+}
+
+/**
+ * 세션 종료 처리
+ */
+function handleSessionClosed(response) {
+    console.log('세션 종료:', response);
+
+    const typingIndicator = document.getElementById('typing-indicator');
+    if (typingIndicator) {
+        typingIndicator.style.display = 'none';
+    }
+
+    appendChatMessage('system', '👋 ' + (response.content || '상담이 종료되었습니다. 이용해주셔서 감사합니다.'));
+
+    // 입력창 비활성화
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    if (messageInput) {
+        messageInput.disabled = true;
+    }
+    if (sendBtn) {
+        sendBtn.disabled = true;
+    }
+
+    scrollChatToBottom();
+    isSendingChatMessage = false;
+}
+
+// ===== 상담원 대시보드 구현 =====
+
+let consultantStompClient = null;
+let consultantConnected = false;
+let currentSessionId = null;
+let waitingSessions = [];
+let activeSessions = [];
+let consultantSessionsIntervalId = null;  // setInterval ID 저장
+
+/**
+ * 상담원 대시보드 초기화
+ */
+function initConsultantDashboard() {
+    connectConsultantWebSocket();
+    setupConsultantUI();
+    loadConsultantSessions();
+}
+
+/**
+ * 상담원 대시보드 정리 (페이지 벗어날 때 호출)
+ */
+function cleanupConsultantDashboard() {
+    // setInterval 정리
+    if (consultantSessionsIntervalId) {
+        clearInterval(consultantSessionsIntervalId);
+        consultantSessionsIntervalId = null;
+    }
+
+    // WebSocket 연결 종료
+    if (consultantStompClient && consultantConnected) {
+        try {
+            consultantStompClient.disconnect(() => {
+                console.log('상담원 WebSocket 연결 종료');
+            });
+        } catch (e) {
+            console.error('WebSocket 종료 중 오류:', e);
+        }
+    }
+
+    // 상태 초기화
+    consultantConnected = false;
+    currentSessionId = null;
+    waitingSessions = [];
+    activeSessions = [];
+}
+
+/**
+ * 상담원 WebSocket 연결
+ */
+function connectConsultantWebSocket() {
+    const connectionDot = document.getElementById('consultant-connection-dot');
+    const connectionText = document.getElementById('consultant-connection-text');
+
+    try {
+        // 현재 호스트 기반 WebSocket URL 동적 생성
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
+        consultantStompClient = Stomp.over(socket);
+        consultantStompClient.debug = null;
+
+        const headers = {};
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+
+        consultantStompClient.connect(headers,
+            () => {
+                // 연결 성공
+                consultantConnected = true;
+                if (connectionDot) {
+                    connectionDot.classList.remove('offline');
+                    connectionDot.classList.add('online');
+                }
+                if (connectionText) {
+                    connectionText.textContent = '연결됨';
+                }
+
+                // 할당된 세션 구독
+                consultantStompClient.subscribe('/user/queue/assigned', (message) => {
+                    try {
+                        const event = JSON.parse(message.body);
+                        console.log('새 세션 할당:', event);
+                        if (event.sessionId) {
+                            currentSessionId = event.sessionId;
+                            selectSession(event.sessionId);
+                            loadSessionMessages(event.sessionId);
+                        }
+                    } catch (e) {
+                        console.error('Session assignment parse error:', e);
+                    }
+                });
+
+                // 상담원이 받을 메시지 구독 (사용자로부터의 메시지)
+                consultantStompClient.subscribe('/user/queue/messages', (message) => {
+                    try {
+                        const msg = JSON.parse(message.body);
+                        console.log('새 메시지 수신:', msg);
+
+                        if (msg && msg.sessionId === currentSessionId) {
+                            // 현재 선택된 세션의 메시지만 추가
+                            const sender = msg.type === 'USER' ? 'user' : (msg.type === 'CONSULTANT' ? 'consultant' : 'system');
+                            appendConsultantChatMessage(sender, msg.content);
+
+                            // 자동 스크롤
+                            const container = document.getElementById('consultant-chat-messages');
+                            if (container) {
+                                container.scrollTop = container.scrollHeight;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Message receive parse error:', e);
+                    }
+                });
+
+                // 세션 종료 알림 구독
+                consultantStompClient.subscribe('/user/queue/session-closed', (message) => {
+                    try {
+                        const event = JSON.parse(message.body);
+                        console.log('세션 종료:', event);
+
+                        if (event.sessionId === currentSessionId) {
+                            appendConsultantChatMessage('system', '👋 ' + (event.content || '사용자가 세션을 종료했습니다.'));
+
+                            // 입력 비활성화
+                            const messageInput = document.getElementById('consultant-message-input');
+                            const sendBtn = document.getElementById('consultant-send-btn');
+                            if (messageInput) messageInput.disabled = true;
+                            if (sendBtn) sendBtn.disabled = true;
+
+                            // 3초 후 세션 초기화
+                            setTimeout(() => {
+                                currentSessionId = null;
+                                const info = document.getElementById('activeSessionInfo');
+                                if (info) info.innerHTML = '세션을 선택해주세요';
+                                loadConsultantSessions();
+                            }, 3000);
+                        }
+                    } catch (e) {
+                        console.error('Session closed parse error:', e);
+                    }
+                });
+
+                // 주기적으로 대기 세션 업데이트 (기존 타이머 정리 후 시작)
+                if (consultantSessionsIntervalId) {
+                    clearInterval(consultantSessionsIntervalId);
+                }
+                consultantSessionsIntervalId = setInterval(loadConsultantSessions, 5000);
+            },
+            (error) => {
+                // 연결 실패
+                consultantConnected = false;
+                if (connectionDot) {
+                    connectionDot.classList.remove('online');
+                    connectionDot.classList.add('offline');
+                }
+                if (connectionText) {
+                    connectionText.textContent = '연결 실패';
+                }
+                console.error('Consultant STOMP error:', error);
+            }
+        );
+    } catch (e) {
+        consultantConnected = false;
+        console.error('Consultant WebSocket error:', e);
+    }
+}
+
+/**
+ * 상담원 UI 설정
+ */
+function setupConsultantUI() {
+    const messageInput = document.getElementById('consultant-message-input');
+    const sendBtn = document.getElementById('consultant-send-btn');
+    const charCount = document.getElementById('consultant-char-count');
+
+    if (!messageInput || !sendBtn) return;
+
+    // 메시지 입력 시
+    messageInput.addEventListener('input', (e) => {
+        const text = e.target.value.trim();
+        sendBtn.disabled = !currentSessionId || text.length === 0;
+        charCount.textContent = `${e.target.value.length}/2000`;
+    });
+
+    // Enter 키로 전송
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendConsultantMessage();
+        }
+    });
+}
+
+/**
+ * 상담원 대기/활성 세션 로드
+ */
+async function loadConsultantSessions() {
+    try {
+        // 1. 대기열 상태 조회
+        const statusResponse = await fetch('/api/consultant/queue/status', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (statusResponse.ok) {
+            const status = await statusResponse.json();
+            console.log('대기열 상태:', status);
+            document.getElementById('waitingCount').textContent = status.waitingCount || 0;
+            document.getElementById('activeCount').textContent = status.activeConsultants || 0;
+        } else {
+            console.warn('대기열 상태 조회 실패:', statusResponse.status);
+            document.getElementById('waitingCount').textContent = '0';
+            document.getElementById('activeCount').textContent = '0';
+        }
+
+        // 2. 대기 중인 세션 목록 조회
+        const sessionsResponse = await fetch('/api/consultant/waiting-sessions', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (sessionsResponse.ok) {
+            const sessions = await sessionsResponse.json();
+            console.log('대기 세션 목록:', sessions);
+            waitingSessions = Array.isArray(sessions) ? sessions : [];
+        } else {
+            console.warn('대기 세션 조회 실패:', sessionsResponse.status);
+            waitingSessions = [];
+        }
+    } catch (error) {
+        console.error('세션 로드 실패:', error);
+        waitingSessions = [];
+
+        // 에러 메시지 표시
+        const container = document.getElementById('waitingSessionsList');
+        if (container) {
+            container.innerHTML = '<p style="color: #e74c3c; padding: 1rem;">세션 로드 실패. 잠시 후 다시 시도해주세요.</p>';
+        }
+    }
+
+    // 대기 세션 목록 업데이트
+    renderWaitingSessions();
+}
+
+/**
+ * 대기 세션 목록 렌더링
+ */
+function renderWaitingSessions() {
+    const container = document.getElementById('waitingSessionsList');
+
+    if (!waitingSessions || waitingSessions.length === 0) {
+        container.innerHTML = '<p style="color: #999;">대기 중인 세션이 없습니다</p>';
+        return;
+    }
+
+    container.innerHTML = waitingSessions.map((session) => `
+        <div style="padding: 1rem; background: white; border-radius: 4px; margin-bottom: 0.5rem; cursor: pointer; border-left: 3px solid #667eea;"
+             onclick="selectSession(${session.sessionId})">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h4 style="margin: 0 0 0.5rem 0;">${session.username || '사용자'}</h4>
+                    <p style="margin: 0; color: #666; font-size: 0.9rem;">대기 순번: ${session.waitingPosition || '-'}</p>
+                    <p style="margin: 0.25rem 0 0 0; color: #999; font-size: 0.85rem;">${new Date(session.startedAt).toLocaleTimeString('ko-KR')}</p>
+                </div>
+                <button class="btn btn-primary" onclick="pickSession(${session.sessionId})" style="margin: 0;">수락</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * 세션 선택
+ */
+function selectSession(sessionId) {
+    currentSessionId = sessionId;
+    const info = document.getElementById('activeSessionInfo');
+
+    if (info) {
+        info.innerHTML = `세션 ID: ${sessionId} | 상담 중...`;
+    }
+
+    const messageInput = document.getElementById('consultant-message-input');
+    const sendBtn = document.getElementById('consultant-send-btn');
+    if (messageInput) {
+        messageInput.disabled = false;
+    }
+    if (sendBtn) {
+        sendBtn.disabled = false;
+    }
+
+    loadSessionMessages(sessionId);
+}
+
+/**
+ * 세션 수락 (대기열에서 가져오기)
+ * 서버 응답(/user/queue/assigned)을 받은 후 selectSession이 호출됨
+ */
+function pickSession(sessionId) {
+    if (!consultantStompClient || !consultantConnected) {
+        showAlert('연결이 끊어졌습니다', 'error');
+        return;
+    }
+
+    try {
+        const headers = {};
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+
+        // 메시지 전송 (sessionId를 반드시 포함해야 함)
+        const payload = {
+            sessionId: sessionId
+        };
+        consultantStompClient.send('/app/consultant/pick', headers, JSON.stringify(payload));
+        console.log('세션 수락 요청 전송:', sessionId);
+    } catch (error) {
+        console.error('Error picking session:', error);
+        showAlert('세션 수락 중 오류가 발생했습니다', 'error');
+    }
+}
+
+/**
+ * 세션 메시지 로드
+ */
+async function loadSessionMessages(sessionId) {
+    const container = document.getElementById('consultant-chat-messages');
+    container.innerHTML = '';
+
+    try {
+        const response = await fetch(`/api/chat/sessions/${sessionId}/messages`, {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+
+        if (response.ok) {
+            const messages = await response.json();
+            messages.forEach(msg => {
+                const sender = msg.type === 'USER' ? 'user' : (msg.type === 'CONSULTANT' ? 'consultant' : 'system');
+                appendConsultantChatMessage(sender, msg.content);
+            });
+
+            // 스크롤
+            container.scrollTop = container.scrollHeight;
+        }
+    } catch (error) {
+        console.error('Failed to load messages:', error);
+    }
+}
+
+/**
+ * 상담원 채팅 메시지 추가
+ */
+function appendConsultantChatMessage(sender, text) {
+    const container = document.getElementById('consultant-chat-messages');
+    if (!container || !text) return;
+
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${sender}`;
+
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.textContent = text;
+
+    messageDiv.appendChild(contentDiv);
+    container.appendChild(messageDiv);
+
+    // 스크롤
+    container.scrollTop = container.scrollHeight;
+}
+
+/**
+ * 상담원 메시지 전송
+ */
+function sendConsultantMessage() {
+    if (!currentSessionId) {
+        showAlert('선택된 세션이 없습니다', 'error');
+        return;
+    }
+
+    if (!consultantStompClient || !consultantConnected) {
+        showAlert('연결이 끊어졌습니다', 'error');
+        return;
+    }
+
+    const messageInput = document.getElementById('consultant-message-input');
+    const text = messageInput.value.trim();
+
+    if (!text) return;
+
+    try {
+        // 사용자 메시지 표시
+        appendConsultantChatMessage('consultant', text);
+        messageInput.value = '';
+        document.getElementById('consultant-char-count').textContent = '0/2000';
+
+        // 메시지 전송
+        const payload = {
+            sessionId: currentSessionId,
+            userId: 0, // 사용자 ID는 백엔드에서 처리
+            content: text
+        };
+
+        const headers = {};
+        if (authToken) {
+            headers['Authorization'] = `Bearer ${authToken}`;
+        }
+
+        consultantStompClient.send('/app/consultant/send', headers, JSON.stringify(payload));
+    } catch (error) {
+        console.error('Error sending message:', error);
+        showAlert('메시지 전송 중 오류가 발생했습니다', 'error');
+    }
 }

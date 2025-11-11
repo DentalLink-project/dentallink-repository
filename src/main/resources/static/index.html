@@ -27,8 +27,11 @@
                     </li>
                     <li><a href="#" onclick="navigateTo('points')">포인트</a></li>
                     <li><a href="#" onclick="navigateTo('chatbot')">💬 채팅</a></li>
-                    <li id="adminMenu" style="display:none;">
-                        <a href="#" onclick="navigateTo('hospitalCreate')">병원 등록</a>
+                    <li id="adminHospitalManagementMenu" style="display:none;">
+                        <a href="#" onclick="navigateTo('hospitalManagement')">🏥 병원 관리</a>
+                    </li>
+                    <li id="adminConsultantMenu" style="display:none;">
+                        <a href="#" onclick="navigateTo('consultantDashboard')">🎧 상담원 대시보드</a>
                     </li>
                     <li id="loginMenu"><a href="#" onclick="navigateTo('login')">로그인</a></li>
                     <li id="logoutMenu" style="display:none;">
@@ -212,9 +215,28 @@
                 </div>
             </div>
 
+            <!-- Hospital Management (Admin Only) -->
+            <div id="hospitalManagement" class="page">
+                <div class="container">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h2>🏥 병원 관리</h2>
+                        <button class="btn btn-primary" onclick="navigateTo('hospitalCreate')">+ 병원 등록</button>
+                    </div>
+                    <div class="search-bar">
+                        <input type="text" id="adminSearchInput" placeholder="병원명 검색..." oninput="adminSearchHospitals()" autocomplete="off">
+                        <button type="button" id="adminSearchClearBtn" class="search-clear-btn" onclick="adminClearSearch()" style="display: none;">✕</button>
+                    </div>
+                    <div id="hospitalManagementList" class="hospitals-grid">
+                        <!-- Hospitals will be loaded here -->
+                    </div>
+                    <div id="hospitalManagementPagination" class="pagination"></div>
+                </div>
+            </div>
+
             <!-- Hospital Create (Admin Only) -->
             <div id="hospitalCreate" class="page">
                 <div class="container">
+                    <button class="btn btn-secondary" onclick="navigateTo('hospitalManagement')">← 돌아가기</button>
                     <div class="form-container">
                         <h2>병원 등록</h2>
                         <form id="hospitalCreateForm" onsubmit="handleHospitalCreate(event)">
@@ -282,6 +304,77 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Consultant Dashboard (Admin Only) -->
+            <div id="consultantDashboard" class="page">
+                <div class="consultant-container">
+                    <!-- 헤더 -->
+                    <div class="consultant-header">
+                        <h2>🎧 상담원 대시보드</h2>
+                        <div class="consultant-status">
+                            <span id="consultant-connection-dot" class="connection-dot offline"></span>
+                            <span id="consultant-connection-text">연결 중...</span>
+                        </div>
+                    </div>
+
+                    <div class="consultant-content">
+                        <!-- 왼쪽: 대기 세션 목록 -->
+                        <div class="consultant-sidebar">
+                            <div class="sidebar-header">
+                                <h3>대기 중인 상담</h3>
+                                <div class="stats">
+                                    <span class="stat-item">
+                                        <strong id="waitingCount">0</strong>
+                                        <span>대기 중</span>
+                                    </span>
+                                    <span class="stat-item">
+                                        <strong id="activeCount">0</strong>
+                                        <span>진행 중</span>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- 대기 세션 목록 -->
+                            <div class="waiting-sessions">
+                                <div id="waitingSessionsList" class="sessions-list">
+                                    <p style="color: #999; text-align: center; padding: 2rem 1rem;">대기 중인 세션이 없습니다</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 오른쪽: 채팅 영역 -->
+                        <div class="consultant-chatarea">
+                            <!-- 세션 정보 -->
+                            <div class="session-header">
+                                <div id="activeSessionInfo" class="session-info">세션을 선택해주세요</div>
+                                <button class="btn btn-sm btn-secondary" onclick="loadConsultantSessions()" title="새로고침">🔄</button>
+                            </div>
+
+                            <!-- 메시지 영역 -->
+                            <div id="consultant-chat-messages" class="consultant-chat-messages">
+                                <!-- 메시지들이 여기에 동적으로 추가됨 -->
+                            </div>
+
+                            <!-- 입력 영역 -->
+                            <div class="consultant-input-container">
+                                <textarea
+                                    id="consultant-message-input"
+                                    placeholder="메시지를 입력하세요... (최대 2000자)"
+                                    maxlength="2000"
+                                    rows="2"
+                                    disabled
+                                ></textarea>
+                                <div class="input-actions">
+                                    <span id="consultant-char-count">0/2000</span>
+                                    <button id="consultant-send-btn" class="btn-send" disabled>
+                                        ➤ 전송
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
 
         <!-- Footer -->
@@ -306,7 +399,6 @@
     </div>
 
     <button id="chatFab" class="chat-fab" onclick="toggleChatbot()">💬</button>
-    <button id="adminFab" class="admin-fab" title="병원 등록" onclick="navigateTo('hospitalCreate')">🏥</button>
 
     <script src="api.js?v=2"></script>
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>

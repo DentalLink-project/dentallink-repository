@@ -13,17 +13,14 @@ import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.annotation.SendToUser;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.List;
 
 /**
  * 챗봇 WebSocket Controller
  * - 실시간 채팅 메시지 처리 (WebSocket)
- * - Postman 테스트용 REST API
+ * - 프로덕션 환경에서 사용
  */
 @Slf4j
 @Controller
@@ -97,62 +94,6 @@ public class ChatbotWebSocketController {
 
         Long userId = getUserIdFromHeader(headerAccessor);
         return new TypingEvent(sessionId, userId, true);
-    }
-
-    // ===== REST API (Postman 테스트용) =====
-
-    /**
-     * 🧪 Postman 테스트: 메시지 전송 (REST API)
-     *
-     * POST /api/chatbot/messages
-     * Authorization: Bearer {JWT_TOKEN}
-     * Body: { "sessionId": 1, "content": "안녕하세요" }
-     */
-    @PostMapping("/api/chatbot/messages")
-    @ResponseBody
-    public ChatResponse sendMessageRest(
-            @RequestBody @Valid ChatRequest request,
-            @AuthenticationPrincipal AuthUser user) {
-
-        Long userId = user.getUserId();
-        log.info("REST API - 메시지 전송: userId={}, content={}",
-                userId, request.content());
-
-        return chatbotService.processMessage(request, userId);
-    }
-
-    /**
-     * 🧪 Postman 테스트: 세션 종료 (REST API)
-     *
-     * POST /api/chatbot/sessions/{sessionId}/close
-     * Authorization: Bearer {JWT_TOKEN}
-     */
-    @PostMapping("/api/chatbot/sessions/{sessionId}/close")
-    @ResponseBody
-    public void closeSessionRest(
-            @PathVariable Long sessionId,
-            @AuthenticationPrincipal AuthUser user) {
-
-        Long userId = user.getUserId();
-        log.info("REST API - 세션 종료: userId={}, sessionId={}", userId, sessionId);
-
-        chatbotService.closeSession(sessionId, userId);
-    }
-
-    /**
-     * 🧪 Postman 테스트: 세션 메시지 히스토리 조회 (REST)
-     *
-     * GET /api/chatbot/sessions/{sessionId}/messages
-     * Authorization: Bearer {JWT_TOKEN}
-     */
-    @GetMapping("/api/chatbot/sessions/{sessionId}/messages")
-    @ResponseBody
-    public List<ChatResponse> getSessionMessages(
-            @PathVariable Long sessionId,
-            @AuthenticationPrincipal AuthUser user) {
-
-        Long userId = user.getUserId();
-        return chatbotService.getSessionMessages(sessionId, userId);
     }
 
     // ===== Private Helper Methods =====
