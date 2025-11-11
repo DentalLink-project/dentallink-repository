@@ -8,6 +8,9 @@ let hospitalsSearchQuery = '';
 let currentHospital = null;
 let reservations = [];
 
+// Consultant Dashboard State
+let lastRenderedWaitingSessions = [];  // 마지막 렌더링된 세션 목록
+
 // Initialize App
 document.addEventListener('DOMContentLoaded', async () => {
     // Check if user is logged in (auto-login)
@@ -3201,14 +3204,14 @@ function initConsultantDashboard() {
     setupConsultantUI();
     // 즉시 한 번 로드
     loadConsultantSessions();
-    // 2초마다 반복 로드 (WebSocket 연결 대기 중일 수 있음)
+    // 10초마다 반복 로드 (사용자가 충분히 버튼을 클릭할 시간 제공)
     if (consultantSessionsIntervalId) {
         clearInterval(consultantSessionsIntervalId);
     }
     consultantSessionsIntervalId = setInterval(() => {
         console.log('세션 주기 업데이트');
         loadConsultantSessions();
-    }, 2000);
+    }, 10000);  // 10초로 변경 (사용자가 버튼을 클릭할 충분한 시간 제공)
 }
 
 /**
@@ -3263,6 +3266,7 @@ function connectConsultantWebSocket() {
             () => {
                 // 연결 성공
                 consultantConnected = true;
+                console.log('상담원 WebSocket 연결 성공!');
                 if (connectionDot) {
                     connectionDot.classList.remove('offline');
                     connectionDot.classList.add('online');
@@ -3473,6 +3477,20 @@ function renderWaitingSessions() {
 
     console.log('렌더링할 세션:', waitingSessions);
 
+    // 세션 데이터가 실제로 변경되었는지 확인 (참조 비교만으로는 부족함)
+    const isDataChanged = lastRenderedWaitingSessions.length !== (waitingSessions?.length || 0) ||
+        (waitingSessions && lastRenderedWaitingSessions.some((session, index) =>
+            !waitingSessions[index] || session.sessionId !== waitingSessions[index].sessionId
+        ));
+
+    if (!isDataChanged) {
+        console.log('세션 데이터가 변경되지 않았습니다. 렌더링 스킵');
+        return;
+    }
+
+    // 마지막 렌더링된 세션 업데이트
+    lastRenderedWaitingSessions = waitingSessions ? [...waitingSessions] : [];
+
     if (!waitingSessions || waitingSessions.length === 0) {
         container.innerHTML = '<p style="color: #999;">대기 중인 세션이 없습니다</p>';
         return;
@@ -3488,6 +3506,8 @@ function renderWaitingSessions() {
             <button class="btn btn-primary" style="margin: 0;" onclick="pickSession(${session.sessionId})">수락</button>
         </div>
     `).join('');
+
+    console.log('세션 목록 렌더링 완료');
 }
 
 /**
@@ -3518,8 +3538,29 @@ function selectSession(sessionId) {
  * 서버 응답(/user/queue/assigned)을 받은 후 selectSession이 호출됨
  */
 function pickSession(sessionId) {
+    console.log('pickSession 호출:', { sessionId, consultantConnected, consultantStompClient: !!consultantStompClient });
+
     if (!consultantStompClient || !consultantConnected) {
-        showAlert('연결이 끊어졌습니다', 'error');
+        console.error('연결 상태 확인 실패:', {
+            stompClientExists: !!consultantStompClient,
+            isConnected: consultantConnected
+        });
+        showAlert('연결이 끊어졌습니다. 잠시 후 다시 시도해주세요.', 'error');
+
+        // 연결 재시도
+        console.log('WebSocket 재연결 시도...');
+        connectConsultantWebSocket();
+
+        // 재연결 후 1초 대기 후 재시도
+        setTimeout(() => {
+            if (consultantStompClient && consultantConnected) {
+                console.log('재연결 성공, 세션 수락 재시도');
+                pickSession(sessionId);
+            } else {
+                console.error('재연결 실패');
+                showAlert('연결을 재설정할 수 없습니다. 페이지를 새로고침해주세요.', 'error');
+            }
+        }, 1000);
         return;
     }
 
@@ -3533,11 +3574,12 @@ function pickSession(sessionId) {
         const payload = {
             sessionId: sessionId
         };
+        console.log('STOMP 메시지 전송:', { destination: '/app/consultant/pick', payload });
         consultantStompClient.send('/app/consultant/pick', headers, JSON.stringify(payload));
-        console.log('세션 수락 요청 전송:', sessionId);
+        console.log('세션 수락 요청 전송 완료:', sessionId);
     } catch (error) {
-        console.error('Error picking session:', error);
-        showAlert('세션 수락 중 오류가 발생했습니다', 'error');
+        console.error('STOMP 메시지 전송 중 오류:', error);
+        showAlert('세션 수락 중 오류가 발생했습니다: ' + error.message, 'error');
     }
 }
 
