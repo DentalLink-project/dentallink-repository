@@ -424,6 +424,7 @@ function showHospitalsSkeletonLoading() {
 
 function renderHospitals(hospitalsList) {
     const container = document.getElementById('hospitalsList');
+    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
 
     if (!hospitalsList || hospitalsList.length === 0) {
         container.innerHTML = '<div class="empty-state"><p>등록된 병원이 없습니다.</p></div>';
@@ -431,14 +432,18 @@ function renderHospitals(hospitalsList) {
     }
 
     container.innerHTML = hospitalsList.map(hospital => `
-        <div class="hospital-card" onclick="viewHospitalDetail(${hospital.id})">
-            <div class="hospital-card-body">
+        <div class="hospital-card">
+            <div class="hospital-card-body" onclick="viewHospitalDetail(${hospital.id})" style="cursor: pointer;">
                 <h3>${hospital.hospitalName || '병원 이름'}</h3>
                 <p>👨‍⚕️ ${hospital.doctorName || '의사 정보 없음'}</p>
                 <p>${hospital.hospitalIsOpen ? '✅ 영업 중' : '❌ 영업 종료'}</p>
             </div>
             <div class="hospital-card-footer">
                 <button class="btn btn-primary" onclick="viewHospitalDetail(${hospital.id})">자세히 보기</button>
+                ${isAdmin ? `
+                    <button class="btn btn-secondary" onclick="openHospitalEditModal(${hospital.id})" style="margin-left: 0.5rem;">✏️ 수정</button>
+                    <button class="btn btn-danger" onclick="deleteHospital(${hospital.id})" style="margin-left: 0.5rem;">🗑️ 삭제</button>
+                ` : ''}
             </div>
         </div>
     `).join('');
@@ -2011,6 +2016,343 @@ async function handleHospitalCreate(event) {
     }
 }
 
+// ===== Hospital Edit (Admin) =====
+let isUpdatingHospital = false;
+let editingHospitalId = null;
+
+/**
+ * 병원 수정 모달 열기
+ */
+async function openHospitalEditModal(hospitalId) {
+    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    if (!authToken || !currentUser || !isAdmin) {
+        showAlert('관리자만 병원 수정이 가능합니다', 'error');
+        return;
+    }
+
+    try {
+        // 기존 병원 데이터 조회
+        const hospital = await hospitalsAPI.getById(hospitalId);
+        editingHospitalId = hospitalId;
+
+        // 모달 HTML 생성
+        const modalHTML = `
+            <div class="modal" id="hospitalEditModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>병원 정보 수정</h2>
+                        <button type="button" class="modal-close" onclick="closeHospitalEditModal()">×</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="hospitalEditForm" onsubmit="handleHospitalUpdate(event)">
+                            <!-- 기본 정보 -->
+                            <div class="form-group">
+                                <label for="heId">병원 ID (수정 불가)</label>
+                                <input type="text" id="heId" value="${hospital.id}" readonly disabled>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heName">병원명 *</label>
+                                <input type="text" id="heName" value="${hospital.hospitalName || ''}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heAddress">주소 *</label>
+                                <input type="text" id="heAddress" value="${hospital.hospitalAddress || ''}" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heDoctor">의사명</label>
+                                <input type="text" id="heDoctor" value="${hospital.doctorName || ''}">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heDescription">병원 설명</label>
+                                <textarea id="heDescription" rows="3">${hospital.hospitalDescription || ''}</textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heOpen">영업 중</label>
+                                <input type="checkbox" id="heOpen" ${hospital.hospitalIsOpen ? 'checked' : ''}>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heReservationCost">예약 비용</label>
+                                <input type="number" id="heReservationCost" value="${hospital.reservationCost || 0}" min="0">
+                            </div>
+
+                            <!-- 진료 시간 -->
+                            <hr style="margin: 1.5rem 0;">
+                            <h3 style="margin-bottom: 1rem;">진료 시간</h3>
+
+                            <div class="form-group">
+                                <label for="heOpenTime">오픈 시간</label>
+                                <input type="time" id="heOpenTime" value="${hospital.openTime || '09:00'}">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heCloseTime">종료 시간</label>
+                                <input type="time" id="heCloseTime" value="${hospital.closeTime || '18:00'}">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heBreakStart">휴게 시작</label>
+                                <input type="time" id="heBreakStart" value="${hospital.breakStart || '12:00'}">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="heBreakEnd">휴게 종료</label>
+                                <input type="time" id="heBreakEnd" value="${hospital.breakEnd || '13:00'}">
+                            </div>
+
+                            <!-- 버튼 -->
+                            <div class="form-actions" style="margin-top: 2rem; display: flex; gap: 1rem; justify-content: flex-end;">
+                                <button type="button" class="btn btn-secondary" onclick="closeHospitalEditModal()">취소</button>
+                                <button type="submit" class="btn btn-primary">수정 완료</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // 기존 모달 제거
+        const existingModal = document.getElementById('hospitalEditModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // 모달 추가
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // 모달 표시
+        const modal = document.getElementById('hospitalEditModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            modal.onclick = (event) => {
+                if (event.target === modal) {
+                    closeHospitalEditModal();
+                }
+            };
+        }
+
+    } catch (error) {
+        console.error('Failed to load hospital for editing:', error);
+        if (error instanceof APIError) {
+            if (error.status === 404) {
+                showAlert('병원을 찾을 수 없습니다', 'error');
+            } else if (error.status === 401) {
+                showAlert('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+                navigateTo('login');
+            } else {
+                showAlert('병원 정보 로드 실패: ' + error.message, 'error');
+            }
+        } else {
+            showAlert('병원 정보를 불러올 수 없습니다', 'error');
+        }
+    }
+}
+
+/**
+ * 병원 수정 모달 닫기
+ */
+function closeHospitalEditModal() {
+    const modal = document.getElementById('hospitalEditModal');
+    if (modal) {
+        modal.remove();
+    }
+    editingHospitalId = null;
+}
+
+/**
+ * 병원 정보 수정 처리
+ */
+async function handleHospitalUpdate(event) {
+    event.preventDefault();
+
+    if (!editingHospitalId) {
+        showAlert('수정할 병원 정보가 없습니다', 'error');
+        return;
+    }
+
+    if (isUpdatingHospital) {
+        showAlert('수정이 진행 중입니다. 잠시만 기다려주세요.', 'info');
+        return;
+    }
+
+    // 기본 정보
+    const hospitalName = document.getElementById('heName').value.trim();
+    const address = document.getElementById('heAddress').value.trim();
+    const doctorName = document.getElementById('heDoctor').value.trim();
+    const description = document.getElementById('heDescription').value.trim();
+    const isOpen = document.getElementById('heOpen').checked;
+
+    // 진료 시간
+    const openTime = document.getElementById('heOpenTime').value;
+    const closeTime = document.getElementById('heCloseTime').value;
+    const breakStart = document.getElementById('heBreakStart').value;
+    const breakEnd = document.getElementById('heBreakEnd').value;
+
+    // 예약 비용
+    const reservationCost = parseInt(document.getElementById('heReservationCost').value) || 0;
+
+    // Validate inputs
+    if (!hospitalName) {
+        showAlert('병원명은 필수입력 항목입니다', 'error');
+        return;
+    }
+
+    if (!address) {
+        showAlert('주소는 필수입력 항목입니다', 'error');
+        return;
+    }
+
+    if (hospitalName.length < 2) {
+        showAlert('병원명은 2자 이상이어야 합니다', 'error');
+        return;
+    }
+
+    if (reservationCost < 0) {
+        showAlert('예약 비용은 0 이상이어야 합니다', 'error');
+        return;
+    }
+
+    // Disable submit button
+    const form = document.getElementById('hospitalEditForm');
+    const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = '수정 중...';
+    }
+
+    isUpdatingHospital = true;
+
+    try {
+        const payload = {
+            hospitalName: hospitalName,
+            hospitalDescription: description || '',
+            hospitalAddress: address,
+            hospitalIsOpen: !!isOpen,
+            doctorName: doctorName || '',
+            reservationCost: reservationCost,
+            openTime: openTime,
+            closeTime: closeTime,
+            breakStart: breakStart,
+            breakEnd: breakEnd
+        };
+
+        await hospitalsAPI.update(editingHospitalId, payload);
+
+        showAlert(`'${hospitalName}' 병원이 성공적으로 수정되었습니다!`, 'success');
+
+        // 모달 닫기
+        closeHospitalEditModal();
+
+        // 병원 목록 새로고침
+        setTimeout(() => {
+            loadHospitals(0);
+        }, 1500);
+
+    } catch (error) {
+        if (error instanceof APIError) {
+            if (error.status === 400) {
+                showAlert('입력한 병원 정보가 올바르지 않습니다: ' + error.message, 'error');
+            } else if (error.status === 401) {
+                showAlert('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+                navigateTo('login');
+            } else if (error.status === 404) {
+                showAlert('병원을 찾을 수 없습니다', 'error');
+            } else if (error.status === 403) {
+                showAlert('병원을 수정할 권한이 없습니다', 'error');
+            } else {
+                showAlert('병원 수정 실패: ' + error.message, 'error');
+            }
+        } else {
+            showAlert('병원 수정 중 오류가 발생했습니다: ' + error.message, 'error');
+        }
+        console.error('Hospital update error:', error);
+    } finally {
+        isUpdatingHospital = false;
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '수정 완료';
+        }
+    }
+}
+
+// ===== Hospital Delete (Admin) =====
+let isDeletingHospital = false;
+
+/**
+ * 병원 삭제
+ */
+async function deleteHospital(hospitalId) {
+    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    if (!authToken || !currentUser || !isAdmin) {
+        showAlert('관리자만 병원 삭제가 가능합니다', 'error');
+        return;
+    }
+
+    if (isDeletingHospital) {
+        showAlert('삭제가 진행 중입니다. 잠시만 기다려주세요.', 'info');
+        return;
+    }
+
+    // 확인 대화상자
+    const confirmDelete = confirm('정말 이 병원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
+    if (!confirmDelete) {
+        return;
+    }
+
+    isDeletingHospital = true;
+
+    try {
+        // 버튼 비활성화
+        const deleteBtn = document.querySelector(`button[onclick="deleteHospital(${hospitalId})"]`);
+        if (deleteBtn) {
+            deleteBtn.disabled = true;
+            deleteBtn.textContent = '삭제 중...';
+        }
+
+        await hospitalsAPI.delete(hospitalId);
+
+        showAlert('병원이 성공적으로 삭제되었습니다', 'success');
+
+        // 병원 목록 새로고침
+        setTimeout(() => {
+            loadHospitals(0);
+        }, 1500);
+
+    } catch (error) {
+        if (error instanceof APIError) {
+            if (error.status === 404) {
+                showAlert('병원을 찾을 수 없습니다', 'error');
+            } else if (error.status === 401) {
+                showAlert('세션이 만료되었습니다. 다시 로그인해주세요', 'error');
+                navigateTo('login');
+            } else if (error.status === 403) {
+                showAlert('병원을 삭제할 권한이 없습니다', 'error');
+            } else if (error.status === 400) {
+                showAlert('삭제할 수 없는 병원입니다. 관련 예약이 있을 수 있습니다: ' + error.message, 'error');
+            } else {
+                showAlert('병원 삭제 실패: ' + error.message, 'error');
+            }
+        } else {
+            showAlert('병원 삭제 중 오류가 발생했습니다: ' + error.message, 'error');
+        }
+        console.error('Hospital delete error:', error);
+
+        // 버튼 다시 활성화
+        const deleteBtn = document.querySelector(`button[onclick="deleteHospital(${hospitalId})"]`);
+        if (deleteBtn) {
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = '🗑️ 삭제';
+        }
+    } finally {
+        isDeletingHospital = false;
+    }
+}
+
 console.log('App module loaded');
 
 // ===== Chatbot Page Implementation =====
@@ -2501,8 +2843,8 @@ function handleConsultantTransfer(response) {
     // 응답 메시지 표시
     if (response.waitingPosition === 0) {
         // 즉시 연결됨
-        appendChatMessage('system', '🎧 상담원을 연결하고 있습니다...');
-        appendChatMessage('bot', response.content || '상담원이 곧 응답할 예정입니다.');
+        appendChatMessage('system', '✅ 상담원이 곧 응답할 예정입니다. 잠시만 기다려주세요.');
+        appendChatMessage('bot', response.content || '상담원과의 대화가 시작되었습니다.');
     } else {
         // 대기열에 추가됨
         appendChatMessage('system', `📊 현재 대기 순번: ${response.waitingPosition}번`);
@@ -2755,8 +3097,13 @@ async function loadConsultantSessions() {
 
         if (statusResponse.ok) {
             const status = await statusResponse.json();
+            console.log('대기열 상태:', status);
             document.getElementById('waitingCount').textContent = status.waitingCount || 0;
             document.getElementById('activeCount').textContent = status.activeConsultants || 0;
+        } else {
+            console.warn('대기열 상태 조회 실패:', statusResponse.status);
+            document.getElementById('waitingCount').textContent = '0';
+            document.getElementById('activeCount').textContent = '0';
         }
 
         // 2. 대기 중인 세션 목록 조회
@@ -2767,11 +3114,22 @@ async function loadConsultantSessions() {
         });
 
         if (sessionsResponse.ok) {
-            waitingSessions = await sessionsResponse.json();
+            const sessions = await sessionsResponse.json();
+            console.log('대기 세션 목록:', sessions);
+            waitingSessions = Array.isArray(sessions) ? sessions : [];
+        } else {
+            console.warn('대기 세션 조회 실패:', sessionsResponse.status);
+            waitingSessions = [];
         }
     } catch (error) {
-        console.error('Failed to load sessions:', error);
+        console.error('세션 로드 실패:', error);
         waitingSessions = [];
+
+        // 에러 메시지 표시
+        const container = document.getElementById('waitingSessionsList');
+        if (container) {
+            container.innerHTML = '<p style="color: #e74c3c; padding: 1rem;">세션 로드 실패. 잠시 후 다시 시도해주세요.</p>';
+        }
     }
 
     // 대기 세션 목록 업데이트
