@@ -1,6 +1,5 @@
 package com.dentallink.domain.user.service;
 
-import com.dentallink.common.exception.GlobalException;
 import com.dentallink.domain.auth.service.AuthService;
 import com.dentallink.domain.user.dto.request.UserSignupRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
@@ -16,7 +15,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
