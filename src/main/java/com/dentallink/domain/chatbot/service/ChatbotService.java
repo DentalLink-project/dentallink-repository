@@ -73,6 +73,7 @@ public class ChatbotService {
     /**
      * 메시지 처리 및 AI 응답 생성 (WebSocket용)
      * - 상담원 모드 체크 포함
+     * - 상담원 연결 키워드 감지
      */
     @Transactional
     public ChatResponse processMessage(ChatRequest request, Long userId) {
@@ -92,14 +93,31 @@ public class ChatbotService {
         ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
         messageRepository.save(userMessage);
 
-        // 5. Rate Limit 체크
+        // 5. 상담원 연결 키워드 감지
+        if (isConsultantRequestKeyword(request.content())) {
+            log.info("상담원 연결 요청 감지 - 상담원 전환: userId={}", userId);
+
+            // 시스템 메시지 저장
+            ChatMessage systemMessage = ChatMessage.createSystemMessage(
+                    session,
+                    "상담원 연결을 요청하셨습니다. 상담원을 연결해드리겠습니다."
+            );
+            messageRepository.save(systemMessage);
+
+            // 상담원 연결 시도
+            var matchResult = consultantService.transferToConsultant(session.getId(), userId);
+
+            return ChatResponse.createTransferResponse(session.getId(), matchResult.waitingPosition());
+        }
+
+        // 6. Rate Limit 체크
         if (!checkRateLimit(userId)) {
             // Rate Limit 초과 → 상담원 전환
             return handleRateLimitExceeded(session, userId);
         }
 
         try {
-            // 6. AI 응답 생성
+            // 7. AI 응답 생성
             return generateAIResponse(session, userId);
 
         } catch (GlobalException e) {
@@ -301,6 +319,33 @@ public class ChatbotService {
     }
 
     /**
+     * 로그아웃 시 사용자의 모든 활성 세션 종료
+     * - 사용자가 로그아웃할 때 호출
+     * - ACTIVE 상태인 세션을 모두 CLOSED로 변경
+     * (주: 현재는 프론트엔드에서 WebSocket 정리하므로 선택적 사용)
+     */
+    @Transactional
+    public void closeAllSessionsForUser(Long userId) {
+        log.info("사용자 로그아웃 - 활성 세션 정리: userId={}", userId);
+
+        // 쿼리 메서드 추가 필요: findByUserIdAndStatusList 또는
+        // 여기서는 모든 세션 조회 후 필터링
+        Page<ChatSession> activeSessions = sessionRepository.findByUserIdAndStatus(
+                userId,
+                SessionStatus.ACTIVE,
+                org.springframework.data.domain.PageRequest.of(0, 1000)
+        );
+
+        for (ChatSession session : activeSessions.getContent()) {
+            session.close();
+            log.info("세션 종료: sessionId={}, userId={}", session.getId(), userId);
+        }
+
+        // 변경사항 모두 저장
+        sessionRepository.saveAll(activeSessions.getContent());
+    }
+
+    /**
      * 세션의 메시지 목록 조회
      */
     public List<ChatResponse> getSessionMessages(Long sessionId, Long userId) {
@@ -394,31 +439,106 @@ public class ChatbotService {
     private GeminiFunction.GeminiMessage createSystemPrompt() {
         String systemPrompt = """
                 당신은 DentalLink 치과 예약 시스템의 친절한 AI 상담사입니다.
-                
+
                 주요 역할:
                 1. 사용자의 예약 관련 질문에 답변
                 2. 예약 가능 시간 조회 및 안내
                 3. 예약 생성, 조회, 취소 지원
-                4. 병원 정보 제공
-                
+                4. 병원 정보 제공 (이름, 위치, 의사 검색)
+
                 응답 가이드:
                 - 친절하고 전문적인 톤 사용
                 - 간결하고 명확한 답변 제공
                 - 예약 생성 시 포인트 차감 사실 안내
                 - 복잡한 문의는 상담원 연결 제안
                 - 항상 한국어로 응답
-                
+
                 제공 가능한 기능:
                 - get_available_times: 예약 가능 시간 조회
                 - create_reservation: 예약 생성
                 - get_my_reservations: 내 예약 조회
                 - cancel_reservation: 예약 취소
-                - search_hospitals: 병원 검색
+                - search_hospitals: 병원을 이름으로 검색
+                - search_hospitals_by_location: 병원을 위치/지역/주소로 검색 (예: "강남 지역 병원", "서초동 병원")
+                - search_hospitals_by_doctor: 특정 의사가 근무하는 병원을 검색 (예: "김철수 의사 병원", "이영희 선생님 있는 병원")
                 """;
 
         return GeminiFunction.GeminiMessage.builder()
                 .role("user")
                 .content(systemPrompt)
                 .build();
+    }
+
+    /**
+     * 상담원 연결 키워드 감지
+     * 사용자 입력에서 상담원 연결 요청 키워드를 확인합니다.
+     *
+     * @param content 사용자 입력 텍스트
+     * @return 상담원 연결 요청 키워드가 포함되어 있으면 true
+     */
+    private boolean isConsultantRequestKeyword(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            return false;
+        }
+
+        String lowerText = content.toLowerCase();
+
+        // 상담원 연결 관련 키워드 리스트
+        String[] consultantKeywords = {
+                // 상담원/상담사 관련
+                "상담원",
+                "상담원 연결",
+                "상담원 연결해",
+                "상담원 연결해주",
+                "상담원과",
+                "상담원님",
+                "상담사",
+                "상담사 연결",
+                "상담사와",
+
+                // 직원/담당자 관련
+                "직원",
+                "직원 연결",
+                "담당자",
+                "담당자 연결",
+                "담당자와",
+
+                // 대화/통화 관련
+                "사람과 통화",
+                "사람과 얘기",
+                "사람하고 통화",
+                "사람하고 얘기",
+                "실제 사람",
+                "사람이",
+
+                // 상담 관련
+                "상담 받고",
+                "상담 받고 싶",
+                "상담해",
+                "상담해주",
+
+                // 기타
+                "전화",
+                "직원과",
+                "연결해",
+                "연결해주",
+
+                // 영문 키워드
+                "talk to",
+                "speak to",
+                "connect",
+                "operator",
+                "agent",
+                "representative"
+        };
+
+        // 키워드 매칭 (포함 여부 확인)
+        for (String keyword : consultantKeywords) {
+            if (lowerText.contains(keyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
