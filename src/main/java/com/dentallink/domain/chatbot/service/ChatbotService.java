@@ -142,7 +142,7 @@ public class ChatbotService {
         if (session.getConsultant() != null) {
             messagingTemplate.convertAndSendToUser(
                     session.getConsultant().getId().toString(),
-                    "/queue/reply",
+                    "/queue/messages",
                     ChatResponse.from(userMessage)
             );
         }

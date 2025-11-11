@@ -2722,6 +2722,11 @@ function connectChatbot() {
 
                             if (messageType === 'CONSULTANT') {
                                 sender = 'consultant'; // 상담사 메시지
+                                // 상담원 메시지 수신 시 입력창 활성화
+                                const messageInput = document.getElementById('message-input');
+                                const sendBtn = document.getElementById('send-btn');
+                                if (messageInput) messageInput.disabled = false;
+                                if (sendBtn) sendBtn.disabled = false;
                             } else if (messageType === 'SYSTEM') {
                                 sender = 'system'; // 시스템 메시지
                             }
