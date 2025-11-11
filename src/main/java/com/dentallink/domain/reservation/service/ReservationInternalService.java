@@ -276,10 +276,7 @@ public class ReservationInternalService {
 
         if (user.getUserRole() == UserRole.ROLE_ADMIN) return;
 
-        Hospital hospital = hospitalRepository.findById(hospitalId)
-                .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_NOT_FOUND));
-
-        if (!hospital.getUserId().equals(userId)) {
+        if (user.getHospitalId() == null || !user.getHospitalId().equals(hospitalId)) {
             throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
         }
     }
@@ -300,7 +297,7 @@ public class ReservationInternalService {
         if (reservation.isOwnedBy(userId)) return;
         // 3. 해당 병원의 관리자는 조회 가능
         if (user.getUserRole() == UserRole.ROLE_HOSPITAL
-                && reservation.getHospital().getUserId().equals(userId)) return;
+                && reservation.getHospital().getId().equals(user.getHospitalId())) return;
 
         throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
     }
