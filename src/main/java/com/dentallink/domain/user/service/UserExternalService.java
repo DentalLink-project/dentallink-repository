@@ -18,7 +18,7 @@ public class UserExternalService {
     // ID를 기준으로 사용자 조회
     @Transactional(readOnly = true)
     public User getUserById(Long id) {
-        return userRepository.findByIdAndDeletedAtIsNull(id).orElseThrow(
+        return userRepository.findByIdAndDeletedAtIsFalse(id).orElseThrow(
                 () -> new GlobalException(UserErrorCode.USER_NOT_FOUND));
     }
     // email 기준으로 유저 검색
