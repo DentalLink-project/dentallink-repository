@@ -286,7 +286,8 @@ async function logout() {
         if (consultantStompClient && consultantConnected) {
             console.log('상담원 WebSocket 연결 종료');
             try {
-                consultantStompClient.disconnect(() => {});
+                consultantStompClient.disconnect(() => {
+                });
             } catch (e) {
                 console.error('Consultant WebSocket 종료 중 오류:', e);
             }
@@ -575,7 +576,7 @@ function goToHospitalsPage(page) {
     // Smooth scroll to hospital list before loading
     const hospitalsList = document.getElementById('hospitalsList');
     if (hospitalsList) {
-        hospitalsList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        hospitalsList.scrollIntoView({behavior: 'smooth', block: 'start'});
     }
 
     loadHospitals(page);
@@ -1264,7 +1265,7 @@ function goToPointsPage(page) {
     // Smooth scroll to transaction list before loading
     const transactionList = document.querySelector('.transaction-list');
     if (transactionList) {
-        transactionList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        transactionList.scrollIntoView({behavior: 'smooth', block: 'start'});
     }
 
     loadPoints(page);
@@ -2342,14 +2343,14 @@ async function deleteHospital(hospitalId) {
         }
         console.error('Hospital delete error:', error);
 
+    } finally {
+        isDeletingHospital = false;
         // 버튼 다시 활성화
         const deleteBtn = document.querySelector(`button[onclick="deleteHospital(${hospitalId})"]`);
         if (deleteBtn) {
             deleteBtn.disabled = false;
             deleteBtn.textContent = '🗑️ 삭제';
         }
-    } finally {
-        isDeletingHospital = false;
     }
 }
 
@@ -2441,7 +2442,7 @@ function connectChatbot() {
         const host = window.location.host;
         const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
         chatbotStompClient = Stomp.over(socket);
-        chatbotStompClient.debug = function(msg) {
+        chatbotStompClient.debug = function (msg) {
             console.log('STOMP DEBUG:', msg);
         }; // 디버그 로그 활성화
 
@@ -2643,7 +2644,7 @@ function initChatObserver() {
             }
         });
 
-        observer.observe(target, { childList: true, subtree: false });
+        observer.observe(target, {childList: true, subtree: false});
         chatbotObserverInitialized = true;
     } catch (e) {
         console.error('MutationObserver init error:', e);
