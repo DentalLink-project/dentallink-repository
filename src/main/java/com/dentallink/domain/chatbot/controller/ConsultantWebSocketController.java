@@ -192,6 +192,25 @@ public class ConsultantWebSocketController {
         return consultantService.getWaitingSessions();
     }
 
+    /**
+     * 세션 메시지 조회
+     * /api/chat/sessions/{sessionId}/messages
+     */
+    @GetMapping("/api/chat/sessions/{sessionId}/messages")
+    @ResponseBody
+    public List<ConsultantService.ChatSessionMessageDto> getSessionMessages(
+            @PathVariable Long sessionId) {
+
+        log.info("세션 메시지 조회: sessionId={}", sessionId);
+
+        try {
+            return consultantService.getSessionMessages(sessionId);
+        } catch (Exception e) {
+            log.error("세션 메시지 조회 중 오류 발생: sessionId={}", sessionId, e);
+            return List.of();
+        }
+    }
+
     // ===== Private Helper Methods =====
 
     private Long getConsultantIdFromHeader(SimpMessageHeaderAccessor headerAccessor) {
@@ -242,4 +261,15 @@ public class ConsultantWebSocketController {
     private record NoSessionAvailableEvent() {}
 
     private record SessionPickFailedEvent(String message) {}
+
+    /**
+     * 세션 메시지 응답 DTO
+     */
+    public record ChatSessionMessage(
+            Long id,
+            String type,
+            String content,
+            String senderName,
+            java.time.LocalDateTime sentAt
+    ) {}
 }

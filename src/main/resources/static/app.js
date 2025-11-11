@@ -3588,27 +3588,60 @@ function pickSession(sessionId) {
  */
 async function loadSessionMessages(sessionId) {
     const container = document.getElementById('consultant-chat-messages');
+
+    if (!container) {
+        console.warn('consultant-chat-messages 컨테이너를 찾을 수 없습니다');
+        return;
+    }
+
     container.innerHTML = '';
 
     try {
+        console.log('세션 메시지 로드 시작: sessionId=', sessionId);
+
         const response = await fetch(`/api/chat/sessions/${sessionId}/messages`, {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
         });
 
-        if (response.ok) {
-            const messages = await response.json();
-            messages.forEach(msg => {
-                const sender = msg.type === 'USER' ? 'user' : (msg.type === 'CONSULTANT' ? 'consultant' : 'system');
-                appendConsultantChatMessage(sender, msg.content);
-            });
+        console.log('메시지 조회 응답:', response.status, response.statusText);
 
-            // 스크롤
-            container.scrollTop = container.scrollHeight;
+        if (!response.ok) {
+            console.warn('메시지 조회 실패: status=', response.status);
+            // 에러 응답이어도 조용히 처리 (사용자에게 에러 표시 안함)
+            // 초기에는 빈 상태로 둠
+            container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">메시지 로드 중...</p>';
+            return;
         }
+
+        const messages = await response.json();
+        console.log('파싱된 메시지 개수:', messages.length);
+
+        if (!Array.isArray(messages) || messages.length === 0) {
+            console.log('메시지가 없습니다');
+            container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">아직 메시지가 없습니다</p>';
+            return;
+        }
+
+        // 메시지 렌더링
+        messages.forEach(msg => {
+            const sender = msg.type === 'USER' ? 'user' :
+                          (msg.type === 'CONSULTANT' ? 'consultant' : 'system');
+            console.log('메시지 추가:', sender, msg.content);
+            appendConsultantChatMessage(sender, msg.content);
+        });
+
+        // 스크롤
+        container.scrollTop = container.scrollHeight;
+        console.log('세션 메시지 로드 완료');
+
     } catch (error) {
-        console.error('Failed to load messages:', error);
+        console.error('세션 메시지 로드 중 오류:', error);
+        // 네트워크 에러 등은 사용자에게 보이지 않게 처리
+        if (!container.innerHTML) {
+            container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">메시지를 불러올 수 없습니다</p>';
+        }
     }
 }
 

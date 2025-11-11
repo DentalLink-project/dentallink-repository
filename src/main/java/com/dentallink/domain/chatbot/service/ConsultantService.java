@@ -308,6 +308,60 @@ public class ConsultantService {
         return waitingSessions;
     }
 
+    /**
+     * 세션의 메시지 조회
+     * @param sessionId 세션 ID
+     * @return 세션의 모든 메시지
+     */
+    public List<ChatSessionMessageDto> getSessionMessages(Long sessionId) {
+        List<ChatMessage> messages = messageRepository.findBySessionIdOrderBySentAtAsc(sessionId);
+
+        if (messages.isEmpty()) {
+            log.debug("세션의 메시지가 없음: sessionId={}", sessionId);
+            return List.of();
+        }
+
+        // 세션 정보 로드 (sender name을 위해)
+        ChatSession session = messages.get(0).getSession();
+
+        return messages.stream()
+                .map(msg -> {
+                    String senderName = determineSenderName(msg, session);
+                    return new ChatSessionMessageDto(
+                            msg.getId(),
+                            msg.getType().toString(),
+                            msg.getContent(),
+                            senderName,
+                            msg.getSentAt()
+                    );
+                })
+                .toList();
+    }
+
+    /**
+     * 메시지의 발신자 이름 결정
+     */
+    private String determineSenderName(ChatMessage msg, ChatSession session) {
+        return switch (msg.getType()) {
+            case USER -> session.getUser().getUsername();
+            case CONSULTANT -> session.getConsultant() != null ?
+                    session.getConsultant().getUsername() : "상담원";
+            case AI -> "AI";
+            case SYSTEM -> "시스템";
+        };
+    }
+
+    /**
+     * 세션 메시지 응답 DTO
+     */
+    public record ChatSessionMessageDto(
+            Long id,
+            String type,
+            String content,
+            String senderName,
+            java.time.LocalDateTime sentAt
+    ) {}
+
     // ===== Private Helper Methods =====
 
     /**
