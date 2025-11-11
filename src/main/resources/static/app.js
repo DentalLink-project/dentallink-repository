@@ -110,43 +110,54 @@ function updateNavbar() {
     const logoutMenu = document.getElementById('logoutMenu');
     const customerMenu = document.getElementById('customerMenu');
     const customerReservations = document.getElementById('customerReservations');
-    const chatbotMenu = document.querySelector('li a[onclick="navigateTo(\'chatbot\')"]')?.parentElement;
+    const chatbotMenu = document.getElementById('chatbotMenu');
     const hospitalMenu = document.getElementById('hospitalMenu');
     const adminHospitalManagementMenu = document.getElementById('adminHospitalManagementMenu');
     const adminConsultantMenu = document.getElementById('adminConsultantMenu');
-    const adminFab = document.getElementById('adminFab');
+
+    console.log('updateNavbar 호출:', { authToken: !!authToken, currentUser });
 
     if (authToken && currentUser) {
         if (loginMenu) loginMenu.style.display = 'none';
         if (logoutMenu) logoutMenu.style.display = 'block';
 
+        // 사용자 역할 확인 (userRole 또는 role 필드 모두 확인)
+        const userRole = currentUser.userRole || currentUser.role || '';
+        const roleStr = String(userRole).toUpperCase();
+        console.log('사용자 역할:', roleStr);
+
         // Show/hide menus based on user role
-        if (currentUser.userRole && String(currentUser.userRole).includes('HOSPITAL')) {
+        if (roleStr.includes('HOSPITAL')) {
+            // 병원 관리자 메뉴
+            console.log('병원 관리자 메뉴 표시');
             if (customerMenu) customerMenu.style.display = 'none';
             if (customerReservations) customerReservations.style.display = 'none';
             if (chatbotMenu) chatbotMenu.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'block';
             if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
-            if (adminFab) adminFab.style.display = 'none';
-        } else if (currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) {
+        } else if (roleStr.includes('ADMIN')) {
+            // 관리자(상담원) 메뉴
+            console.log('관리자/상담원 메뉴 표시');
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
-            if (chatbotMenu) chatbotMenu.style.display = 'none'; // 관리자는 상담원 대시보드 사용
+            if (chatbotMenu) chatbotMenu.style.display = 'none'; // 관리자는 채팅 대신 상담 관리 사용
             if (hospitalMenu) hospitalMenu.style.display = 'none';
             if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'block';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'block';
-            if (adminFab) adminFab.style.display = 'block';
         } else {
+            // 일반 사용자 메뉴
+            console.log('일반 사용자 메뉴 표시');
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
             if (chatbotMenu) chatbotMenu.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'none';
             if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
-            if (adminFab) adminFab.style.display = 'none';
         }
     } else {
+        // 로그인하지 않은 사용자
+        console.log('로그인하지 않은 사용자 메뉴 표시');
         if (loginMenu) loginMenu.style.display = 'block';
         if (logoutMenu) logoutMenu.style.display = 'none';
         if (customerMenu) customerMenu.style.display = 'block';
@@ -155,7 +166,6 @@ function updateNavbar() {
         if (hospitalMenu) hospitalMenu.style.display = 'none';
         if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
         if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
-        if (adminFab) adminFab.style.display = 'none';
     }
 }
 

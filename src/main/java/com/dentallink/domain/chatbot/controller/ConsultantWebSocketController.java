@@ -191,10 +191,19 @@ public class ConsultantWebSocketController {
             return Long.parseLong(principal.getName());
         }
 
-        // 테스트용
-        String consultantIdHeader = (String) headerAccessor.getSessionAttributes().get("consultantId");
-        if (consultantIdHeader != null) {
-            return Long.parseLong(consultantIdHeader);
+        // 테스트용 - 타입 안전성 강화
+        Object consultantIdObj = headerAccessor.getSessionAttributes().get("consultantId");
+        if (consultantIdObj != null) {
+            // 다양한 타입 처리 (String, Long, Number 등)
+            if (consultantIdObj instanceof String) {
+                return Long.parseLong((String) consultantIdObj);
+            } else if (consultantIdObj instanceof Long) {
+                return (Long) consultantIdObj;
+            } else if (consultantIdObj instanceof Number) {
+                return ((Number) consultantIdObj).longValue();
+            } else {
+                return Long.parseLong(consultantIdObj.toString());
+            }
         }
 
         throw new IllegalArgumentException("인증되지 않은 상담원입니다.");
