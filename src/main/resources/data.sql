@@ -6,8 +6,8 @@
 INSERT INTO hospital (user_id, hospital_name, hospital_description, hospital_address, hospital_is_open, doctor_name, reservation_cost, created_at, updated_at, deleted)
 VALUES
 -- 서울 강남구 병원
-(1, '은지 치과', '현대적인 시설과 친절한 진료로 유명한 치과', '서울시 강남구 테헤란로 123', TRUE, '은지 원장', 50000, NOW(), NOW(), FALSE),
-(1, '은지내과', '환자 중심의 진료 철학으로 운영되는 내과', '서울시 강남구 강남대로 456', TRUE, '은지 의사', 30000, NOW(), NOW(), FALSE),
+(1, '서울 치과', '현대적인 시설과 친절한 진료로 유명한 치과', '서울시 강남구 테헤란로 123', TRUE, '은지 원장', 50000, NOW(), NOW(), FALSE),
+(1, '서울브내과', '환자 중심의 진료 철학으로 운영되는 내과', '서울시 강남구 강남대로 456', TRUE, '은지 의사', 30000, NOW(), NOW(), FALSE),
 
 -- 서울 강남 지역
 (1, '스마일 치과', '최신 장비를 갖춘 전문 치과', '서울시 강남구 역삼동 789', TRUE, '김철수 원장', 60000, NOW(), NOW(), FALSE),

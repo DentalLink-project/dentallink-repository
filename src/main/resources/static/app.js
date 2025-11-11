@@ -60,7 +60,7 @@ function navigateTo(page) {
                 navigateTo('login');
             }
         } else if (page === 'hospitalReservations') {
-            if (authToken && currentUser && currentUser.userRole === 'HOSPITAL') {
+            if (authToken && currentUser && currentUser.role === 'HOSPITAL') {
                 loadHospitalReservations();
             } else {
                 showAlert('병원 관리자만 접근할 수 있습니다', 'error');
@@ -72,14 +72,14 @@ function navigateTo(page) {
                 initChatPage();
             }, 100);
         } else if (page === 'hospitalManagement') {
-            if (authToken && currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'))) {
+            if (authToken && currentUser && (currentUser.role && String(currentUser.role).includes('ADMIN'))) {
                 loadHospitalManagementList(0);
             } else {
                 showAlert('관리자만 접근할 수 있습니다', 'error');
                 navigateTo('home');
             }
         } else if (page === 'consultantDashboard') {
-            if (authToken && currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'))) {
+            if (authToken && currentUser && (currentUser.role && String(currentUser.role).includes('ADMIN'))) {
                 setTimeout(() => {
                     initConsultantDashboard();
                 }, 100);
@@ -98,7 +98,7 @@ async function loadUserProfile() {
     try {
         currentUser = await authAPI.getProfile();
         console.log('프로필 로드 완료:', currentUser);
-        console.log('사용자 역할:', currentUser.userRole);
+        console.log('사용자 역할:', 혀.role);
         updateNavbar();
     } catch (error) {
         console.error('Failed to load profile:', error);
@@ -448,7 +448,7 @@ function showHospitalsSkeletonLoading() {
 
 function renderHospitals(hospitalsList) {
     const container = document.getElementById('hospitalsList');
-    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) || (currentUser && currentUser.role === 'ADMIN');
 
     if (!hospitalsList || hospitalsList.length === 0) {
         container.innerHTML = '<div class="empty-state"><p>등록된 병원이 없습니다.</p></div>';
@@ -1929,7 +1929,7 @@ let isCreatingHospital = false;
 async function handleHospitalCreate(event) {
     event.preventDefault();
 
-    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    const isAdmin = currentUser && ((currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) || currentUser.role === 'ADMIN');
     if (!authToken || !currentUser || !isAdmin) {
         showAlert('관리자만 병원 등록이 가능합니다', 'error');
         return;
@@ -2231,7 +2231,8 @@ let editingHospitalId = null;
  * 병원 수정 모달 열기
  */
 async function openHospitalEditModal(hospitalId) {
-    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    const isAdmin = currentUser && (String(currentUser.userRole || currentUser.role || '').includes('ADMIN'));
+    console.log('병원 수정 권한 확인:', { currentUser, isAdmin });
     if (!authToken || !currentUser || !isAdmin) {
         showAlert('관리자만 병원 수정이 가능합니다', 'error');
         return;
@@ -2494,7 +2495,7 @@ let isDeletingHospital = false;
  * 병원 삭제
  */
 async function deleteHospital(hospitalId) {
-    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    const isAdmin = currentUser && (String(currentUser.userRole || currentUser.role || '').includes('ADMIN'));
     if (!authToken || !currentUser || !isAdmin) {
         showAlert('관리자만 병원 삭제가 가능합니다', 'error');
         return;
@@ -2505,12 +2506,6 @@ async function deleteHospital(hospitalId) {
         return;
     }
 
-    // 확인 대화상자
-    const confirmDelete = confirm('정말 이 병원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
-    if (!confirmDelete) {
-        return;
-    }
-
     isDeletingHospital = true;
 
     try {
@@ -2518,7 +2513,27 @@ async function deleteHospital(hospitalId) {
         const deleteBtn = document.querySelector(`button[onclick="deleteHospital(${hospitalId})"]`);
         if (deleteBtn) {
             deleteBtn.disabled = true;
+            deleteBtn.textContent = '확인 중...';
+        }
+
+        // 먼저 병원의 예약 현황 확인
+        console.log('병원 예약 현황 확인 중...');
+        const reservations = await reservationsAPI.getHospitalReservations(hospitalId, 0, 1);
+
+        if (deleteBtn) {
             deleteBtn.textContent = '삭제 중...';
+        }
+
+        // 예약이 있으면 삭제 불가
+        if (reservations && (reservations.totalElements > 0 || (Array.isArray(reservations) && reservations.length > 0))) {
+            showAlert('이 병원에 예약이 있어서 삭제할 수 없습니다.\n먼저 모든 예약을 취소해주세요.', 'error');
+            return;
+        }
+
+        // 확인 대화상자
+        const confirmDelete = confirm('정말 이 병원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
+        if (!confirmDelete) {
+            return;
         }
 
         await hospitalsAPI.delete(hospitalId);
@@ -2540,7 +2555,9 @@ async function deleteHospital(hospitalId) {
             } else if (error.status === 403) {
                 showAlert('병원을 삭제할 권한이 없습니다', 'error');
             } else if (error.status === 400) {
-                showAlert('삭제할 수 없는 병원입니다. 관련 예약이 있을 수 있습니다: ' + error.message, 'error');
+                showAlert('삭제할 수 없는 병원입니다: ' + error.message, 'error');
+            } else if (error.status >= 500) {
+                showAlert('예약 현황 확인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', 'error');
             } else {
                 showAlert('병원 삭제 실패: ' + error.message, 'error');
             }
@@ -3116,7 +3133,16 @@ let consultantSessionsIntervalId = null;  // setInterval ID 저장
 function initConsultantDashboard() {
     connectConsultantWebSocket();
     setupConsultantUI();
+    // 즉시 한 번 로드
     loadConsultantSessions();
+    // 2초마다 반복 로드 (WebSocket 연결 대기 중일 수 있음)
+    if (consultantSessionsIntervalId) {
+        clearInterval(consultantSessionsIntervalId);
+    }
+    consultantSessionsIntervalId = setInterval(() => {
+        console.log('세션 주기 업데이트');
+        loadConsultantSessions();
+    }, 2000);
 }
 
 /**
@@ -3326,9 +3352,21 @@ async function loadConsultantSessions() {
         });
 
         if (sessionsResponse.ok) {
-            const sessions = await sessionsResponse.json();
-            console.log('대기 세션 목록:', sessions);
-            waitingSessions = Array.isArray(sessions) ? sessions : [];
+            const response = await sessionsResponse.json();
+            console.log('대기 세션 응답:', response);
+
+            // API 응답이 배열이면 직접 사용, 객체면 data 필드 사용
+            if (Array.isArray(response)) {
+                waitingSessions = response;
+            } else if (response && response.data && Array.isArray(response.data)) {
+                waitingSessions = response.data;
+            } else if (response && response.content && Array.isArray(response.content)) {
+                waitingSessions = response.content;
+            } else {
+                waitingSessions = [];
+            }
+
+            console.log('파싱된 대기 세션:', waitingSessions);
         } else {
             console.warn('대기 세션 조회 실패:', sessionsResponse.status);
             waitingSessions = [];
@@ -3354,22 +3392,26 @@ async function loadConsultantSessions() {
 function renderWaitingSessions() {
     const container = document.getElementById('waitingSessionsList');
 
+    if (!container) {
+        console.error('waitingSessionsList 컨테이너를 찾을 수 없습니다');
+        return;
+    }
+
+    console.log('렌더링할 세션:', waitingSessions);
+
     if (!waitingSessions || waitingSessions.length === 0) {
         container.innerHTML = '<p style="color: #999;">대기 중인 세션이 없습니다</p>';
         return;
     }
 
     container.innerHTML = waitingSessions.map((session) => `
-        <div style="padding: 1rem; background: white; border-radius: 4px; margin-bottom: 0.5rem; cursor: pointer; border-left: 3px solid #667eea;"
-             onclick="selectSession(${session.sessionId})">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h4 style="margin: 0 0 0.5rem 0;">${session.username || '사용자'}</h4>
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;">대기 순번: ${session.waitingPosition || '-'}</p>
-                    <p style="margin: 0.25rem 0 0 0; color: #999; font-size: 0.85rem;">${new Date(session.startedAt).toLocaleTimeString('ko-KR')}</p>
-                </div>
-                <button class="btn btn-primary" onclick="pickSession(${session.sessionId})" style="margin: 0;">수락</button>
+        <div style="padding: 1rem; background: white; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #667eea; display: flex; justify-content: space-between; align-items: center;">
+            <div style="cursor: pointer; flex: 1;" onclick="selectSession(${session.sessionId})">
+                <h4 style="margin: 0 0 0.5rem 0;">${session.username || '사용자'}</h4>
+                <p style="margin: 0; color: #666; font-size: 0.9rem;">대기 순번: ${session.waitingPosition || '-'}</p>
+                <p style="margin: 0.25rem 0 0 0; color: #999; font-size: 0.85rem;">${new Date(session.startedAt).toLocaleTimeString('ko-KR')}</p>
             </div>
+            <button class="btn btn-primary" style="margin: 0;" onclick="pickSession(${session.sessionId})">수락</button>
         </div>
     `).join('');
 }

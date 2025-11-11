@@ -780,6 +780,9 @@ html, body, #app {
 
 .modal-body {
     padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .modal-notice {
@@ -917,6 +920,9 @@ fieldset legend {
     box-shadow: 0 5px 20px rgba(0,0,0,0.3);
     max-width: 500px;
     width: 90%;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .modal-header {
