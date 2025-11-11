@@ -9,14 +9,13 @@ let currentHospital = null;
 let reservations = [];
 
 // Initialize App
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Check if user is logged in (auto-login)
     if (authToken) {
-        loadUserProfile();
-        updateNavbar();
-    } else {
-        updateNavbar();
+        await loadUserProfile();
+        console.log('초기화: 프로필 로드 완료, currentUser:', currentUser);
     }
+    updateNavbar();
 
     // Show home page by default
     navigateTo('home');
@@ -91,6 +90,8 @@ function navigateTo(page) {
 async function loadUserProfile() {
     try {
         currentUser = await authAPI.getProfile();
+        console.log('프로필 로드 완료:', currentUser);
+        console.log('사용자 역할:', currentUser.userRole);
         updateNavbar();
     } catch (error) {
         console.error('Failed to load profile:', error);
@@ -2843,23 +2844,28 @@ function handleConsultantTransfer(response) {
 
     // 응답 메시지 표시
     if (response.waitingPosition === 0) {
-        // 즉시 연결됨
-        appendChatMessage('system', '✅ 상담원이 곧 응답할 예정입니다. 잠시만 기다려주세요.');
+        // 즉시 연결됨 - 상담원과 실제 연결
+        appendChatMessage('system', '✅ 상담원이 연결되었습니다.');
         appendChatMessage('bot', response.content || '상담원과의 대화가 시작되었습니다.');
+
+        // 입력창 활성화 (상담원과 실시간 채팅 가능)
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        if (messageInput) messageInput.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
     } else {
         // 대기열에 추가됨
         appendChatMessage('system', `📊 현재 대기 순번: ${response.waitingPosition}번`);
         appendChatMessage('bot', response.content || '상담원과 연결되기 전까지 잠시만 기다려주세요.');
+
+        // 입력창 비활성화 (대기 중)
+        const messageInput = document.getElementById('message-input');
+        const sendBtn = document.getElementById('send-btn');
+        if (messageInput) messageInput.disabled = true;
+        if (sendBtn) sendBtn.disabled = true;
     }
 
     scrollChatToBottom();
-
-    // 입력창 비활성화 (상담원 연결 후 활성화)
-    const sendBtn = document.getElementById('send-btn');
-    if (sendBtn) {
-        sendBtn.disabled = true;
-    }
-
     isSendingChatMessage = false;
 }
 
