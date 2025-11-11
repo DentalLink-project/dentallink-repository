@@ -76,12 +76,12 @@ public class ConsultantService {
         // Redis 대기열에 추가
         redisTemplate.opsForList().rightPush(WAITING_QUEUE_KEY, sessionId.toString());
 
-        // 세션 위치를 Redis에만 저장 (DB 업데이트 제거 - N+1 쿼리 방지)
+        // 세션 위치를 Redis에만 저장 (String으로 변환 - StringRedisSerializer 호환)
         Long position = redisTemplate.opsForList().size(WAITING_QUEUE_KEY);
-        redisTemplate.opsForValue().set(SESSION_POSITION_KEY + sessionId, position);
+        redisTemplate.opsForValue().set(SESSION_POSITION_KEY + sessionId, position != null ? position.toString() : "1");
 
-        // DB의 waitingPosition은 선택적 업데이트 (참고용)
-        // session.moveToWaitingPosition(position); // 제거하여 DB 쿼리 감소
+        // DB의 세션 상태를 WAITING으로 업데이트 (필수: getWaitingSessions에서 필터링)
+        session.moveToWaitingPosition(position);
 
         log.info("상담원 대기열 추가 (Redis): sessionId={}, position={}", sessionId, position);
         return new ConsultantMatchResult(false, null, position);
@@ -271,8 +271,8 @@ public class ConsultantService {
         long position = 1;
         for (Object sessionIdObj : sessionIds) {
             Long sessionId = Long.parseLong(sessionIdObj.toString());
-            // Redis에만 저장 (DB 조회/업데이트 제거)
-            redisTemplate.opsForValue().set(SESSION_POSITION_KEY + sessionId, position);
+            // Redis에만 저장 - String으로 변환 (StringRedisSerializer 호환)
+            redisTemplate.opsForValue().set(SESSION_POSITION_KEY + sessionId, String.valueOf(position));
             position++;
         }
 

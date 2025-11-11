@@ -74,10 +74,12 @@ public class ConsultantWebSocketController {
      * 클라이언트: /app/consultant/pick
      */
     @MessageMapping("/consultant/pick")
-    public void pickNextSession(SimpMessageHeaderAccessor headerAccessor) {
+    public void pickNextSession(
+            @Payload PickSessionRequest request,
+            SimpMessageHeaderAccessor headerAccessor) {
         Long consultantId = getConsultantIdFromHeader(headerAccessor);
 
-        log.info("상담원이 다음 세션 요청: consultantId={}", consultantId);
+        log.info("상담원이 세션 수락 요청: consultantId={}, sessionId={}", consultantId, request.sessionId());
 
         try {
             Optional<ChatSession> session = consultantService.pickNextWaitingSession(consultantId);
@@ -210,6 +212,10 @@ public class ConsultantWebSocketController {
     }
 
     // ===== Inner Classes =====
+
+    private record PickSessionRequest(
+            Long sessionId
+    ) {}
 
     private record ConsultantMessageRequest(
             Long sessionId,

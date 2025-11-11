@@ -2653,7 +2653,15 @@ function initChatPage() {
 }
 
 /**
- * WebSocket 연결 초기화
+ * WebSocket 재연결 관련 상태
+ */
+let chatbotReconnectAttempts = 0;
+let chatbotReconnectTimer = null;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY = 2000; // 2초
+
+/**
+ * WebSocket 연결 초기화 (재연결 로직 포함)
  */
 function connectChatbot() {
     const connectionDot = document.getElementById('connection-dot');
@@ -2665,14 +2673,12 @@ function connectChatbot() {
         const host = window.location.host;
         const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
         chatbotStompClient = Stomp.over(socket);
-        chatbotStompClient.debug = function (msg) {
-            console.log('STOMP DEBUG:', msg);
-        }; // 디버그 로그 활성화
+        chatbotStompClient.debug = null; // 프로덕션에서는 디버그 로그 비활성화
 
         const headers = {};
         if (authToken) {
             headers['Authorization'] = `Bearer ${authToken}`;
-            console.log('WebSocket 연결 시도 - Token 포함:', authToken.substring(0, 20) + '...');
+            console.log('WebSocket 연결 시도 (시도 ' + (chatbotReconnectAttempts + 1) + '/' + MAX_RECONNECT_ATTEMPTS + ')');
         } else {
             console.warn('WebSocket 연결 시도 - Token 없음!');
         }
@@ -2680,7 +2686,10 @@ function connectChatbot() {
         chatbotStompClient.connect(headers,
             () => {
                 // 연결 성공
+                console.log('WebSocket 연결 성공');
                 chatbotConnected = true;
+                chatbotReconnectAttempts = 0; // 성공 시 재시도 카운터 초기화
+
                 if (connectionDot) {
                     connectionDot.classList.remove('offline');
                     connectionDot.classList.add('online');
@@ -2699,6 +2708,7 @@ function connectChatbot() {
 
                         // 상담원 연결 처리
                         if (body?.actionType === 'TRANSFER_TO_CONSULTANT') {
+                            console.log('상담원 전환 메시지 수신:', body);
                             handleConsultantTransfer(body);
                         } else if (body?.actionType === 'SESSION_CLOSED') {
                             handleSessionClosed(body);
@@ -2728,12 +2738,15 @@ function connectChatbot() {
                     }
                 });
 
-                // 접속 인사
-                appendChatMessage('bot', '안녕하세요! 무엇을 도와드릴까요?');
-                scrollChatToBottom();
+                // 접속 인사 (세션이 없을 때만 표시)
+                if (!chatbotSessionId) {
+                    appendChatMessage('bot', '안녕하세요! 무엇을 도와드릴까요?');
+                    scrollChatToBottom();
+                }
             },
             (error) => {
                 // 연결 실패
+                console.error('STOMP connection error:', error);
                 chatbotConnected = false;
                 if (connectionDot) {
                     connectionDot.classList.remove('online');
@@ -2742,14 +2755,29 @@ function connectChatbot() {
                 if (connectionText) {
                     connectionText.textContent = '연결 실패';
                 }
-                console.error('STOMP connection error:', error);
-                appendChatMessage('bot', '죄송합니다. 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
+
+                // 자동 재연결 시도
+                if (chatbotReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    chatbotReconnectAttempts++;
+                    console.log('재연결 시도 예약: ' + chatbotReconnectAttempts + '/' + MAX_RECONNECT_ATTEMPTS);
+
+                    if (chatbotReconnectTimer) {
+                        clearTimeout(chatbotReconnectTimer);
+                    }
+
+                    chatbotReconnectTimer = setTimeout(() => {
+                        console.log('재연결 시도 중...');
+                        connectChatbot();
+                    }, RECONNECT_DELAY * chatbotReconnectAttempts); // 지수 백오프
+                } else {
+                    appendChatMessage('bot', '죄송합니다. 연결에 실패했습니다. 페이지를 새로고침해주세요.');
+                }
             }
         );
     } catch (e) {
         chatbotConnected = false;
         console.error('Chat WebSocket error:', e);
-        appendChatMessage('bot', '죄송합니다. 연결 중 오류가 발생했습니다.');
+        appendChatMessage('bot', '죄송합니다. 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
 }
 
@@ -2803,13 +2831,50 @@ function sendChatbotMessage() {
         messageInput.value = '';
         document.getElementById('char-count').textContent = '0/2000';
 
+        // 연결 상태 확인 및 자동 재연결 시도
         if (!chatbotStompClient || !chatbotConnected) {
-            appendChatMessage('bot', '죄송합니다. 연결이 끊어졌습니다. 잠시 후 다시 시도해주세요.');
-            isSendingChatMessage = false;
-            sendBtn.disabled = false;
+            console.log('WebSocket 연결 상태 확인: connected=' + chatbotConnected);
+            appendChatMessage('bot', '⏳ 연결을 다시 시도 중입니다...');
+
+            // 재연결 시도
+            connectChatbot();
+
+            // 재연결 시도 후 1초 대기 후 메시지 전송 재시도
+            setTimeout(() => {
+                if (chatbotStompClient && chatbotConnected) {
+                    console.log('재연결 성공, 메시지 전송 재시도');
+                    sendChatbotMessageWithConnection(text, typingIndicator);
+                } else {
+                    console.log('재연결 실패');
+                    appendChatMessage('bot', '죄송합니다. 연결이 끊어졌습니다. 페이지를 새로고침해주세요.');
+                    isSendingChatMessage = false;
+                    sendBtn.disabled = false;
+                }
+            }, 1000);
             return;
         }
 
+        // 연결이 있으면 메시지 전송
+        sendChatbotMessageWithConnection(text, typingIndicator);
+
+    } catch (error) {
+        console.error('Error sending message:', error);
+        if (typingIndicator) {
+            typingIndicator.style.display = 'none';
+        }
+        appendChatMessage('bot', '메시지 전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+        isSendingChatMessage = false;
+        sendBtn.disabled = false;
+    }
+}
+
+/**
+ * 연결된 상태에서 메시지 전송 (헬퍼 함수)
+ */
+function sendChatbotMessageWithConnection(text, typingIndicator) {
+    const sendBtn = document.getElementById('send-btn');
+
+    try {
         // 입력 중 표시
         if (typingIndicator) {
             typingIndicator.style.display = 'flex';
@@ -2829,6 +2894,7 @@ function sendChatbotMessage() {
         }
 
         chatbotStompClient.send('/app/chat/send', headers, JSON.stringify(payload));
+        console.log('메시지 전송 완료:', text);
 
         // 타임아웃: 10초 후에도 응답이 없으면 입력 중 표시 제거
         setTimeout(() => {
