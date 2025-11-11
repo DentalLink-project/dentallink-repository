@@ -78,7 +78,6 @@ public class HospitalController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<CommonApiResponse<HospitalCreateResponse>> createHospital(
-//            @AuthenticationPrincipal AuthUser authUser,
             @Valid @RequestBody HospitalCreateRequest request
     ) {
         return created(
