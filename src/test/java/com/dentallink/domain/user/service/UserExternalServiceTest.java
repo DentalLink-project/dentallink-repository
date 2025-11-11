@@ -24,7 +24,6 @@ public class UserExternalServiceTest {
 
     @Mock private UserRepository userRepository;
     @Mock private AuthService authService;
-    @Mock private UserRole userRole;
 
     @InjectMocks
     private UserExternalService userExternalService;
