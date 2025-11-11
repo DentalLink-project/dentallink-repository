@@ -98,7 +98,7 @@ async function loadUserProfile() {
     try {
         currentUser = await authAPI.getProfile();
         console.log('프로필 로드 완료:', currentUser);
-        console.log('사용자 역할:', 혀.role);
+        console.log('사용자 역할:', currentUser.userRole || currentUser.role);
         updateNavbar();
     } catch (error) {
         console.error('Failed to load profile:', error);
@@ -3420,6 +3420,8 @@ async function loadConsultantSessions() {
         if (sessionsResponse.ok) {
             const response = await sessionsResponse.json();
             console.log('대기 세션 응답:', response);
+            console.log('응답 타입:', typeof response);
+            console.log('배열 여부:', Array.isArray(response));
 
             // API 응답이 배열이면 직접 사용, 객체면 data 필드 사용
             if (Array.isArray(response)) {
@@ -3429,12 +3431,18 @@ async function loadConsultantSessions() {
             } else if (response && response.content && Array.isArray(response.content)) {
                 waitingSessions = response.content;
             } else {
+                console.warn('예상치 못한 응답 형식:', response);
                 waitingSessions = [];
             }
 
-            console.log('파싱된 대기 세션:', waitingSessions);
+            console.log('파싱된 대기 세션 개수:', waitingSessions.length);
+            if (waitingSessions.length > 0) {
+                console.log('첫 번째 세션:', waitingSessions[0]);
+            }
         } else {
-            console.warn('대기 세션 조회 실패:', sessionsResponse.status);
+            console.warn('대기 세션 조회 실패 - Status:', sessionsResponse.status);
+            const errorText = await sessionsResponse.text();
+            console.warn('응답 본문:', errorText);
             waitingSessions = [];
         }
     } catch (error) {
