@@ -309,6 +309,17 @@ public class ConsultantService {
     }
 
     /**
+     * 세션의 사용자 ID 조회
+     * @param sessionId 세션 ID
+     * @return 세션의 사용자 ID
+     */
+    public Long getUserIdBySessionId(Long sessionId) {
+        ChatSession session = sessionRepository.findById(sessionId)
+                .orElseThrow(() -> new GlobalException(ChatbotErrorCode.SESSION_NOT_FOUND));
+        return session.getUser().getId();
+    }
+
+    /**
      * 세션의 메시지 조회
      * @param sessionId 세션 ID
      * @return 세션의 모든 메시지

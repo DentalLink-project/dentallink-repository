@@ -57,9 +57,10 @@ public class ConsultantWebSocketController {
                     .sentAt(java.time.LocalDateTime.now())
                     .build();
 
-            // 해당 세션의 사용자에게 전송
+            // 세션에서 사용자 ID를 조회하여 메시지 전송
+            Long userId = consultantService.getUserIdBySessionId(request.sessionId());
             messagingTemplate.convertAndSendToUser(
-                    request.userId().toString(),
+                    userId.toString(),
                     "/queue/reply",
                     response
             );

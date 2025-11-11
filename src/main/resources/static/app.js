@@ -3192,6 +3192,7 @@ function handleSessionClosed(response) {
 let consultantStompClient = null;
 let consultantConnected = false;
 let currentSessionId = null;
+let currentUserId = null;  // 현재 세션의 사용자 ID
 let waitingSessions = [];
 let activeSessions = [];
 let consultantSessionsIntervalId = null;  // setInterval ID 저장
@@ -3498,12 +3499,12 @@ function renderWaitingSessions() {
 
     container.innerHTML = waitingSessions.map((session) => `
         <div style="padding: 1rem; background: white; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #667eea; display: flex; justify-content: space-between; align-items: center;">
-            <div style="cursor: pointer; flex: 1;" onclick="selectSession(${session.sessionId})">
+            <div style="cursor: pointer; flex: 1;" onclick="selectSession(${session.sessionId}, ${session.userId})">
                 <h4 style="margin: 0 0 0.5rem 0;">${session.username || '사용자'}</h4>
                 <p style="margin: 0; color: #666; font-size: 0.9rem;">대기 순번: ${session.waitingPosition || '-'}</p>
                 <p style="margin: 0.25rem 0 0 0; color: #999; font-size: 0.85rem;">${new Date(session.startedAt).toLocaleTimeString('ko-KR')}</p>
             </div>
-            <button class="btn btn-primary" style="margin: 0;" onclick="pickSession(${session.sessionId})">수락</button>
+            <button class="btn btn-primary" style="margin: 0;" onclick="pickSession(${session.sessionId}, ${session.userId})">수락</button>
         </div>
     `).join('');
 
@@ -3513,8 +3514,9 @@ function renderWaitingSessions() {
 /**
  * 세션 선택
  */
-function selectSession(sessionId) {
+function selectSession(sessionId, userId) {
     currentSessionId = sessionId;
+    currentUserId = userId;  // 사용자 ID 저장
     const info = document.getElementById('activeSessionInfo');
 
     if (info) {
@@ -3537,8 +3539,8 @@ function selectSession(sessionId) {
  * 세션 수락 (대기열에서 가져오기)
  * 서버 응답(/user/queue/assigned)을 받은 후 selectSession이 호출됨
  */
-function pickSession(sessionId) {
-    console.log('pickSession 호출:', { sessionId, consultantConnected, consultantStompClient: !!consultantStompClient });
+function pickSession(sessionId, userId) {
+    console.log('pickSession 호출:', { sessionId, userId, consultantConnected, consultantStompClient: !!consultantStompClient });
 
     if (!consultantStompClient || !consultantConnected) {
         console.error('연결 상태 확인 실패:', {
@@ -3694,7 +3696,7 @@ function sendConsultantMessage() {
         // 메시지 전송
         const payload = {
             sessionId: currentSessionId,
-            userId: 0, // 사용자 ID는 백엔드에서 처리
+            userId: currentUserId,
             content: text
         };
 
