@@ -54,7 +54,6 @@ class ReservationLockTest {
     void realConcurrentReservationTest() throws Exception {
         // given
         Hospital hospital = new Hospital(
-                1L,
                 "바른치과",
                 "심미치료 전문. 토/일 예약 가능.",
                 "서울 강남구",

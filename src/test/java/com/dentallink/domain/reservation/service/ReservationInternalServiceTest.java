@@ -1,5 +1,4 @@
-/*package com.dentallink.domain.reservation.service;
-
+package com.dentallink.domain.reservation.service;
 
 import com.dentallink.common.exception.GlobalException;
 import com.dentallink.domain.hospital.entity.Hospital;
@@ -8,7 +7,6 @@ import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
-import com.dentallink.domain.reservation.dto.ReservationCreateRequest;
 import com.dentallink.domain.reservation.dto.ReservationResponse;
 import com.dentallink.domain.reservation.entity.Reservation;
 import com.dentallink.domain.reservation.enums.ReservationStatus;
@@ -21,7 +19,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,11 +31,13 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.*;
-import static org.mockito.Mockito.inOrder;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("ReservationInternalService - 단위 테스트")
+@DisplayName("ReservationInternalService - 기본 단위 테스트")
 class ReservationInternalServiceTest {
 
     @Mock
@@ -65,8 +64,6 @@ class ReservationInternalServiceTest {
     private PointAccount pointAccount;
     private LocalDateTime appointmentDate;
 
-    private static final LocalDateTime FIXED_NOW = LocalDateTime.of(2025, 10, 22, 10, 0, 0);
-
     @BeforeEach
     void setUp() {
         // User 생성 및 ID 설정
@@ -80,13 +77,14 @@ class ReservationInternalServiceTest {
 
         // Hospital 생성
         hospital = new Hospital(
-                1L,
                 "테스트치과",
                 "좋은 치과입니다",
                 "서울시 강남구",
                 true,
-                "김의사"
+                "김의사",
+                1000L
         );
+        ReflectionTestUtils.setField(hospital, "id", 1L);
 
         // HospitalSchedule 생성
         schedule = HospitalSchedule.create(
@@ -101,61 +99,11 @@ class ReservationInternalServiceTest {
         pointAccount = PointAccount.create(user, 5000L);
         ReflectionTestUtils.setField(pointAccount, "id", 1L);
 
-        appointmentDate = FIXED_NOW.plusDays(1).withHour(14).withMinute(0).withSecond(0).withNano(0);
+        // 현재 시간 기준으로 내일 14:00 설정
+        appointmentDate = LocalDateTime.now().plusDays(1).withHour(14).withMinute(0).withSecond(0).withNano(0);
     }
 
-    @Test
-    @DisplayName("예약 생성 성공 - 포인트 차감 후 예약 저장 순서 검증")
-    void createReservation_Success() {
-        // given
-        ReservationCreateRequest request = new ReservationCreateRequest(1L, appointmentDate);
-
-        given(hospitalRepository.findById(1L)).willReturn(Optional.of(hospital));
-        given(hospitalScheduleRepository.findByHospitalId(1L)).willReturn(Optional.of(schedule));
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        given(reservationRepository.countByHospitalIdAndAppointmentDate(1L, appointmentDate)).willReturn(0);
-        given(reservationRepository.existsByUserIdAndAppointmentDate(1L, appointmentDate)).willReturn(false);
-        given(pointAccountExternalService.getPointAccountByUser(user)).willReturn(pointAccount);
-
-        Reservation savedReservation = Reservation.create(hospital, user, appointmentDate, 1000L);
-        given(reservationRepository.save(any(Reservation.class))).willReturn(savedReservation);
-
-        // when
-        ReservationResponse response = reservationInternalService.createReservation(request, 1L);
-
-        // then
-        assertThat(response).isNotNull();
-        assertThat(response.usedPoints()).isEqualTo(1000L);
-
-        InOrder inOrder = inOrder(pointAccountExternalService, reservationRepository);
-        then(pointAccountExternalService).should(inOrder).spendPointAccount(eq(1L), eq(1000L));
-        then(reservationRepository).should(inOrder).save(any(Reservation.class));
-    }
-
-    @Test
-    @DisplayName("예약 생성 실패 - 포인트 부족")
-    void createReservation_InsufficientPoints() {
-        // given
-        ReservationCreateRequest request = new ReservationCreateRequest(1L, appointmentDate);
-
-        given(hospitalRepository.findById(1L)).willReturn(Optional.of(hospital));
-        given(hospitalScheduleRepository.findByHospitalId(1L)).willReturn(Optional.of(schedule));
-        given(userRepository.findById(1L)).willReturn(Optional.of(user));
-        given(reservationRepository.countByHospitalIdAndAppointmentDate(1L, appointmentDate)).willReturn(0);
-        given(reservationRepository.existsByUserIdAndAppointmentDate(1L, appointmentDate)).willReturn(false);
-        given(pointAccountExternalService.getPointAccountByUser(user)).willReturn(pointAccount);
-
-        willThrow(new IllegalStateException("잔액이 부족합니다."))
-                .given(pointAccountExternalService)
-                .spendPointAccount(eq(1L), eq(1000L));
-
-        // when, then
-        assertThatThrownBy(() -> reservationInternalService.createReservation(request, 1L))
-                .isInstanceOf(GlobalException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.INSUFFICIENT_POINTS);
-
-        then(reservationRepository).should(never()).save(any(Reservation.class));
-    }
+    // ==================== 예약 취소 테스트 ====================
 
     @Test
     @DisplayName("예약 취소 성공 - 포인트 환불")
@@ -165,7 +113,7 @@ class ReservationInternalServiceTest {
         ReflectionTestUtils.setField(reservation, "id", 1L);
 
         given(reservationRepository.findByIdAndNotDeleted(1L)).willReturn(Optional.of(reservation));
-        given(pointAccountExternalService.getPointAccountByUser(user)).willReturn(pointAccount);
+        given(pointAccountExternalService.getPointAccountByUserId(1L)).willReturn(pointAccount);
 
         // when
         reservationInternalService.cancelReservation(1L, 1L);
@@ -213,65 +161,14 @@ class ReservationInternalServiceTest {
     }
 
     @Test
-    @DisplayName("예약 생성 실패 - 과거 시간")
-    void createReservation_PastDateTime() {
+    @DisplayName("예약 조회 실패 - 예약 없음")
+    void getReservation_NotFound() {
         // given
-        LocalDateTime pastDate = FIXED_NOW.minusDays(1);
-        ReservationCreateRequest request = new ReservationCreateRequest(1L, pastDate);
-
-        given(hospitalRepository.findById(1L)).willReturn(Optional.of(hospital));
+        given(reservationRepository.findByIdAndNotDeleted(999L)).willReturn(Optional.empty());
 
         // when, then
-        assertThatThrownBy(() -> reservationInternalService.createReservation(request, 1L))
+        assertThatThrownBy(() -> reservationInternalService.getReservation(999L, 1L))
                 .isInstanceOf(GlobalException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.PAST_APPOINTMENT_TIME);
+                .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.RESERVATION_NOT_FOUND);
     }
-
-    @Test
-    @DisplayName("예약 생성 실패 - 병원 영업 중이 아님")
-    void createReservation_HospitalClosed() {
-        // given
-        Hospital closedHospital = new Hospital(1L, "테스트치과", "좋은 치과", "서울시", false, "김의사");
-        ReservationCreateRequest request = new ReservationCreateRequest(1L, appointmentDate);
-
-        given(hospitalRepository.findById(1L)).willReturn(Optional.of(closedHospital));
-
-        // when, then
-        assertThatThrownBy(() -> reservationInternalService.createReservation(request, 1L))
-                .isInstanceOf(GlobalException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.HOSPITAL_CLOSED);
-    }
-
-    @Test
-    @DisplayName("예약 생성 실패 - 시간대 예약 마감")
-    void createReservation_TimeSlotFull() {
-        // given
-        ReservationCreateRequest request = new ReservationCreateRequest(1L, appointmentDate);
-
-        given(hospitalRepository.findById(1L)).willReturn(Optional.of(hospital));
-        given(hospitalScheduleRepository.findByHospitalId(1L)).willReturn(Optional.of(schedule));
-        given(reservationRepository.countByHospitalIdAndAppointmentDate(1L, appointmentDate)).willReturn(3);
-
-        // when, then
-        assertThatThrownBy(() -> reservationInternalService.createReservation(request, 1L))
-                .isInstanceOf(GlobalException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.RESERVATION_FULL);
-    }
-
-    @Test
-    @DisplayName("예약 생성 실패 - 중복 예약")
-    void createReservation_DuplicateReservation() {
-        // given
-        ReservationCreateRequest request = new ReservationCreateRequest(1L, appointmentDate);
-
-        given(hospitalRepository.findById(1L)).willReturn(Optional.of(hospital));
-        given(hospitalScheduleRepository.findByHospitalId(1L)).willReturn(Optional.of(schedule));
-        given(reservationRepository.countByHospitalIdAndAppointmentDate(1L, appointmentDate)).willReturn(0);
-        given(reservationRepository.existsByUserIdAndAppointmentDate(1L, appointmentDate)).willReturn(true);
-
-        // when, then
-        assertThatThrownBy(() -> reservationInternalService.createReservation(request, 1L))
-                .isInstanceOf(GlobalException.class)
-                .hasFieldOrPropertyWithValue("errorCode", ReservationErrorCode.DUPLICATE_RESERVATION);
-    }
-}*/
+}
