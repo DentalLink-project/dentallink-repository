@@ -110,6 +110,7 @@ function updateNavbar() {
     const logoutMenu = document.getElementById('logoutMenu');
     const customerMenu = document.getElementById('customerMenu');
     const customerReservations = document.getElementById('customerReservations');
+    const chatbotMenu = document.querySelector('li a[onclick="navigateTo(\'chatbot\')"]')?.parentElement;
     const hospitalMenu = document.getElementById('hospitalMenu');
     const adminHospitalManagementMenu = document.getElementById('adminHospitalManagementMenu');
     const adminConsultantMenu = document.getElementById('adminConsultantMenu');
@@ -123,6 +124,7 @@ function updateNavbar() {
         if (currentUser.userRole && String(currentUser.userRole).includes('HOSPITAL')) {
             if (customerMenu) customerMenu.style.display = 'none';
             if (customerReservations) customerReservations.style.display = 'none';
+            if (chatbotMenu) chatbotMenu.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'block';
             if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
@@ -130,6 +132,7 @@ function updateNavbar() {
         } else if (currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) {
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
+            if (chatbotMenu) chatbotMenu.style.display = 'none'; // 관리자는 상담원 대시보드 사용
             if (hospitalMenu) hospitalMenu.style.display = 'none';
             if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'block';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'block';
@@ -137,6 +140,7 @@ function updateNavbar() {
         } else {
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
+            if (chatbotMenu) chatbotMenu.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'none';
             if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
@@ -147,6 +151,7 @@ function updateNavbar() {
         if (logoutMenu) logoutMenu.style.display = 'none';
         if (customerMenu) customerMenu.style.display = 'block';
         if (customerReservations) customerReservations.style.display = 'block';
+        if (chatbotMenu) chatbotMenu.style.display = 'block';
         if (hospitalMenu) hospitalMenu.style.display = 'none';
         if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
         if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
