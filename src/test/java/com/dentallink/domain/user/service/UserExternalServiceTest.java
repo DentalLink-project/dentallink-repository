@@ -48,7 +48,7 @@ public class UserExternalServiceTest {
     void getUserByEmail_success() {
 
         // given
-        when(userRepository.findByEmailAndDeletedAtIsNull("mockUser@example.com"))
+        when(userRepository.findByEmailAndDeletedAtIsNull(mockUser.getEmail()))
                 .thenReturn(Optional.of(mockUser));
 
         // when
@@ -56,8 +56,8 @@ public class UserExternalServiceTest {
 
         // then
         assertNotNull(foundUser);
-        assertEquals("mockUser@example.com", foundUser.getEmail());
-        verify(userRepository).findByEmailAndDeletedAtIsNull("mockUser@example.com");
+        assertEquals(mockUser.getEmail(), foundUser.getEmail());
+        verify(userRepository).findByEmailAndDeletedAtIsNull(mockUser.getEmail());
     }
 
     @Test
@@ -83,16 +83,16 @@ public class UserExternalServiceTest {
     @DisplayName("userId를 통해 유저를 검색 성공한다.")
     void getUserById_success() {
         // given
-        when(userRepository.findByIdAndDeletedAtIsFalse(1L))
+        when(userRepository.findByIdAndDeletedAtIsFalse(mockUser.getId()))
                 .thenReturn(Optional.of(mockUser));
 
         // when
-        User foundUser = userExternalService.getUserById(1L);
+        User foundUser = userExternalService.getUserById(mockUser.getId());
 
         // then
         assertNotNull(foundUser);
-        assertEquals(1L, foundUser.getId());
-        verify(userRepository).findByIdAndDeletedAtIsFalse(1L);
+        assertEquals(mockUser.getId(), foundUser.getId());
+        verify(userRepository).findByIdAndDeletedAtIsFalse(mockUser.getId());
     }
 
     @Test
