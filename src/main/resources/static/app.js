@@ -71,6 +71,13 @@ function navigateTo(page) {
             setTimeout(() => {
                 initChatPage();
             }, 100);
+        } else if (page === 'hospitalManagement') {
+            if (authToken && currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'))) {
+                loadHospitalManagementList(0);
+            } else {
+                showAlert('관리자만 접근할 수 있습니다', 'error');
+                navigateTo('home');
+            }
         } else if (page === 'consultantDashboard') {
             if (authToken && currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'))) {
                 setTimeout(() => {
@@ -104,7 +111,7 @@ function updateNavbar() {
     const customerMenu = document.getElementById('customerMenu');
     const customerReservations = document.getElementById('customerReservations');
     const hospitalMenu = document.getElementById('hospitalMenu');
-    const adminMenu = document.getElementById('adminMenu');
+    const adminHospitalManagementMenu = document.getElementById('adminHospitalManagementMenu');
     const adminConsultantMenu = document.getElementById('adminConsultantMenu');
     const adminFab = document.getElementById('adminFab');
 
@@ -117,21 +124,21 @@ function updateNavbar() {
             if (customerMenu) customerMenu.style.display = 'none';
             if (customerReservations) customerReservations.style.display = 'none';
             if (hospitalMenu) hospitalMenu.style.display = 'block';
-            if (adminMenu) adminMenu.style.display = 'none';
+            if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
             if (adminFab) adminFab.style.display = 'none';
         } else if (currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) {
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'none';
-            if (adminMenu) adminMenu.style.display = 'block';
+            if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'block';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'block';
             if (adminFab) adminFab.style.display = 'block';
         } else {
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'none';
-            if (adminMenu) adminMenu.style.display = 'none';
+            if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
             if (adminFab) adminFab.style.display = 'none';
         }
@@ -141,7 +148,7 @@ function updateNavbar() {
         if (customerMenu) customerMenu.style.display = 'block';
         if (customerReservations) customerReservations.style.display = 'block';
         if (hospitalMenu) hospitalMenu.style.display = 'none';
-        if (adminMenu) adminMenu.style.display = 'none';
+        if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
         if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
         if (adminFab) adminFab.style.display = 'none';
     }
@@ -2016,6 +2023,189 @@ async function handleHospitalCreate(event) {
             submitBtn.textContent = '병원 등록';
         }
     }
+}
+
+/**
+ * 관리자 병원 관리 페이지 - 병원 목록 로드
+ */
+let adminHospitalsPageNo = 0;
+let adminHospitalsPageSize = 10;
+let adminHospitalsTotalPages = 1;
+let adminHospitalsSearchQuery = '';
+
+async function loadHospitalManagementList(page = 0) {
+    const container = document.getElementById('hospitalManagementList');
+    const pagination = document.getElementById('hospitalManagementPagination');
+
+    if (!container) return;
+
+    // 로딩 상태
+    container.innerHTML = '<div class="loading"><div class="spinner"></div><p>병원 목록 로드 중...</p></div>';
+
+    try {
+        adminHospitalsPageNo = page;
+        let data;
+
+        if (adminHospitalsSearchQuery) {
+            data = await hospitalsAPI.search(adminHospitalsSearchQuery, adminHospitalsPageNo, adminHospitalsPageSize);
+        } else {
+            data = await hospitalsAPI.getAll(adminHospitalsPageNo, adminHospitalsPageSize);
+        }
+
+        // API 응답 처리
+        let hospitals = [];
+        if (Array.isArray(data)) {
+            hospitals = data;
+            adminHospitalsTotalPages = 1;
+        } else {
+            hospitals = data.content || [];
+            adminHospitalsTotalPages = typeof data.totalPages === 'number' ? data.totalPages : 1;
+            adminHospitalsPageNo = typeof data.number === 'number' ? data.number : adminHospitalsPageNo;
+        }
+
+        // 병원 목록 렌더링
+        renderHospitalManagementList(hospitals);
+
+        // 페이지 버튼 렌더링
+        renderAdminHospitalsPagination();
+
+    } catch (error) {
+        console.error('Failed to load hospital management list:', error);
+        container.innerHTML = `
+            <div class="empty-state">
+                <p>병원 목록을 불러올 수 없습니다</p>
+                <button class="btn btn-primary" style="width: auto; margin-top: 1rem;" onclick="loadHospitalManagementList(0)">
+                    다시 시도
+                </button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * 관리자 병원 관리 페이지 - 병원 목록 렌더링
+ */
+function renderHospitalManagementList(hospitalsList) {
+    const container = document.getElementById('hospitalManagementList');
+
+    if (!hospitalsList || hospitalsList.length === 0) {
+        container.innerHTML = '<div class="empty-state"><p>등록된 병원이 없습니다.</p></div>';
+        return;
+    }
+
+    container.innerHTML = hospitalsList.map(hospital => `
+        <div class="hospital-card">
+            <div class="hospital-card-body" onclick="viewHospitalDetail(${hospital.id})" style="cursor: pointer;">
+                <h3>${hospital.hospitalName || '병원 이름'}</h3>
+                <p>👨‍⚕️ ${hospital.doctorName || '의사 정보 없음'}</p>
+                <p>${hospital.hospitalIsOpen ? '✅ 영업 중' : '❌ 영업 종료'}</p>
+            </div>
+            <div class="hospital-card-footer">
+                <button class="btn btn-secondary" onclick="openHospitalEditModal(${hospital.id})" style="margin-right: 0.5rem;">✏️ 수정</button>
+                <button class="btn btn-danger" onclick="deleteHospital(${hospital.id})">🗑️ 삭제</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+/**
+ * 관리자 병원 관리 페이지 - 페이지네이션 렌더링
+ */
+function renderAdminHospitalsPagination() {
+    const pagination = document.getElementById('hospitalManagementPagination');
+    if (!pagination) return;
+
+    if (adminHospitalsTotalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+
+    const buttons = [];
+    // Prev
+    buttons.push(`<button ${adminHospitalsPageNo === 0 ? 'disabled' : ''} onclick="goToAdminHospitalsPage(${adminHospitalsPageNo - 1})">이전</button>`);
+
+    // Page numbers
+    const windowSize = 5;
+    const start = Math.max(0, adminHospitalsPageNo - Math.floor(windowSize / 2));
+    const end = Math.min(adminHospitalsTotalPages - 1, start + windowSize - 1);
+    for (let i = start; i <= end; i++) {
+        buttons.push(`<button class="${i === adminHospitalsPageNo ? 'active' : ''}" onclick="goToAdminHospitalsPage(${i})">${i + 1}</button>`);
+    }
+
+    // Next
+    buttons.push(`<button ${adminHospitalsPageNo >= adminHospitalsTotalPages - 1 ? 'disabled' : ''} onclick="goToAdminHospitalsPage(${adminHospitalsPageNo + 1})">다음</button>`);
+
+    pagination.innerHTML = buttons.join('');
+}
+
+function goToAdminHospitalsPage(page) {
+    if (page < 0 || page >= adminHospitalsTotalPages) return;
+    loadHospitalManagementList(page);
+}
+
+/**
+ * 관리자 병원 검색
+ */
+let adminHospitalsSearchTimer = null;
+
+function adminSearchHospitals() {
+    const searchInput = document.getElementById('adminSearchInput');
+    const query = (searchInput.value || '').trim();
+    const container = document.getElementById('hospitalManagementList');
+    const clearBtn = document.getElementById('adminSearchClearBtn');
+
+    // 검색어가 없으면 전체 목록 표시
+    if (!query) {
+        adminHospitalsSearchQuery = '';
+        if (clearBtn) clearBtn.style.display = 'none';
+        loadHospitalManagementList(0);
+        return;
+    }
+
+    // 검색어 있으면 클리어 버튼 표시
+    if (clearBtn) clearBtn.style.display = 'inline-block';
+
+    // 로딩 상태
+    if (container) {
+        container.innerHTML = '<div class="loading"><div class="spinner"></div><p>검색 중...</p></div>';
+    }
+
+    // 기존 타이머 취소
+    if (adminHospitalsSearchTimer) clearTimeout(adminHospitalsSearchTimer);
+
+    // 500ms 디바운스
+    adminHospitalsSearchTimer = setTimeout(async () => {
+        try {
+            adminHospitalsSearchQuery = query;
+            await loadHospitalManagementList(0);
+
+            if (!document.getElementById('hospitalManagementList').innerHTML.includes('hospital-card')) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>검색 결과가 없습니다</p>
+                    </div>
+                `;
+            }
+        } catch (e) {
+            console.error('Search failed:', e);
+            container.innerHTML = '<div class="empty-state"><p>검색 중 오류가 발생했습니다</p></div>';
+        }
+    }, 500);
+}
+
+/**
+ * 관리자 병원 검색 초기화
+ */
+function adminClearSearch() {
+    const searchInput = document.getElementById('adminSearchInput');
+    const clearBtn = document.getElementById('adminSearchClearBtn');
+
+    searchInput.value = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+
+    adminHospitalsSearchQuery = '';
+    loadHospitalManagementList(0);
+    searchInput.focus();
 }
 
 // ===== Hospital Edit (Admin) =====
