@@ -8,6 +8,9 @@ let hospitalsSearchQuery = '';
 let currentHospital = null;
 let reservations = [];
 
+// Consultant Dashboard State
+let lastRenderedWaitingSessions = [];  // 마지막 렌더링된 세션 목록
+
 // Initialize App
 document.addEventListener('DOMContentLoaded', async () => {
     // Check if user is logged in (auto-login)
@@ -60,7 +63,7 @@ function navigateTo(page) {
                 navigateTo('login');
             }
         } else if (page === 'hospitalReservations') {
-            if (authToken && currentUser && currentUser.userRole === 'HOSPITAL') {
+            if (authToken && currentUser && currentUser.role === 'HOSPITAL') {
                 loadHospitalReservations();
             } else {
                 showAlert('병원 관리자만 접근할 수 있습니다', 'error');
@@ -72,14 +75,14 @@ function navigateTo(page) {
                 initChatPage();
             }, 100);
         } else if (page === 'hospitalManagement') {
-            if (authToken && currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'))) {
+            if (authToken && currentUser && (currentUser.role && String(currentUser.role).includes('ADMIN'))) {
                 loadHospitalManagementList(0);
             } else {
                 showAlert('관리자만 접근할 수 있습니다', 'error');
                 navigateTo('home');
             }
         } else if (page === 'consultantDashboard') {
-            if (authToken && currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'))) {
+            if (authToken && currentUser && (currentUser.role && String(currentUser.role).includes('ADMIN'))) {
                 setTimeout(() => {
                     initConsultantDashboard();
                 }, 100);
@@ -98,7 +101,7 @@ async function loadUserProfile() {
     try {
         currentUser = await authAPI.getProfile();
         console.log('프로필 로드 완료:', currentUser);
-        console.log('사용자 역할:', currentUser.userRole);
+        console.log('사용자 역할:', currentUser.userRole || currentUser.role);
         updateNavbar();
     } catch (error) {
         console.error('Failed to load profile:', error);
@@ -110,43 +113,54 @@ function updateNavbar() {
     const logoutMenu = document.getElementById('logoutMenu');
     const customerMenu = document.getElementById('customerMenu');
     const customerReservations = document.getElementById('customerReservations');
-    const chatbotMenu = document.querySelector('li a[onclick="navigateTo(\'chatbot\')"]')?.parentElement;
+    const chatbotMenu = document.getElementById('chatbotMenu');
     const hospitalMenu = document.getElementById('hospitalMenu');
     const adminHospitalManagementMenu = document.getElementById('adminHospitalManagementMenu');
     const adminConsultantMenu = document.getElementById('adminConsultantMenu');
-    const adminFab = document.getElementById('adminFab');
+
+    console.log('updateNavbar 호출:', { authToken: !!authToken, currentUser });
 
     if (authToken && currentUser) {
         if (loginMenu) loginMenu.style.display = 'none';
         if (logoutMenu) logoutMenu.style.display = 'block';
 
+        // 사용자 역할 확인 (userRole 또는 role 필드 모두 확인)
+        const userRole = currentUser.userRole || currentUser.role || '';
+        const roleStr = String(userRole).toUpperCase();
+        console.log('사용자 역할:', roleStr);
+
         // Show/hide menus based on user role
-        if (currentUser.userRole && String(currentUser.userRole).includes('HOSPITAL')) {
+        if (roleStr.includes('HOSPITAL')) {
+            // 병원 관리자 메뉴
+            console.log('병원 관리자 메뉴 표시');
             if (customerMenu) customerMenu.style.display = 'none';
             if (customerReservations) customerReservations.style.display = 'none';
             if (chatbotMenu) chatbotMenu.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'block';
             if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
-            if (adminFab) adminFab.style.display = 'none';
-        } else if (currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) {
+        } else if (roleStr.includes('ADMIN')) {
+            // 관리자(상담원) 메뉴
+            console.log('관리자/상담원 메뉴 표시');
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
-            if (chatbotMenu) chatbotMenu.style.display = 'none'; // 관리자는 상담원 대시보드 사용
+            if (chatbotMenu) chatbotMenu.style.display = 'none'; // 관리자는 채팅 대신 상담 관리 사용
             if (hospitalMenu) hospitalMenu.style.display = 'none';
             if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'block';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'block';
-            if (adminFab) adminFab.style.display = 'block';
         } else {
+            // 일반 사용자 메뉴
+            console.log('일반 사용자 메뉴 표시');
             if (customerMenu) customerMenu.style.display = 'block';
             if (customerReservations) customerReservations.style.display = 'block';
             if (chatbotMenu) chatbotMenu.style.display = 'block';
             if (hospitalMenu) hospitalMenu.style.display = 'none';
             if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
             if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
-            if (adminFab) adminFab.style.display = 'none';
         }
     } else {
+        // 로그인하지 않은 사용자
+        console.log('로그인하지 않은 사용자 메뉴 표시');
         if (loginMenu) loginMenu.style.display = 'block';
         if (logoutMenu) logoutMenu.style.display = 'none';
         if (customerMenu) customerMenu.style.display = 'block';
@@ -155,7 +169,6 @@ function updateNavbar() {
         if (hospitalMenu) hospitalMenu.style.display = 'none';
         if (adminHospitalManagementMenu) adminHospitalManagementMenu.style.display = 'none';
         if (adminConsultantMenu) adminConsultantMenu.style.display = 'none';
-        if (adminFab) adminFab.style.display = 'none';
     }
 }
 
@@ -438,7 +451,7 @@ function showHospitalsSkeletonLoading() {
 
 function renderHospitals(hospitalsList) {
     const container = document.getElementById('hospitalsList');
-    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) || (currentUser && currentUser.role === 'ADMIN');
 
     if (!hospitalsList || hospitalsList.length === 0) {
         container.innerHTML = '<div class="empty-state"><p>등록된 병원이 없습니다.</p></div>';
@@ -1919,7 +1932,7 @@ let isCreatingHospital = false;
 async function handleHospitalCreate(event) {
     event.preventDefault();
 
-    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    const isAdmin = currentUser && ((currentUser.userRole && String(currentUser.userRole).includes('ADMIN')) || currentUser.role === 'ADMIN');
     if (!authToken || !currentUser || !isAdmin) {
         showAlert('관리자만 병원 등록이 가능합니다', 'error');
         return;
@@ -2221,7 +2234,8 @@ let editingHospitalId = null;
  * 병원 수정 모달 열기
  */
 async function openHospitalEditModal(hospitalId) {
-    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    const isAdmin = currentUser && (String(currentUser.userRole || currentUser.role || '').includes('ADMIN'));
+    console.log('병원 수정 권한 확인:', { currentUser, isAdmin });
     if (!authToken || !currentUser || !isAdmin) {
         showAlert('관리자만 병원 수정이 가능합니다', 'error');
         return;
@@ -2484,7 +2498,7 @@ let isDeletingHospital = false;
  * 병원 삭제
  */
 async function deleteHospital(hospitalId) {
-    const isAdmin = currentUser && (currentUser.userRole && String(currentUser.userRole).includes('ADMIN'));
+    const isAdmin = currentUser && (String(currentUser.userRole || currentUser.role || '').includes('ADMIN'));
     if (!authToken || !currentUser || !isAdmin) {
         showAlert('관리자만 병원 삭제가 가능합니다', 'error');
         return;
@@ -2495,12 +2509,6 @@ async function deleteHospital(hospitalId) {
         return;
     }
 
-    // 확인 대화상자
-    const confirmDelete = confirm('정말 이 병원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
-    if (!confirmDelete) {
-        return;
-    }
-
     isDeletingHospital = true;
 
     try {
@@ -2508,7 +2516,27 @@ async function deleteHospital(hospitalId) {
         const deleteBtn = document.querySelector(`button[onclick="deleteHospital(${hospitalId})"]`);
         if (deleteBtn) {
             deleteBtn.disabled = true;
+            deleteBtn.textContent = '확인 중...';
+        }
+
+        // 먼저 병원의 예약 현황 확인
+        console.log('병원 예약 현황 확인 중...');
+        const reservations = await reservationsAPI.getHospitalReservations(hospitalId, 0, 1);
+
+        if (deleteBtn) {
             deleteBtn.textContent = '삭제 중...';
+        }
+
+        // 예약이 있으면 삭제 불가
+        if (reservations && (reservations.totalElements > 0 || (Array.isArray(reservations) && reservations.length > 0))) {
+            showAlert('이 병원에 예약이 있어서 삭제할 수 없습니다.\n먼저 모든 예약을 취소해주세요.', 'error');
+            return;
+        }
+
+        // 확인 대화상자
+        const confirmDelete = confirm('정말 이 병원을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.');
+        if (!confirmDelete) {
+            return;
         }
 
         await hospitalsAPI.delete(hospitalId);
@@ -2530,7 +2558,9 @@ async function deleteHospital(hospitalId) {
             } else if (error.status === 403) {
                 showAlert('병원을 삭제할 권한이 없습니다', 'error');
             } else if (error.status === 400) {
-                showAlert('삭제할 수 없는 병원입니다. 관련 예약이 있을 수 있습니다: ' + error.message, 'error');
+                showAlert('삭제할 수 없는 병원입니다: ' + error.message, 'error');
+            } else if (error.status >= 500) {
+                showAlert('예약 현황 확인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.', 'error');
             } else {
                 showAlert('병원 삭제 실패: ' + error.message, 'error');
             }
@@ -2626,7 +2656,15 @@ function initChatPage() {
 }
 
 /**
- * WebSocket 연결 초기화
+ * WebSocket 재연결 관련 상태
+ */
+let chatbotReconnectAttempts = 0;
+let chatbotReconnectTimer = null;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY = 2000; // 2초
+
+/**
+ * WebSocket 연결 초기화 (재연결 로직 포함)
  */
 function connectChatbot() {
     const connectionDot = document.getElementById('connection-dot');
@@ -2638,14 +2676,12 @@ function connectChatbot() {
         const host = window.location.host;
         const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
         chatbotStompClient = Stomp.over(socket);
-        chatbotStompClient.debug = function (msg) {
-            console.log('STOMP DEBUG:', msg);
-        }; // 디버그 로그 활성화
+        chatbotStompClient.debug = null; // 프로덕션에서는 디버그 로그 비활성화
 
         const headers = {};
         if (authToken) {
             headers['Authorization'] = `Bearer ${authToken}`;
-            console.log('WebSocket 연결 시도 - Token 포함:', authToken.substring(0, 20) + '...');
+            console.log('WebSocket 연결 시도 (시도 ' + (chatbotReconnectAttempts + 1) + '/' + MAX_RECONNECT_ATTEMPTS + ')');
         } else {
             console.warn('WebSocket 연결 시도 - Token 없음!');
         }
@@ -2653,7 +2689,10 @@ function connectChatbot() {
         chatbotStompClient.connect(headers,
             () => {
                 // 연결 성공
+                console.log('WebSocket 연결 성공');
                 chatbotConnected = true;
+                chatbotReconnectAttempts = 0; // 성공 시 재시도 카운터 초기화
+
                 if (connectionDot) {
                     connectionDot.classList.remove('offline');
                     connectionDot.classList.add('online');
@@ -2672,6 +2711,7 @@ function connectChatbot() {
 
                         // 상담원 연결 처리
                         if (body?.actionType === 'TRANSFER_TO_CONSULTANT') {
+                            console.log('상담원 전환 메시지 수신:', body);
                             handleConsultantTransfer(body);
                         } else if (body?.actionType === 'SESSION_CLOSED') {
                             handleSessionClosed(body);
@@ -2682,6 +2722,11 @@ function connectChatbot() {
 
                             if (messageType === 'CONSULTANT') {
                                 sender = 'consultant'; // 상담사 메시지
+                                // 상담원 메시지 수신 시 입력창 활성화
+                                const messageInput = document.getElementById('message-input');
+                                const sendBtn = document.getElementById('send-btn');
+                                if (messageInput) messageInput.disabled = false;
+                                if (sendBtn) sendBtn.disabled = false;
                             } else if (messageType === 'SYSTEM') {
                                 sender = 'system'; // 시스템 메시지
                             }
@@ -2701,12 +2746,15 @@ function connectChatbot() {
                     }
                 });
 
-                // 접속 인사
-                appendChatMessage('bot', '안녕하세요! 무엇을 도와드릴까요?');
-                scrollChatToBottom();
+                // 접속 인사 (세션이 없을 때만 표시)
+                if (!chatbotSessionId) {
+                    appendChatMessage('bot', '안녕하세요! 무엇을 도와드릴까요?');
+                    scrollChatToBottom();
+                }
             },
             (error) => {
                 // 연결 실패
+                console.error('STOMP connection error:', error);
                 chatbotConnected = false;
                 if (connectionDot) {
                     connectionDot.classList.remove('online');
@@ -2715,14 +2763,29 @@ function connectChatbot() {
                 if (connectionText) {
                     connectionText.textContent = '연결 실패';
                 }
-                console.error('STOMP connection error:', error);
-                appendChatMessage('bot', '죄송합니다. 연결에 실패했습니다. 잠시 후 다시 시도해주세요.');
+
+                // 자동 재연결 시도
+                if (chatbotReconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                    chatbotReconnectAttempts++;
+                    console.log('재연결 시도 예약: ' + chatbotReconnectAttempts + '/' + MAX_RECONNECT_ATTEMPTS);
+
+                    if (chatbotReconnectTimer) {
+                        clearTimeout(chatbotReconnectTimer);
+                    }
+
+                    chatbotReconnectTimer = setTimeout(() => {
+                        console.log('재연결 시도 중...');
+                        connectChatbot();
+                    }, RECONNECT_DELAY * chatbotReconnectAttempts); // 지수 백오프
+                } else {
+                    appendChatMessage('bot', '죄송합니다. 연결에 실패했습니다. 페이지를 새로고침해주세요.');
+                }
             }
         );
     } catch (e) {
         chatbotConnected = false;
         console.error('Chat WebSocket error:', e);
-        appendChatMessage('bot', '죄송합니다. 연결 중 오류가 발생했습니다.');
+        appendChatMessage('bot', '죄송합니다. 연결 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
 }
 
@@ -2776,13 +2839,50 @@ function sendChatbotMessage() {
         messageInput.value = '';
         document.getElementById('char-count').textContent = '0/2000';
 
+        // 연결 상태 확인 및 자동 재연결 시도
         if (!chatbotStompClient || !chatbotConnected) {
-            appendChatMessage('bot', '죄송합니다. 연결이 끊어졌습니다. 잠시 후 다시 시도해주세요.');
-            isSendingChatMessage = false;
-            sendBtn.disabled = false;
+            console.log('WebSocket 연결 상태 확인: connected=' + chatbotConnected);
+            appendChatMessage('bot', '⏳ 연결을 다시 시도 중입니다...');
+
+            // 재연결 시도
+            connectChatbot();
+
+            // 재연결 시도 후 1초 대기 후 메시지 전송 재시도
+            setTimeout(() => {
+                if (chatbotStompClient && chatbotConnected) {
+                    console.log('재연결 성공, 메시지 전송 재시도');
+                    sendChatbotMessageWithConnection(text, typingIndicator);
+                } else {
+                    console.log('재연결 실패');
+                    appendChatMessage('bot', '죄송합니다. 연결이 끊어졌습니다. 페이지를 새로고침해주세요.');
+                    isSendingChatMessage = false;
+                    sendBtn.disabled = false;
+                }
+            }, 1000);
             return;
         }
 
+        // 연결이 있으면 메시지 전송
+        sendChatbotMessageWithConnection(text, typingIndicator);
+
+    } catch (error) {
+        console.error('Error sending message:', error);
+        if (typingIndicator) {
+            typingIndicator.style.display = 'none';
+        }
+        appendChatMessage('bot', '메시지 전송 중 오류가 발생했습니다. 다시 시도해주세요.');
+        isSendingChatMessage = false;
+        sendBtn.disabled = false;
+    }
+}
+
+/**
+ * 연결된 상태에서 메시지 전송 (헬퍼 함수)
+ */
+function sendChatbotMessageWithConnection(text, typingIndicator) {
+    const sendBtn = document.getElementById('send-btn');
+
+    try {
         // 입력 중 표시
         if (typingIndicator) {
             typingIndicator.style.display = 'flex';
@@ -2802,6 +2902,7 @@ function sendChatbotMessage() {
         }
 
         chatbotStompClient.send('/app/chat/send', headers, JSON.stringify(payload));
+        console.log('메시지 전송 완료:', text);
 
         // 타임아웃: 10초 후에도 응답이 없으면 입력 중 표시 제거
         setTimeout(() => {
@@ -3096,6 +3197,7 @@ function handleSessionClosed(response) {
 let consultantStompClient = null;
 let consultantConnected = false;
 let currentSessionId = null;
+let currentUserId = null;  // 현재 세션의 사용자 ID
 let waitingSessions = [];
 let activeSessions = [];
 let consultantSessionsIntervalId = null;  // setInterval ID 저장
@@ -3106,7 +3208,16 @@ let consultantSessionsIntervalId = null;  // setInterval ID 저장
 function initConsultantDashboard() {
     connectConsultantWebSocket();
     setupConsultantUI();
+    // 즉시 한 번 로드
     loadConsultantSessions();
+    // 10초마다 반복 로드 (사용자가 충분히 버튼을 클릭할 시간 제공)
+    if (consultantSessionsIntervalId) {
+        clearInterval(consultantSessionsIntervalId);
+    }
+    consultantSessionsIntervalId = setInterval(() => {
+        console.log('세션 주기 업데이트');
+        loadConsultantSessions();
+    }, 10000);  // 10초로 변경 (사용자가 버튼을 클릭할 충분한 시간 제공)
 }
 
 /**
@@ -3161,6 +3272,7 @@ function connectConsultantWebSocket() {
             () => {
                 // 연결 성공
                 consultantConnected = true;
+                console.log('상담원 WebSocket 연결 성공!');
                 if (connectionDot) {
                     connectionDot.classList.remove('offline');
                     connectionDot.classList.add('online');
@@ -3316,11 +3428,31 @@ async function loadConsultantSessions() {
         });
 
         if (sessionsResponse.ok) {
-            const sessions = await sessionsResponse.json();
-            console.log('대기 세션 목록:', sessions);
-            waitingSessions = Array.isArray(sessions) ? sessions : [];
+            const response = await sessionsResponse.json();
+            console.log('대기 세션 응답:', response);
+            console.log('응답 타입:', typeof response);
+            console.log('배열 여부:', Array.isArray(response));
+
+            // API 응답이 배열이면 직접 사용, 객체면 data 필드 사용
+            if (Array.isArray(response)) {
+                waitingSessions = response;
+            } else if (response && response.data && Array.isArray(response.data)) {
+                waitingSessions = response.data;
+            } else if (response && response.content && Array.isArray(response.content)) {
+                waitingSessions = response.content;
+            } else {
+                console.warn('예상치 못한 응답 형식:', response);
+                waitingSessions = [];
+            }
+
+            console.log('파싱된 대기 세션 개수:', waitingSessions.length);
+            if (waitingSessions.length > 0) {
+                console.log('첫 번째 세션:', waitingSessions[0]);
+            }
         } else {
-            console.warn('대기 세션 조회 실패:', sessionsResponse.status);
+            console.warn('대기 세션 조회 실패 - Status:', sessionsResponse.status);
+            const errorText = await sessionsResponse.text();
+            console.warn('응답 본문:', errorText);
             waitingSessions = [];
         }
     } catch (error) {
@@ -3344,31 +3476,52 @@ async function loadConsultantSessions() {
 function renderWaitingSessions() {
     const container = document.getElementById('waitingSessionsList');
 
+    if (!container) {
+        console.error('waitingSessionsList 컨테이너를 찾을 수 없습니다');
+        return;
+    }
+
+    console.log('렌더링할 세션:', waitingSessions);
+
+    // 세션 데이터가 실제로 변경되었는지 확인 (참조 비교만으로는 부족함)
+    const isDataChanged = lastRenderedWaitingSessions.length !== (waitingSessions?.length || 0) ||
+        (waitingSessions && lastRenderedWaitingSessions.some((session, index) =>
+            !waitingSessions[index] || session.sessionId !== waitingSessions[index].sessionId
+        ));
+
+    if (!isDataChanged) {
+        console.log('세션 데이터가 변경되지 않았습니다. 렌더링 스킵');
+        return;
+    }
+
+    // 마지막 렌더링된 세션 업데이트
+    lastRenderedWaitingSessions = waitingSessions ? [...waitingSessions] : [];
+
     if (!waitingSessions || waitingSessions.length === 0) {
         container.innerHTML = '<p style="color: #999;">대기 중인 세션이 없습니다</p>';
         return;
     }
 
     container.innerHTML = waitingSessions.map((session) => `
-        <div style="padding: 1rem; background: white; border-radius: 4px; margin-bottom: 0.5rem; cursor: pointer; border-left: 3px solid #667eea;"
-             onclick="selectSession(${session.sessionId})">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <h4 style="margin: 0 0 0.5rem 0;">${session.username || '사용자'}</h4>
-                    <p style="margin: 0; color: #666; font-size: 0.9rem;">대기 순번: ${session.waitingPosition || '-'}</p>
-                    <p style="margin: 0.25rem 0 0 0; color: #999; font-size: 0.85rem;">${new Date(session.startedAt).toLocaleTimeString('ko-KR')}</p>
-                </div>
-                <button class="btn btn-primary" onclick="pickSession(${session.sessionId})" style="margin: 0;">수락</button>
+        <div style="padding: 1rem; background: white; border-radius: 4px; margin-bottom: 0.5rem; border-left: 3px solid #667eea; display: flex; justify-content: space-between; align-items: center;">
+            <div style="cursor: pointer; flex: 1;" onclick="selectSession(${session.sessionId}, ${session.userId})">
+                <h4 style="margin: 0 0 0.5rem 0;">${session.username || '사용자'}</h4>
+                <p style="margin: 0; color: #666; font-size: 0.9rem;">대기 순번: ${session.waitingPosition || '-'}</p>
+                <p style="margin: 0.25rem 0 0 0; color: #999; font-size: 0.85rem;">${new Date(session.startedAt).toLocaleTimeString('ko-KR')}</p>
             </div>
+            <button class="btn btn-primary" style="margin: 0;" onclick="pickSession(${session.sessionId}, ${session.userId})">수락</button>
         </div>
     `).join('');
+
+    console.log('세션 목록 렌더링 완료');
 }
 
 /**
  * 세션 선택
  */
-function selectSession(sessionId) {
+function selectSession(sessionId, userId) {
     currentSessionId = sessionId;
+    currentUserId = userId;  // 사용자 ID 저장
     const info = document.getElementById('activeSessionInfo');
 
     if (info) {
@@ -3391,9 +3544,30 @@ function selectSession(sessionId) {
  * 세션 수락 (대기열에서 가져오기)
  * 서버 응답(/user/queue/assigned)을 받은 후 selectSession이 호출됨
  */
-function pickSession(sessionId) {
+function pickSession(sessionId, userId) {
+    console.log('pickSession 호출:', { sessionId, userId, consultantConnected, consultantStompClient: !!consultantStompClient });
+
     if (!consultantStompClient || !consultantConnected) {
-        showAlert('연결이 끊어졌습니다', 'error');
+        console.error('연결 상태 확인 실패:', {
+            stompClientExists: !!consultantStompClient,
+            isConnected: consultantConnected
+        });
+        showAlert('연결이 끊어졌습니다. 잠시 후 다시 시도해주세요.', 'error');
+
+        // 연결 재시도
+        console.log('WebSocket 재연결 시도...');
+        connectConsultantWebSocket();
+
+        // 재연결 후 1초 대기 후 재시도
+        setTimeout(() => {
+            if (consultantStompClient && consultantConnected) {
+                console.log('재연결 성공, 세션 수락 재시도');
+                pickSession(sessionId);
+            } else {
+                console.error('재연결 실패');
+                showAlert('연결을 재설정할 수 없습니다. 페이지를 새로고침해주세요.', 'error');
+            }
+        }, 1000);
         return;
     }
 
@@ -3407,11 +3581,12 @@ function pickSession(sessionId) {
         const payload = {
             sessionId: sessionId
         };
+        console.log('STOMP 메시지 전송:', { destination: '/app/consultant/pick', payload });
         consultantStompClient.send('/app/consultant/pick', headers, JSON.stringify(payload));
-        console.log('세션 수락 요청 전송:', sessionId);
+        console.log('세션 수락 요청 전송 완료:', sessionId);
     } catch (error) {
-        console.error('Error picking session:', error);
-        showAlert('세션 수락 중 오류가 발생했습니다', 'error');
+        console.error('STOMP 메시지 전송 중 오류:', error);
+        showAlert('세션 수락 중 오류가 발생했습니다: ' + error.message, 'error');
     }
 }
 
@@ -3420,27 +3595,60 @@ function pickSession(sessionId) {
  */
 async function loadSessionMessages(sessionId) {
     const container = document.getElementById('consultant-chat-messages');
+
+    if (!container) {
+        console.warn('consultant-chat-messages 컨테이너를 찾을 수 없습니다');
+        return;
+    }
+
     container.innerHTML = '';
 
     try {
+        console.log('세션 메시지 로드 시작: sessionId=', sessionId);
+
         const response = await fetch(`/api/chat/sessions/${sessionId}/messages`, {
             headers: {
                 'Authorization': `Bearer ${authToken}`
             }
         });
 
-        if (response.ok) {
-            const messages = await response.json();
-            messages.forEach(msg => {
-                const sender = msg.type === 'USER' ? 'user' : (msg.type === 'CONSULTANT' ? 'consultant' : 'system');
-                appendConsultantChatMessage(sender, msg.content);
-            });
+        console.log('메시지 조회 응답:', response.status, response.statusText);
 
-            // 스크롤
-            container.scrollTop = container.scrollHeight;
+        if (!response.ok) {
+            console.warn('메시지 조회 실패: status=', response.status);
+            // 에러 응답이어도 조용히 처리 (사용자에게 에러 표시 안함)
+            // 초기에는 빈 상태로 둠
+            container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">메시지 로드 중...</p>';
+            return;
         }
+
+        const messages = await response.json();
+        console.log('파싱된 메시지 개수:', messages.length);
+
+        if (!Array.isArray(messages) || messages.length === 0) {
+            console.log('메시지가 없습니다');
+            container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">아직 메시지가 없습니다</p>';
+            return;
+        }
+
+        // 메시지 렌더링
+        messages.forEach(msg => {
+            const sender = msg.type === 'USER' ? 'user' :
+                          (msg.type === 'CONSULTANT' ? 'consultant' : 'system');
+            console.log('메시지 추가:', sender, msg.content);
+            appendConsultantChatMessage(sender, msg.content);
+        });
+
+        // 스크롤
+        container.scrollTop = container.scrollHeight;
+        console.log('세션 메시지 로드 완료');
+
     } catch (error) {
-        console.error('Failed to load messages:', error);
+        console.error('세션 메시지 로드 중 오류:', error);
+        // 네트워크 에러 등은 사용자에게 보이지 않게 처리
+        if (!container.innerHTML) {
+            container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">메시지를 불러올 수 없습니다</p>';
+        }
     }
 }
 
@@ -3493,7 +3701,7 @@ function sendConsultantMessage() {
         // 메시지 전송
         const payload = {
             sessionId: currentSessionId,
-            userId: 0, // 사용자 ID는 백엔드에서 처리
+            userId: currentUserId,
             content: text
         };
 

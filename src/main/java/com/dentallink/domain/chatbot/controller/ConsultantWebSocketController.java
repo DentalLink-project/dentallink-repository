@@ -57,9 +57,10 @@ public class ConsultantWebSocketController {
                     .sentAt(java.time.LocalDateTime.now())
                     .build();
 
-            // 해당 세션의 사용자에게 전송
+            // 세션에서 사용자 ID를 조회하여 메시지 전송
+            Long userId = consultantService.getUserIdBySessionId(request.sessionId());
             messagingTemplate.convertAndSendToUser(
-                    request.userId().toString(),
+                    userId.toString(),
                     "/queue/reply",
                     response
             );
@@ -70,17 +71,21 @@ public class ConsultantWebSocketController {
     }
 
     /**
-     * 다음 대기 세션 가져오기
+     * 특정 대기 세션 수락
      * 클라이언트: /app/consultant/pick
+     * 상담원이 선택한 특정 세션을 수락함
      */
     @MessageMapping("/consultant/pick")
-    public void pickNextSession(SimpMessageHeaderAccessor headerAccessor) {
+    public void pickNextSession(
+            @Payload PickSessionRequest request,
+            SimpMessageHeaderAccessor headerAccessor) {
         Long consultantId = getConsultantIdFromHeader(headerAccessor);
 
-        log.info("상담원이 다음 세션 요청: consultantId={}", consultantId);
+        log.info("상담원이 세션 수락 요청: consultantId={}, sessionId={}", consultantId, request.sessionId());
 
         try {
-            Optional<ChatSession> session = consultantService.pickNextWaitingSession(consultantId);
+            // 상담원이 선택한 특정 세션 수락
+            Optional<ChatSession> session = consultantService.pickSpecificSession(request.sessionId(), consultantId);
 
             if (session.isPresent()) {
                 // 상담원에게 새 세션 알림
@@ -112,16 +117,22 @@ public class ConsultantWebSocketController {
                 );
 
             } else {
-                // 대기 중인 세션 없음
+                // 세션 수락 실패 (세션을 찾을 수 없음 또는 이미 할당됨)
+                log.warn("세션 수락 실패: sessionId={}", request.sessionId());
                 messagingTemplate.convertAndSendToUser(
                         consultantId.toString(),
                         "/queue/assigned",
-                        new NoSessionAvailableEvent()
+                        new SessionPickFailedEvent("세션을 찾을 수 없거나 이미 할당되었습니다.")
                 );
             }
 
         } catch (Exception e) {
             log.error("세션 할당 중 오류 발생", e);
+            messagingTemplate.convertAndSendToUser(
+                    consultantId.toString(),
+                    "/queue/assigned",
+                    new SessionPickFailedEvent("세션 수락 중 오류가 발생했습니다.")
+            );
         }
     }
 
@@ -182,6 +193,25 @@ public class ConsultantWebSocketController {
         return consultantService.getWaitingSessions();
     }
 
+    /**
+     * 세션 메시지 조회
+     * /api/chat/sessions/{sessionId}/messages
+     */
+    @GetMapping("/api/chat/sessions/{sessionId}/messages")
+    @ResponseBody
+    public List<ConsultantService.ChatSessionMessageDto> getSessionMessages(
+            @PathVariable Long sessionId) {
+
+        log.info("세션 메시지 조회: sessionId={}", sessionId);
+
+        try {
+            return consultantService.getSessionMessages(sessionId);
+        } catch (Exception e) {
+            log.error("세션 메시지 조회 중 오류 발생: sessionId={}", sessionId, e);
+            return List.of();
+        }
+    }
+
     // ===== Private Helper Methods =====
 
     private Long getConsultantIdFromHeader(SimpMessageHeaderAccessor headerAccessor) {
@@ -191,16 +221,29 @@ public class ConsultantWebSocketController {
             return Long.parseLong(principal.getName());
         }
 
-        // 테스트용
-        String consultantIdHeader = (String) headerAccessor.getSessionAttributes().get("consultantId");
-        if (consultantIdHeader != null) {
-            return Long.parseLong(consultantIdHeader);
+        // 테스트용 - 타입 안전성 강화
+        Object consultantIdObj = headerAccessor.getSessionAttributes().get("consultantId");
+        if (consultantIdObj != null) {
+            // 다양한 타입 처리 (String, Long, Number 등)
+            if (consultantIdObj instanceof String) {
+                return Long.parseLong((String) consultantIdObj);
+            } else if (consultantIdObj instanceof Long) {
+                return (Long) consultantIdObj;
+            } else if (consultantIdObj instanceof Number) {
+                return ((Number) consultantIdObj).longValue();
+            } else {
+                return Long.parseLong(consultantIdObj.toString());
+            }
         }
 
         throw new IllegalArgumentException("인증되지 않은 상담원입니다.");
     }
 
     // ===== Inner Classes =====
+
+    private record PickSessionRequest(
+            Long sessionId
+    ) {}
 
     private record ConsultantMessageRequest(
             Long sessionId,
@@ -217,4 +260,17 @@ public class ConsultantWebSocketController {
     private record SessionClosedEvent(Long sessionId) {}
 
     private record NoSessionAvailableEvent() {}
+
+    private record SessionPickFailedEvent(String message) {}
+
+    /**
+     * 세션 메시지 응답 DTO
+     */
+    public record ChatSessionMessage(
+            Long id,
+            String type,
+            String content,
+            String senderName,
+            java.time.LocalDateTime sentAt
+    ) {}
 }

@@ -434,6 +434,9 @@ public class FunctionCallHandler {
 
     private Long getLongValue(Map<String, Object> map, String key) {
         Object value = map.get(key);
+        if (value == null) {
+            throw new IllegalArgumentException("필수 파라미터가 없습니다: " + key);
+        }
         if (value instanceof Number) {
             return ((Number) value).longValue();
         }
@@ -441,6 +444,10 @@ public class FunctionCallHandler {
     }
 
     private String getStringValue(Map<String, Object> map, String key) {
-        return map.get(key).toString();
+        Object value = map.get(key);
+        if (value == null) {
+            throw new IllegalArgumentException("필수 파라미터가 없습니다: " + key);
+        }
+        return value.toString();
     }
 }
