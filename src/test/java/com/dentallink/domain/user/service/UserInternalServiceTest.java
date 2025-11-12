@@ -316,4 +316,6 @@ public class UserInternalServiceTest {
         verify(userRepository).save(any(User.class));
         verify(authService).passwordEncode("passwordA123!");
     }
+
+
 }
