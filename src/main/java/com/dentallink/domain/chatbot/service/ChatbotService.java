@@ -373,7 +373,6 @@ public class ChatbotService {
             throw new GlobalException(ChatbotErrorCode.MESSAGE_TOO_LONG);
         }
     }
-
     /**
      * Rate Limit 체크
      */
