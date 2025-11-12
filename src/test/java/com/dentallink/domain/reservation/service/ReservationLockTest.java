@@ -74,7 +74,7 @@ class ReservationLockTest {
         );
         hospitalScheduleRepository.saveAndFlush(schedule);
 
-        // ✅ 오늘 기준으로 내일 예약 슬롯 생성
+        // 오늘 기준으로 내일 예약 슬롯 생성
         LocalDate targetDate = LocalDate.now().plusDays(1);
         LocalTime startTime = LocalTime.of(10, 0);
         LocalTime endTime = LocalTime.of(10, 30);
@@ -94,7 +94,7 @@ class ReservationLockTest {
         PointAccount pointAccount = PointAccount.create(user, 10_000L); // 잔액 1만 원 예시
         pointAccountRepository.saveAndFlush(pointAccount);
 
-        // ✅ 항상 미래 시점으로 설정
+        // 항상 미래 시점으로 설정
         LocalDateTime appointmentDate = LocalDateTime.of(targetDate, startTime);
         ReservationCreateRequest request = new ReservationCreateRequest(hospital.getId(), appointmentDate);
 
