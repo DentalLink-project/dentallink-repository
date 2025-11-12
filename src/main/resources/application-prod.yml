@@ -17,6 +17,12 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+jwt:
+  secret:
+    key: ${jwt.secret.key}
+  access-token-expiration: ${access.token.expiration:3600000}       # AccessToken의 만료 시간은 1시간 입니다.
+  refresh-token-expiration: ${refresh.token.expiration:1209600000}
+
 springdoc:
   api-docs.enabled: false
   swagger-ui:
