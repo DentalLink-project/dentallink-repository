@@ -21,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.Commit;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -29,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -54,7 +56,6 @@ class ReservationLockTest {
     void realConcurrentReservationTest() throws Exception {
         // given
         Hospital hospital = new Hospital(
-                1L,
                 "바른치과",
                 "심미치료 전문. 토/일 예약 가능.",
                 "서울 강남구",
@@ -73,11 +74,16 @@ class ReservationLockTest {
         );
         hospitalScheduleRepository.saveAndFlush(schedule);
 
+        // ✅ 오늘 기준으로 내일 예약 슬롯 생성
+        LocalDate targetDate = LocalDate.now().plusDays(1);
+        LocalTime startTime = LocalTime.of(10, 0);
+        LocalTime endTime = LocalTime.of(10, 30);
+
         HospitalReservationTime slot = new HospitalReservationTime(
                 hospital,
-                LocalDate.of(2025, 11, 7),
-                LocalTime.of(10, 0),
-                LocalTime.of(10, 30)
+                targetDate,
+                startTime,
+                endTime
         );
         reservationTimeRepository.saveAndFlush(slot);
 
@@ -87,7 +93,9 @@ class ReservationLockTest {
 
         PointAccount pointAccount = PointAccount.create(user, 10_000L); // 잔액 1만 원 예시
         pointAccountRepository.saveAndFlush(pointAccount);
-        LocalDateTime appointmentDate = LocalDateTime.of(2025, 11, 7, 10, 0);
+
+        // ✅ 항상 미래 시점으로 설정
+        LocalDateTime appointmentDate = LocalDateTime.of(targetDate, startTime);
         ReservationCreateRequest request = new ReservationCreateRequest(hospital.getId(), appointmentDate);
 
         int threadCount = 5;
@@ -109,7 +117,6 @@ class ReservationLockTest {
 
         latch.await();
 
-        // 테스트 종료 후 ExecutorService 정리 (리소스 누수 방지)
         executor.shutdown();
         if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
             executor.shutdownNow();
@@ -123,9 +130,7 @@ class ReservationLockTest {
                 .orElseThrow(() -> new IllegalStateException("포인트 계좌 없음"));
         System.out.println("최종 잔액: " + latestAccount.getBalance() + "원");
 
-        //assertThat(all.size()).isGreaterThan(1);
         assertThat(all.size()).isEqualTo(1);
-
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
