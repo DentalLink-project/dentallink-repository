@@ -1,0 +1,40 @@
+{
+  "family": "aws-demo-ecs-task-definition",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": { "cpuArchitecture": "X86_64", "operatingSystemFamily": "LINUX" },
+
+  "executionRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::<ACCOUNT_ID>:role/ecsTaskExecutionRole",
+
+  "containerDefinitions": [
+    {
+      "name": "aws-demo-container",
+      "image": "<IMAGE_URI>",
+      "environment": [
+        { "name": "SPRING_PROFILES_ACTIVE", "value": "<PROFILE>" }
+      ],
+      "essential": true,
+      "portMappings": [
+        { "containerPort": 8080, "protocol": "tcp", "appProtocol": "http" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/aws-demo-ecs-task-definition",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "secrets": [
+        { "name": "DB_HOST",     "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:<ACCOUNT_ID>:secret:<PROFILE>/mysql/credentials:db.host::" },
+        { "name": "DB_NAME",     "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:<ACCOUNT_ID>:secret:<PROFILE>/mysql/credentials:db.name::" },
+        { "name": "DB_USERNAME", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:<ACCOUNT_ID>:secret:<PROFILE>/mysql/credentials:db.username::" },
+        { "name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:<ACCOUNT_ID>:secret:<PROFILE>/mysql/credentials:db.password::" }
+      ]
+    }
+  ]
+}

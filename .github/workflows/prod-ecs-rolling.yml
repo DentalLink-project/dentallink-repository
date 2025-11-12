@@ -1,0 +1,86 @@
+name: Deploy to ECS
+
+on:
+  push:
+    branches: [ "prod" ]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-northeast-2
+  ACCOUNT_ID: ${{ secrets.ACCOUNT_ID }}
+  ECR_REPO: ${{ secrets.PROD_ECR_REPO }}
+  IMAGE_TAG: ${{ github.sha }}
+  ECS_CLUSTER: aws-demo-ecs-cluster
+  ECS_SERVICE: aws-demo-ecs-service
+  TASKDEF_TEMPLATE: infra/taskdef.json
+  TASKDEF_RENDERED: infra/taskdef.rendered.json
+  SPRING_PROFILE: prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: ecs-prod-deploy
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ env.ACCOUNT_ID }}:role/github-oidc-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build & Push to ECR
+        id: push
+        run: ./scripts/ecr-push.sh
+
+      - name: Render task definition (image/account)
+        run: |
+          IMG="${{ steps.push.outputs.FULL_URI }}"
+          sed -e "s|<ACCOUNT_ID>|${ACCOUNT_ID}|g" \
+              -e "s|<IMAGE_URI>|${IMG}|g" \
+              -e "s|<PROFILE>|${SPRING_PROFILE}|g" \
+              "${TASKDEF_TEMPLATE}" > "${TASKDEF_RENDERED}"
+          echo "Rendered taskdef:"
+          cat "${TASKDEF_RENDERED}"
+
+      - name: Register new task definition
+        id: register
+        run: |
+          REV_JSON=$(aws ecs register-task-definition --cli-input-json file://"${TASKDEF_RENDERED}")
+          REV_ARN=$(echo "$REV_JSON" | jq -r '.taskDefinition.taskDefinitionArn')
+          echo "TASK_DEF_ARN=$REV_ARN" >> "$GITHUB_OUTPUT"
+          echo "Registered: $REV_ARN"
+
+      - name: Update ECS Service (force new deployment)
+        run: |
+          aws ecs update-service \
+            --cluster "${ECS_CLUSTER}" \
+            --service "${ECS_SERVICE}" \
+            --task-definition "${{ steps.register.outputs.TASK_DEF_ARN }}" \
+            --force-new-deployment
+
+      - name: Wait until service stable
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${ECS_CLUSTER}" \
+            --services "${ECS_SERVICE}"
+
+      - name: Show service events (last 10)
+        run: |
+          aws ecs describe-services \
+            --cluster "${ECS_CLUSTER}" \
+            --services "${ECS_SERVICE}" \
+          | jq -r '.services[0].events[:10][] | "[\(.createdAt)] \(.message)"'
