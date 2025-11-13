@@ -58,7 +58,7 @@ public class UserInternalServiceTest {
     }
 
     @Test
-    @DisplayName("email을 통해 사용자 여부를 확인하고 True 반환")
+    @DisplayName("email을 통해 사용자 여부가 확인되면 True 반환")
     void existUserByEmail_true() {
 
         // given
