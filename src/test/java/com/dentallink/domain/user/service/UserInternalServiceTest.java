@@ -2,6 +2,7 @@ package com.dentallink.domain.user.service;
 
 import com.dentallink.domain.auth.service.AuthService;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
+import com.dentallink.domain.user.dto.request.UserDeleteRequest;
 import com.dentallink.domain.user.dto.request.UserSignupRequest;
 import com.dentallink.domain.user.dto.request.UserUpdatePasswordRequest;
 import com.dentallink.domain.user.dto.request.UserUpdateRequest;
@@ -172,7 +173,7 @@ public class UserInternalServiceTest {
     }
 
     @Test
-    @DisplayName("비밀번호 변경 성공시 UserResponse를 응답한다")
+    @DisplayName("비밀번호 변경 성공시 응답한다")
     void changePassword_success() {
 
         // given
@@ -196,7 +197,37 @@ public class UserInternalServiceTest {
         userInternalService.changePassword(request, authUser);
 
         // then
+        assertEquals("encoded-password", mockUser.getPassword());
         verify(authService).passwordCheck("oldPassword", 1L);
         verify(authService).passwordEncode("passwordA123!");
+    }
+
+    @Test
+    @DisplayName("회원 탈퇴 시 deleted가 참으로 설정된다")
+    void deleteUser_success() {
+
+        // given
+        AuthUser authUser = new AuthUser(
+                1L,
+                "mockUser@example.com",
+                UserRole.ROLE_USER
+        );
+        UserDeleteRequest request = new UserDeleteRequest(
+                "passwordA123!"
+        );
+        when(userExternalService.getUserById(1L))
+                .thenReturn(mockUser);
+        doNothing().when(authService).passwordCheck("passwordA123!", mockUser.getId());
+        when(userRepository.save(any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        userInternalService.withdraw(request, authUser);
+
+        // then
+        assertNotNull(mockUser.getDeletedAt());
+        assertTrue(mockUser.isDeleted());
+        verify(userExternalService).getUserById(authUser.getUserId());
+        verify(userRepository).save(mockUser);
     }
 }
