@@ -21,7 +21,7 @@ spring:
     redisson:
       config: |
         singleServerConfig:
-          address: "redis://${REDIS_HOST}:${REDIS_PORT:6379}"
+          address: "redis://${redis.host}:${redis.port}"
 
   jpa:
     hibernate:
