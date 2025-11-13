@@ -16,6 +16,8 @@ spring:
     redis:
       host: ${spring.data.redis.host}
       port: ${spring.data.redis.port}
+      ssl:
+        enabled: true
 
   redis:
     redisson:
