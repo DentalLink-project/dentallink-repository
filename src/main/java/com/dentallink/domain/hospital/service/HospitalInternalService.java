@@ -5,7 +5,6 @@ import com.dentallink.common.response.PageResponse;
 import com.dentallink.domain.hospital.dto.request.*;
 import com.dentallink.domain.hospital.dto.response.*;
 import com.dentallink.domain.hospital.entity.Hospital;
-import com.dentallink.domain.hospital.entity.HospitalReservationTime;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import com.dentallink.domain.hospital.exception.HospitalErrorCode;
 import com.dentallink.domain.hospital.repository.HospitalReservationTimeRepository;
@@ -15,21 +14,15 @@ import com.dentallink.domain.user.entity.User;
 import com.dentallink.domain.user.exception.UserErrorCode;
 import com.dentallink.domain.user.repository.UserRepository;
 import com.dentallink.domain.user.enums.UserRole;
-import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 @Slf4j
@@ -38,7 +31,6 @@ import java.util.Optional;
 public class HospitalInternalService {
     private final HospitalRepository hospitalRepository;
     private final HospitalScheduleRepository hospitalScheduleRepository;
-    private final HospitalReservationTimeRepository hospitalReservationTimeRepository;
     private final UserRepository userRepository;
 
 

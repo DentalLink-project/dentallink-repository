@@ -20,7 +20,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
-import static org.mockito.ArgumentMatchers.*;
 
 @ExtendWith(MockitoExtension.class)
 class HospitalControllerTest {
@@ -82,8 +81,6 @@ class HospitalControllerTest {
     @Test
     @DisplayName("병원 등록 성공")
     void createHospital_success() {
-        AuthUser mockUser = new AuthUser(1L, "admin@example.com", UserRole.ROLE_ADMIN);
-
         HospitalCreateRequest request =
                 new HospitalCreateRequest(
                         "테스트치과", "좋은 치과", "서울 강남구",
