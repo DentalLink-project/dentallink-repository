@@ -7,7 +7,6 @@ import com.dentallink.domain.hospital.dto.response.*;
 import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import com.dentallink.domain.hospital.exception.HospitalErrorCode;
-import com.dentallink.domain.hospital.repository.HospitalReservationTimeRepository;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import com.dentallink.domain.user.entity.User;
