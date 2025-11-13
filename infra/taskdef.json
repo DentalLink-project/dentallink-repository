@@ -30,10 +30,12 @@
         }
       },
       "secrets": [
-        { "name": "DB_HOST",     "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:<ACCOUNT_ID>:secret:<PROFILE>/mysql/credentials:db.host::" },
-        { "name": "DB_NAME",     "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:<ACCOUNT_ID>:secret:<PROFILE>/mysql/credentials:db.name::" },
-        { "name": "DB_USERNAME", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:<ACCOUNT_ID>:secret:<PROFILE>/mysql/credentials:db.username::" },
-        { "name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:<ACCOUNT_ID>:secret:<PROFILE>/mysql/credentials:db.password::" }
+        { "name": "DB_HOST",     "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:db.host::" },
+        { "name": "DB_NAME",     "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:db.name::" },
+        { "name": "DB_USERNAME", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:db.username::" },
+        { "name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:db.password::" },
+        {"name": "JWT_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:prod/jwt/secret:key::"
+        }
       ]
     }
   ]
