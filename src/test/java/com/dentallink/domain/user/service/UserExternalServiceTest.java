@@ -83,7 +83,7 @@ public class UserExternalServiceTest {
     @DisplayName("userId를 통해 유저를 검색 성공한다.")
     void getUserById_success() {
         // given
-        when(userRepository.findByIdAndDeletedAtIsFalse(mockUser.getId()))
+        when(userRepository.findByIdAndDeletedAtIsNull(mockUser.getId()))
                 .thenReturn(Optional.of(mockUser));
 
         // when
@@ -92,7 +92,7 @@ public class UserExternalServiceTest {
         // then
         assertNotNull(foundUser);
         assertEquals(mockUser.getId(), foundUser.getId());
-        verify(userRepository).findByIdAndDeletedAtIsFalse(mockUser.getId());
+        verify(userRepository).findByIdAndDeletedAtIsNull(mockUser.getId());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class UserExternalServiceTest {
     void getUserById_notFound_throw() {
         // given
         long notExistId = 100L;
-        when(userRepository.findByIdAndDeletedAtIsFalse(100L))
+        when(userRepository.findByIdAndDeletedAtIsNull(100L))
                 .thenReturn(Optional.empty());
 
         // when & then
@@ -110,6 +110,6 @@ public class UserExternalServiceTest {
         );
 
         // verify
-        verify(userRepository).findByIdAndDeletedAtIsFalse(notExistId);
+        verify(userRepository).findByIdAndDeletedAtIsNull(notExistId);
     }
 }
