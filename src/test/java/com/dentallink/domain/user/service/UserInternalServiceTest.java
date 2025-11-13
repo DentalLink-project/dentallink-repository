@@ -3,6 +3,7 @@ package com.dentallink.domain.user.service;
 import com.dentallink.domain.auth.service.AuthService;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
 import com.dentallink.domain.user.dto.request.UserSignupRequest;
+import com.dentallink.domain.user.dto.request.UserUpdatePasswordRequest;
 import com.dentallink.domain.user.dto.request.UserUpdateRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.dto.security.AuthUser;
@@ -168,5 +169,34 @@ public class UserInternalServiceTest {
 
         verify(userExternalService).getUserById(1L);
         verify(authService).passwordCheck("passwordA123!", 1L);
+    }
+
+    @Test
+    @DisplayName("비밀번호 변경 성공시 UserResponse를 응답한다")
+    void changePassword_success() {
+
+        // given
+        AuthUser authUser = new AuthUser(
+                1L,
+                "mockUser@example.com",
+                UserRole.ROLE_USER
+        );
+        UserUpdatePasswordRequest request = new UserUpdatePasswordRequest(
+                "passwordA123!",
+                "oldPassword"
+        );
+        when(userExternalService.getUserById(1L))
+                .thenReturn(mockUser);
+        doNothing().when(authService).passwordCheck("oldPassword", mockUser.getId());
+        when(authService.passwordEncode("passwordA123!")).thenReturn("encoded-password");
+        when(userRepository.save(any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        userInternalService.changePassword(request, authUser);
+
+        // then
+        verify(authService).passwordCheck("oldPassword", 1L);
+        verify(authService).passwordEncode("passwordA123!");
     }
 }
