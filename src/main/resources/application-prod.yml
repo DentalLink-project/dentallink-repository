@@ -16,18 +16,10 @@ spring:
     redis:
       host: ${spring.data.redis.host}
       port: ${spring.data.redis.port}
-      ssl:
-        enabled: true
 
-  redis:
-    redisson:
-      config: |
-        {
-          "singleServerConfig": {
-            "address": "rediss://${spring.data.redis.host}:${spring.data.redis.port}",
-            "sslEnableEndpointIdentification": true
-          }
-        }
+  autoconfigure:
+    exclude:
+      - org.redisson.spring.starter.RedissonAutoConfigurationV2
 
   jpa:
     hibernate:
