@@ -145,7 +145,7 @@ public class UserInternalServiceTest {
 
         // given
         User changeuser = User.of(
-                "changeEmail@exmaple.com",
+                "changeEmail@example.com",
                 "encoded-password",
                 "username",
                 UserRole.ROLE_USER
