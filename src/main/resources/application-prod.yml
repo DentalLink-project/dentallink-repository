@@ -14,8 +14,8 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT:6379}
+      host: ${redis.host}
+      port: ${redis.port}
 
   redis:
     redisson:
