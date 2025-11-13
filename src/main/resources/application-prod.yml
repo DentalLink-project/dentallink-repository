@@ -21,7 +21,7 @@ spring:
 jwt:
   secret:
     key: ${JWT_SECRET_KEY}
-  access-token-expiration: ${access.token.expiration:3600000}       # AccessToken의 만료 시간은 1시간 입니다.
+  access-token-expiration: ${access.token.expiration:3600000}
   refresh-token-expiration: ${refresh.token.expiration:1209600000}
 
 springdoc:
