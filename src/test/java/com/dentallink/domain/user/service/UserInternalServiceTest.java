@@ -1,5 +1,6 @@
 package com.dentallink.domain.user.service;
 
+import com.dentallink.common.response.PageResponse;
 import com.dentallink.domain.auth.service.AuthService;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
 import com.dentallink.domain.user.dto.request.UserDeleteRequest;
@@ -18,12 +19,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserInternalServiceTest {
@@ -66,8 +72,8 @@ public class UserInternalServiceTest {
 
         // given
         String email = "mockUser@example.com";
-        when(userRepository.existsByEmail(email))
-                .thenReturn(true);
+        given(userRepository.existsByEmail(email))
+                .willReturn(true);
 
         // when
         boolean result = userInternalService.existsUserByEmail(email);
@@ -83,14 +89,10 @@ public class UserInternalServiceTest {
     void signup_success() {
 
         // given
-        when(authService.passwordEncode("passwordA123!"))
-                .thenReturn("encoded-password");
-        when(userRepository.save(any(User.class)))
-                .thenAnswer(invocation -> {
-            User user = invocation.getArgument(0);
-            ReflectionTestUtils.setField(user, "id", 1L);
-            return user;
-        });
+        given(authService.passwordEncode("passwordA123!"))
+                .willReturn("encoded-password");
+        given(userRepository.save(any(User.class)))
+                .willReturn(mockUser);
         UserSignupRequest request = UserSignupRequest.of(
                 "mockUser",
                 "mockUser@example.com",
@@ -121,8 +123,8 @@ public class UserInternalServiceTest {
                 "mockUser@example.com",
                 UserRole.ROLE_USER
         );
-        when(userExternalService.getUserById(1L))
-                .thenReturn(mockUser);
+        given(userExternalService.getUserById(1L))
+                .willReturn(mockUser);
 
         // when
         UserResponse response = userInternalService.getUser(authUser);
@@ -159,11 +161,11 @@ public class UserInternalServiceTest {
                 "mockUser@example.com",
                 "passwordA123!"
         );
-        when(userExternalService.getUserById(1L))
-                .thenReturn(changeuser);
-        doNothing().when(authService).passwordCheck("passwordA123!", changeuser.getId());
-        when(userRepository.save(any(User.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        given(userExternalService.getUserById(1L))
+                .willReturn(changeuser);
+        willDoNothing().given(authService).passwordCheck("passwordA123!", changeuser.getId());
+        given(userRepository.save(any(User.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
 
         // when
         UserResponse response = userInternalService.updateUser(request,authUser);
@@ -247,8 +249,8 @@ public class UserInternalServiceTest {
     void getOneUser_success() {
 
         // given
-        when(userExternalService.getUserById(1L))
-                .thenReturn(mockUser);
+        given(userExternalService.getUserById(1L))
+                .willReturn(mockUser);
 
         // when
         UserResponse response = userInternalService.getOneUser(1L);
@@ -262,13 +264,35 @@ public class UserInternalServiceTest {
     }
 
     @Test
+    @DisplayName("사용자 조회 성공시 페이지네이션 된 UserResponse를 응답한다")
+    void getUsers_success() {
+
+        // given
+        PageRequest pageable = PageRequest.of(0, 10);
+        PageImpl<User> page = new PageImpl<>(
+                List.of(mockUser),
+                pageable,
+                1
+        );
+        given(userRepository.findAllByDeletedFalse(any(Pageable.class)))
+                .willReturn(page);
+
+        // when
+        PageResponse<UserResponse> response = userInternalService.getUsers(1, 10, "none");
+
+        // then
+        assertThat(response.getContent()).hasSize(1);
+        then(userRepository).should().findAllByDeletedFalse(any(Pageable.class));
+    }
+
+    @Test
     @DisplayName("병원 사용자 생성 시 저장됨")
     void hospitalSignup_success() {
         // given
-        when(authService.passwordEncode("passwordA123!"))
-                .thenReturn("encoded-password");
-        when(userRepository.save(any(User.class)))
-                .thenAnswer(invocation -> {
+        given(authService.passwordEncode("passwordA123!"))
+                .willReturn("encoded-password");
+        given(userRepository.save(any(User.class)))
+                .willAnswer(invocation -> {
                     User user = invocation.getArgument(0);
                     ReflectionTestUtils.setField(user, "id", 2L);
                     return user;
