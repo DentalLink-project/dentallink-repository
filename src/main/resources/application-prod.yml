@@ -22,10 +22,12 @@ spring:
   redis:
     redisson:
       config: |
-        singleServerConfig:
-          address: "rediss://${spring.data.redis.host}:${spring.data.redis.port}"
-          sslEnableEndpointIdentification: true
-        codec: org.redisson.codec.StringCodec
+        {
+          "singleServerConfig": {
+            "address": "rediss://${spring.data.redis.host}:${spring.data.redis.port}",
+            "sslEnableEndpointIdentification": true
+          }
+        }
 
   jpa:
     hibernate:
