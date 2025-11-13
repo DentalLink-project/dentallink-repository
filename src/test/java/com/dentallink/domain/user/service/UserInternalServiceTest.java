@@ -3,6 +3,7 @@ package com.dentallink.domain.user.service;
 import com.dentallink.domain.auth.service.AuthService;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
 import com.dentallink.domain.user.dto.request.UserSignupRequest;
+import com.dentallink.domain.user.dto.request.UserUpdateRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
 import com.dentallink.domain.user.dto.security.AuthUser;
 import com.dentallink.domain.user.entity.User;
@@ -16,9 +17,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
-
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -107,7 +105,7 @@ public class UserInternalServiceTest {
     }
 
     @Test
-    @DisplayName("내 프로필 조회 성공시 응답한다")
+    @DisplayName("내 프로필 조회 성공시 UserResponse를 응답한다")
     void getUser_success() {
 
         // given
@@ -129,5 +127,46 @@ public class UserInternalServiceTest {
         assertEquals(UserRole.ROLE_USER, response.role());
 
         verify(userExternalService).getUserById(1L);
+    }
+
+    @Test
+    @DisplayName("내 정보 수정이 성공하면 UserResponse를 응답한다")
+    void updateUser_success() {
+
+        // given
+        User changeuser = User.of(
+                "changeEmail@exmaple.com",
+                "encoded-password",
+                "username",
+                UserRole.ROLE_USER
+        );
+        ReflectionTestUtils.setField(changeuser, "id", 1L);
+        AuthUser authUser = new AuthUser(
+                1L,
+                "changeEmail@example.com",
+                UserRole.ROLE_USER
+        );
+        UserUpdateRequest request = new UserUpdateRequest(
+                "mockUser",
+                "mockUser@example.com",
+                "passwordA123!"
+        );
+        when(userExternalService.getUserById(1L))
+                .thenReturn(changeuser);
+        doNothing().when(authService).passwordCheck("passwordA123!", changeuser.getId());
+        when(userRepository.save(any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        UserResponse response = userInternalService.updateUser(request,authUser);
+
+        // then
+        assertNotNull(response.userId());
+        assertEquals(mockUser.getEmail(), response.email());
+        assertEquals(mockUser.getUsername(), response.username());
+        assertEquals(UserRole.ROLE_USER, response.role());
+
+        verify(userExternalService).getUserById(1L);
+        verify(authService).passwordCheck("passwordA123!", 1L);
     }
 }
