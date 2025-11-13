@@ -82,9 +82,7 @@ class ReviewInternalServiceTest {
     @Test
     @DisplayName("병원 리뷰 목록 조회 성공")
     void findAllReviews_success() {
-        ReviewListResponse review1 = ReviewListResponse.from(review);
         Review anotherReview = Review.of(2L, 1L, 2L, 4, "괜찮아요");
-        ReviewListResponse review2 = ReviewListResponse.from(anotherReview);
 
         Page<Review> reviewPage = new PageImpl<>(List.of(review, anotherReview),
                 PageRequest.of(0, 10), 2);
