@@ -17,10 +17,6 @@ spring:
       host: ${spring.data.redis.host}
       port: ${spring.data.redis.port}
 
-  autoconfigure:
-    exclude:
-      - org.redisson.spring.starter.RedissonAutoConfigurationV2
-
   jpa:
     hibernate:
       ddl-auto: validate
