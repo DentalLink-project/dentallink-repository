@@ -23,7 +23,10 @@ spring:
     redisson:
       config: |
         singleServerConfig:
-          address: "redis://${spring.data.redis.host}:${spring.data.redis.port}"
+          address: "rediss://${spring.data.redis.host}:${spring.data.redis.port}"
+          sslEnableEndpointIdentification: true
+        codec:
+          class: "org.redisson.codec.StringCodec"
 
   jpa:
     hibernate:
