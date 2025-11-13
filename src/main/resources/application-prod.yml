@@ -12,11 +12,6 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-  data:
-    redis:
-      host: ${spring.data.redis.host}
-      port: ${spring.data.redis.port}
-
   jpa:
     hibernate:
       ddl-auto: validate
