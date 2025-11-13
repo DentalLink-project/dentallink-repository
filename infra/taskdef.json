@@ -15,8 +15,8 @@
       "image": "<IMAGE_URI>",
       "environment": [
         { "name": "SPRING_PROFILES_ACTIVE", "value": "<PROFILE>" },
-        { "name": "redis.host", "value": "prod-redis-ltimjs.serverless.apn2.cache.amazonaws.com" },
-        { "name": "redis.port", "value": "6379" }
+        { "name": "spring_data_redis_host", "value": "prod-redis-ltimjs.serverless.apn2.cache.amazonaws.com" },
+        { "name": "spring_data_redis_port", "value": "6379" }
       ],
       "essential": true,
       "portMappings": [
