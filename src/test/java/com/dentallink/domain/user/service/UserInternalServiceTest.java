@@ -37,7 +37,7 @@ public class UserInternalServiceTest {
     @Mock private PointAccountExternalService pointAccountExternalService;
 
     private User mockUser;
-    private User mockAdminUser;
+    private User mockHospitalUser;
 
     @BeforeEach
     void setUp() {
@@ -48,15 +48,15 @@ public class UserInternalServiceTest {
                 "mockUser",
                 UserRole.ROLE_USER
         );
-        mockAdminUser = User.of(
-                "mockAdmin@example.com",
+        mockHospitalUser = User.of(
+                "mockHospital@example.com",
                 "encoded-password",
-                "mockAdmin",
-                UserRole.ROLE_ADMIN
+                "mockHospital",
+                UserRole.ROLE_HOSPITAL
         );
 
         ReflectionTestUtils.setField(mockUser, "id", 1L);
-        ReflectionTestUtils.setField(mockAdminUser, "id", 10L);
+        ReflectionTestUtils.setField(mockHospitalUser, "id", 2L);
     }
 
     // ---------- 내부 검색 메서드 ----------
@@ -101,6 +101,7 @@ public class UserInternalServiceTest {
         UserResponse response = userInternalService.signup(request);
 
         // then
+        assertNotNull(response);
         assertNotNull(response.userId());
         assertEquals(mockUser.getEmail(), response.email());
         assertEquals(mockUser.getUsername(), response.username());
@@ -127,6 +128,7 @@ public class UserInternalServiceTest {
         UserResponse response = userInternalService.getUser(authUser);
 
         // then
+        assertNotNull(response);
         assertNotNull(response.userId());
         assertEquals(mockUser.getEmail(), response.email());
         assertEquals(mockUser.getUsername(), response.username());
@@ -167,6 +169,7 @@ public class UserInternalServiceTest {
         UserResponse response = userInternalService.updateUser(request,authUser);
 
         // then
+        assertNotNull(response);
         assertNotNull(response.userId());
         assertEquals(mockUser.getEmail(), response.email());
         assertEquals(mockUser.getUsername(), response.username());
@@ -208,7 +211,7 @@ public class UserInternalServiceTest {
     }
 
     @Test
-    @DisplayName("회원 탈퇴 시 deleted가 참으로 설정된다")
+    @DisplayName("회원 탈퇴 시 deleted가 True로 설정된다")
     void deleteUser_success() {
 
         // given
@@ -256,5 +259,37 @@ public class UserInternalServiceTest {
         assertEquals("mockUser@example.com", response.email());
 
         verify(userExternalService).getUserById(1L);
+    }
+
+    @Test
+    @DisplayName("병원 사용자 생성 시 저장됨")
+    void hospitalSignup_success() {
+        // given
+        when(authService.passwordEncode("passwordA123!"))
+                .thenReturn("encoded-password");
+        when(userRepository.save(any(User.class)))
+                .thenAnswer(invocation -> {
+                    User user = invocation.getArgument(0);
+                    ReflectionTestUtils.setField(user, "id", 2L);
+                    return user;
+                });
+        UserSignupRequest request = UserSignupRequest.of(
+                "mockHospital",
+                "mockHospital@example.com",
+                "passwordA123!"
+        );
+
+        // when
+        UserResponse response = userInternalService.hospitalSignup(request);
+
+        // then
+        assertNotNull(response);
+        assertNotNull(response.userId());
+        assertEquals(mockHospitalUser.getEmail(), response.email());
+        assertEquals(mockHospitalUser.getUsername(), response.username());
+        assertEquals(UserRole.ROLE_HOSPITAL, response.role());
+
+        verify(userRepository).save(any(User.class));
+        verify(authService).passwordEncode("passwordA123!");
     }
 }
