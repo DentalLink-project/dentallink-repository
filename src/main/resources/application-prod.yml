@@ -16,8 +16,10 @@ spring:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
+      ssl:
+        enabled: true
 
-#  임시로 주석처리. 확인되면 삭제
+  #  임시로 주석처리. 확인되면 삭제
 #  autoconfigure:
 #    exclude:
 #      - org.redisson.spring.starter.RedissonAutoConfigurationV2
