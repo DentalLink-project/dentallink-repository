@@ -1,8 +1,10 @@
 package com.dentallink.domain.user.service;
 
 import com.dentallink.domain.auth.service.AuthService;
+import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
 import com.dentallink.domain.user.dto.request.UserSignupRequest;
 import com.dentallink.domain.user.dto.response.UserResponse;
+import com.dentallink.domain.user.dto.security.AuthUser;
 import com.dentallink.domain.user.entity.User;
 import com.dentallink.domain.user.enums.UserRole;
 import com.dentallink.domain.user.repository.UserRepository;
@@ -16,100 +18,116 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserInternalServiceTest {
 
-    @Mock
-    private UserRepository userRepository;
-    @Mock private AuthService authService;
-
     @InjectMocks
     private UserInternalService userInternalService;
+
+    @Mock private UserRepository userRepository;
+    @Mock private UserExternalService userExternalService;
+    @Mock private AuthService authService;
+    @Mock private PointAccountExternalService pointAccountExternalService;
+
     private User mockUser;
     private User mockAdminUser;
-    private String mockPlanePassword;
 
     @BeforeEach
     void setUp() {
-        mockPlanePassword = "passwordA123!";
-
-        when(authService.passwordEncode(mockPlanePassword))
-                .thenReturn("encoded-password");
 
         mockUser = User.of(
                 "mockUser@example.com",
-                authService.passwordEncode(mockPlanePassword),
+                "encoded-password",
                 "mockUser",
                 UserRole.ROLE_USER
         );
         mockAdminUser = User.of(
                 "mockAdmin@example.com",
-                authService.passwordEncode(mockPlanePassword),
+                "encoded-password",
                 "mockAdmin",
                 UserRole.ROLE_ADMIN
         );
+
         ReflectionTestUtils.setField(mockUser, "id", 1L);
         ReflectionTestUtils.setField(mockAdminUser, "id", 10L);
     }
 
     @Test
-    @DisplayName("email을 통해 유저가 존재하는지 확인하고, 존재하여 True 반환")
-    void existsUserByEmail_true() {
+    @DisplayName("email을 통해 사용자 여부를 확인하고 True 반환")
+    void existUserByEmail_true() {
+
         // given
-        when(userRepository.existsByEmail(mockUser.getEmail()))
+        String email = "mockUser@example.com";
+        when(userRepository.existsByEmail(email))
                 .thenReturn(true);
+
         // when
-        boolean isExists = userInternalService.existsUserByEmail(mockUser.getEmail());
+        boolean result = userInternalService.existsUserByEmail(email);
+
         // then
-        assertTrue(isExists);
-        verify(userRepository.existsByEmail(mockUser.getEmail()));
+        assertTrue(result);
+        verify(userRepository, times(1)).existsByEmail(email);
     }
 
     @Test
-    @DisplayName("email을 통해 유저가 존재하는지 확인하고, 존재하지 않아 False 반환")
-    void existsUserByEmail_false() {
-        // given
-        when(userRepository.existsByEmail(mockUser.getEmail()))
-                .thenReturn(false);
-        // when
-        boolean isExists = userInternalService.existsUserByEmail(mockUser.getEmail());
-        // then
-        assertFalse(isExists);
-        verify(userRepository).existsByEmail(mockUser.getEmail());
-    }
+    @DisplayName("회원가입 진행 시 사용자가 저장 된다")
+    void signup_success() {
 
-    @Test
-    @DisplayName("회원가입 성공 시 유저가 저장된다")
-    void createUser_success() {
         // given
-        UserSignupRequest request = UserSignupRequest.of(
-                mockUser.getUsername(),
-                mockUser.getEmail(),
-                mockPlanePassword
-        );
-        when(authService.passwordEncode(request.password()))
-                .thenReturn("encodedPassword");
+        when(authService.passwordEncode("passwordA123!"))
+                .thenReturn("encoded-password");
         when(userRepository.save(any(User.class)))
                 .thenAnswer(invocation -> {
-                    User user = invocation.getArgument(0);
-                    ReflectionTestUtils.setField(user, "id", 1L); // id 자동 생성 흉내
-                    return user;
-                });
+            User user = invocation.getArgument(0);
+            ReflectionTestUtils.setField(user, "id", 1L);
+            return user;
+        });
+        UserSignupRequest request = UserSignupRequest.of(
+                "mockUser",
+                "mockUser@example.com",
+                "passwordA123!"
+        );
 
         // when
-        UserResponse savedUserResponse = userInternalService.signup(request);
+        UserResponse response = userInternalService.signup(request);
 
-        assertNotNull(savedUserResponse.userId());
-        assertEquals(mockUser.getEmail(), savedUserResponse.email());
-        assertEquals(mockUser.getUsername(), savedUserResponse.username());
-        assertEquals(UserRole.ROLE_USER, savedUserResponse.role());
+        // then
+        assertNotNull(response.userId());
+        assertEquals(mockUser.getEmail(), response.email());
+        assertEquals(mockUser.getUsername(), response.username());
+        assertEquals(UserRole.ROLE_USER, response.role());
 
         verify(userRepository).save(any(User.class));
-        verify(authService).passwordEncode(mockPlanePassword);
+        verify(authService).passwordEncode("passwordA123!");
     }
 
+    @Test
+    @DisplayName("내 프로필 조회 성공시 응답한다")
+    void getUser_success() {
 
+        // given
+        AuthUser authUser = new AuthUser(
+                1L,
+                "mockUser@example.com",
+                UserRole.ROLE_USER
+        );
+        when(userExternalService.getUserById(1L))
+                .thenReturn(mockUser);
+
+        // when
+        UserResponse response = userInternalService.getUser(authUser);
+
+        // then
+        assertNotNull(response.userId());
+        assertEquals(mockUser.getEmail(), response.email());
+        assertEquals(mockUser.getUsername(), response.username());
+        assertEquals(UserRole.ROLE_USER, response.role());
+
+        verify(userExternalService).getUserById(1L);
+    }
 }
