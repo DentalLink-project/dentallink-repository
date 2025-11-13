@@ -20,6 +20,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -57,6 +59,7 @@ public class UserInternalServiceTest {
         ReflectionTestUtils.setField(mockAdminUser, "id", 10L);
     }
 
+    // ---------- 내부 검색 메서드 ----------
     @Test
     @DisplayName("email을 통해 사용자 여부가 확인되면 True 반환")
     void existUserByEmail_true() {
@@ -74,6 +77,7 @@ public class UserInternalServiceTest {
         verify(userRepository, times(1)).existsByEmail(email);
     }
 
+    // ---------- 일반 사용자 기능 ----------
     @Test
     @DisplayName("회원가입 진행 시 사용자가 저장 된다")
     void signup_success() {
@@ -198,6 +202,7 @@ public class UserInternalServiceTest {
 
         // then
         assertEquals("encoded-password", mockUser.getPassword());
+
         verify(authService).passwordCheck("oldPassword", 1L);
         verify(authService).passwordEncode("passwordA123!");
     }
@@ -227,7 +232,29 @@ public class UserInternalServiceTest {
         // then
         assertNotNull(mockUser.getDeletedAt());
         assertTrue(mockUser.isDeleted());
+
         verify(userExternalService).getUserById(authUser.getUserId());
         verify(userRepository).save(mockUser);
+    }
+
+    // ---------- 관리자 기능 ----------
+
+    @Test
+    @DisplayName("Id를 통해 특정 사용자 조회에 성공하면 UserResponse를 응답한다")
+    void getOneUser_success() {
+
+        // given
+        when(userExternalService.getUserById(1L))
+                .thenReturn(mockUser);
+
+        // when
+        UserResponse response = userInternalService.getOneUser(1L);
+
+        // then
+        assertNotNull(response);
+        assertEquals(1L, response.userId());
+        assertEquals("mockUser@example.com", response.email());
+
+        verify(userExternalService).getUserById(1L);
     }
 }
