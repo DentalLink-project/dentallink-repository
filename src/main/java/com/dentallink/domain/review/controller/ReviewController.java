@@ -94,6 +94,7 @@ public class ReviewController {
             @ApiResponse(responseCode = "403", description = "권한 없음"),
             @ApiResponse(responseCode = "404", description = "리뷰를 찾을 수 없음")
     })
+    @PatchMapping("/reviews/{id}")
     public ResponseEntity<CommonApiResponse<ReviewUpdateResponse>> updateReview(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser,

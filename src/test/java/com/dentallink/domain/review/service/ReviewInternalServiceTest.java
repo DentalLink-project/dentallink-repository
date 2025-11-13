@@ -85,11 +85,11 @@ class ReviewInternalServiceTest {
         Review anotherReview = Review.of(2L, 1L, 2L, 4, "괜찮아요");
 
         Page<Review> reviewPage = new PageImpl<>(List.of(review, anotherReview),
-                PageRequest.of(0, 10), 2);
+                PageRequest.of(1, 10), 2);
 
         when(reviewRepository.findByHospitalId(anyLong(), any(Pageable.class))).thenReturn(reviewPage);
 
-        PageResponse<ReviewListResponse> response = reviewInternalService.findAllReviews(1L, 0, 10);
+        PageResponse<ReviewListResponse> response = reviewInternalService.findAllReviews(1L, 1, 10);
 
         assertThat(response).isNotNull();
         assertThat(response.getContent()).hasSize(2);
