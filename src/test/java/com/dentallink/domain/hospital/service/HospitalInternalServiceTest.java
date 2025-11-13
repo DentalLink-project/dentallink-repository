@@ -371,10 +371,10 @@ class HospitalInternalServiceTest {
                 1
         );
 
-        given(hospitalRepository.findAllWithOptionalFavorite(1L, pageable))
+        given(hospitalRepository.findAllWithOptionalFavorite(adminUser.getId(), pageable))
                 .willReturn(page);
 
-        PageResponse<HospitalListResponse> response = hospitalInternalService.findAllHospitals(1, 10, 1L);
+        PageResponse<HospitalListResponse> response = hospitalInternalService.findAllHospitals(Math.toIntExact(adminUser.getId()), 10, 1L);
 
         assertThat(response.getContent()).hasSize(1);
     }
@@ -385,10 +385,9 @@ class HospitalInternalServiceTest {
         // boolean isFavorite 인자 추가
         HospitalDetailResponse detailResponse = HospitalDetailResponse.of(hospital, schedule, false);
 
-        given(hospitalRepository.findHospitalDetailWithOptionalFavorite(1L, 1L))
+        given(hospitalRepository.findHospitalDetailWithOptionalFavorite(hospital.getId(), adminUser.getId()))
                 .willReturn(Optional.of(detailResponse));
-
-        HospitalDetailResponse response = hospitalInternalService.findHospitalById(1L, 1L);
+        HospitalDetailResponse response = hospitalInternalService.findHospitalById(hospital.getId(), adminUser.getId());
 
         assertThat(response.hospitalName()).isEqualTo("테스트치과");
     }

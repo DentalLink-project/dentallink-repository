@@ -41,7 +41,7 @@ class HospitalControllerTest {
         PageResponse<HospitalListResponse> mockPage =
                 new PageResponse<>(List.of(hospitalResponse), 1L, 1, 10, 0);
 
-        given(hospitalInternalService.findAllHospitals(1, 10, 1L))
+        given(hospitalInternalService.findAllHospitals(1, 10, mockUser.getUserId()))
                 .willReturn(mockPage);
 
         ResponseEntity<CommonApiResponse<PageResponse<HospitalListResponse>>> response =
@@ -67,7 +67,7 @@ class HospitalControllerTest {
                         false
                 );
 
-        given(hospitalInternalService.findHospitalById(1L, 1L))
+        given(hospitalInternalService.findHospitalById(1L, mockUser.getUserId()))
                 .willReturn(detailResponse);
 
         ResponseEntity<CommonApiResponse<HospitalDetailResponse>> response =
