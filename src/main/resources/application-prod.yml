@@ -14,14 +14,14 @@ spring:
 
   data:
     redis:
-      host: ${redis.host}
-      port: ${redis.port:6379}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
 
   redis:
     redisson:
       config: |
         singleServerConfig:
-          address: "redis://${redis.host}:${redis.port:6379}"
+          address: "redis://${REDIS_HOST}:${REDIS_PORT:6379}"
 
   jpa:
     hibernate:
