@@ -14,7 +14,9 @@
       "name": "aws-demo-container",
       "image": "<IMAGE_URI>",
       "environment": [
-        { "name": "SPRING_PROFILES_ACTIVE", "value": "<PROFILE>" }
+        { "name": "SPRING_PROFILES_ACTIVE", "value": "<PROFILE>" },
+        { "name": "redis.host", "value": "prod-redis-ltimjs.serverless.apn2.cache.amazonaws.com" },
+        { "name": "redis.port", "value": "6379" }
       ],
       "essential": true,
       "portMappings": [
@@ -34,8 +36,7 @@
         { "name": "DB_NAME",     "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:db.name::" },
         { "name": "DB_USERNAME", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:db.username::" },
         { "name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:db.password::" },
-        {"name": "JWT_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:prod/jwt/secret:key::"
-        }
+        { "name": "JWT_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:prod/jwt/secret:key::" }
       ]
     }
   ]
