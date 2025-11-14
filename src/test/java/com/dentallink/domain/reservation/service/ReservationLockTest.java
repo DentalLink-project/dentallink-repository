@@ -1,10 +1,8 @@
 package com.dentallink.domain.reservation.service;
 
 import com.dentallink.domain.hospital.entity.Hospital;
-import com.dentallink.domain.hospital.entity.HospitalReservationTime;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
-import com.dentallink.domain.hospital.repository.HospitalReservationTimeRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.repository.PointAccountRepository;
@@ -42,8 +40,8 @@ class ReservationLockTest {
     private HospitalRepository hospitalRepository;
     @Autowired
     private HospitalScheduleRepository hospitalScheduleRepository;
-    @Autowired
-    private HospitalReservationTimeRepository reservationTimeRepository;
+//    @Autowired
+//    private HospitalReservationTimeRepository reservationTimeRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -77,15 +75,15 @@ class ReservationLockTest {
         // 오늘 기준으로 내일 예약 슬롯 생성
         LocalDate targetDate = LocalDate.now().plusDays(1);
         LocalTime startTime = LocalTime.of(10, 0);
-        LocalTime endTime = LocalTime.of(10, 30);
+//        LocalTime endTime = LocalTime.of(10, 30);
 
-        HospitalReservationTime slot = new HospitalReservationTime(
-                hospital,
-                targetDate,
-                startTime,
-                endTime
-        );
-        reservationTimeRepository.saveAndFlush(slot);
+//        HospitalReservationTime slot = new HospitalReservationTime(
+//                hospital,
+//                targetDate,
+//                startTime,
+//                endTime
+//        );
+//        reservationTimeRepository.saveAndFlush(slot);
 
         User user = userRepository.saveAndFlush(
                 User.of("test@example.com", "password123!A", "테스트유저", UserRole.ROLE_USER)
