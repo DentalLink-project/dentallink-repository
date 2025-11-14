@@ -92,6 +92,7 @@ public class UserInternalService {
         User user = userExternalService.getUserById(authUser.getUserId());
         authService.passwordCheck(request.password(), user.getId());
         user.delete();
+        userRepository.save(user);
         return null;
     }
 
