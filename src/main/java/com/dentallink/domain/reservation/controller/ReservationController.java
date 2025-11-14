@@ -81,7 +81,7 @@ public class ReservationController {
             @ApiResponse(responseCode = "403", description = "권한 없음"),
             @ApiResponse(responseCode = "404", description = "예약을 찾을 수 없음")
     })
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9]+}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<CommonApiResponse<ReservationResponse>> getReservation(
             @Parameter(description = "예약 ID")

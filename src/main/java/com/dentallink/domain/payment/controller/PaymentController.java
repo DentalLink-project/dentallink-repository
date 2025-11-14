@@ -70,7 +70,7 @@ public class PaymentController {
             @ApiResponse(responseCode = "401", description = "인증 실패"),
             @ApiResponse(responseCode = "500", description = "서버 오류")
     })
-    @PostMapping("/cancel/ready/{orderId}")
+    @PostMapping("/cancel/ready/{orderId:[0-9]+}")
     public ResponseEntity<CommonApiResponse<PaymentCancelResponse>> cancelReadyPayment(
             @AuthenticationPrincipal AuthUser authUser,
             @PathVariable String orderId

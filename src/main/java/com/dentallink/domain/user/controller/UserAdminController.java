@@ -37,7 +37,7 @@ public class UserAdminController {
                     @ApiResponse(responseCode = "404", description = "존재하지 않는 사용자")
             })
     @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/users/{userId}")
+    @GetMapping("/users/{userId:[0-9]+}")
     public ResponseEntity<CommonApiResponse<UserResponse>> getOneUser(
             @Parameter(description = "조회할 사용자 PK") @PathVariable("userId") Long userId
     ) {
