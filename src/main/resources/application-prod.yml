@@ -54,7 +54,6 @@ chatbot:
 
 springdoc:
   api-docs:
-    enabled: true
+    enabled: false
   swagger-ui:
-    enabled: true
-    path: /swagger-ui.html
+    enabled: false

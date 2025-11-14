@@ -88,32 +88,34 @@ public class SecurityConfig {
 
         // 1. 명시적 Origin 지정 (로컬 개발 포트 + 외부 서버)
         configuration.setAllowedOrigins(List.of(
-            "http://localhost:8000",
-            "http://127.0.0.1:8000",
-            "http://localhost:63342",
-            "http://127.0.0.1:63342",
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            "http://13.124.156.240:8080"
+                "http://localhost:8000",
+                "http://127.0.0.1:8000",
+                "http://localhost:63342",
+                "http://127.0.0.1:63342",
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://13.124.156.240:8080",
+                "https://www.dentallink.store",
+                "https://dentallink.store"
         ));
 
         // 2. 필요한 헤더만 명시
         configuration.setAllowedHeaders(List.of(
-            "Content-Type",
-            "Authorization",
-            "Accept",
-            "Origin",
-            "Refresh-Token"
+                "Content-Type",
+                "Authorization",
+                "Accept",
+                "Origin",
+                "Refresh-Token"
         ));
 
         // 3. 필요한 HTTP 메서드만 명시
         configuration.setAllowedMethods(List.of(
-            "GET",
-            "POST",
-            "PUT",
-            "DELETE",
-            "PATCH",
-            "OPTIONS"
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "PATCH",
+                "OPTIONS"
         ));
 
         // 4. 인증정보 포함 허용
@@ -121,9 +123,9 @@ public class SecurityConfig {
 
         // 5. 클라이언트에 노출할 헤더
         configuration.setExposedHeaders(List.of(
-            "Authorization",
-            "Refresh-Token",
-            "Content-Disposition"
+                "Authorization",
+                "Refresh-Token",
+                "Content-Disposition"
         ));
 
         // 6. preflight 요청 캐시 시간 (1시간)
