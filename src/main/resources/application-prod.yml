@@ -38,7 +38,8 @@ jwt:
   refresh-token-expiration: ${refresh.token.expiration:1209600000}
 
 toss:
-  secret-key: ${TOSS_SECRET_KEY}
+  secret:
+    key: ${TOSS_SECRET_KEY}
 
 springdoc:
   api-docs.enabled: false
