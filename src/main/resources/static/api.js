@@ -10,7 +10,8 @@ const getApiBaseUrl = () => {
         return 'http://13.124.156.240:8080/api';
     } else {
         // 프로덕션 환경 (www.dentallink.store)
-        return 'https://api.dentallink.store/api';
+        // 같은 도메인 사용 - 상대 경로
+        return '/api';
     }
 };
 
