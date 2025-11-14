@@ -39,7 +39,8 @@
         { "name": "REDIS_HOST", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:redis.host::" },
         { "name": "REDIS_PORT", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:redis.port::" },
         { "name": "JWT_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:prod/jwt/secret:key::" },
-        { "name": "TOSS_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:prod/toss/secret:key::" }
+        { "name": "TOSS_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:prod/toss/secret:key::" },
+        { "name": "GEMINI_API_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:prod/gemini/secret:api-key::" }
       ]
     }
   ]
