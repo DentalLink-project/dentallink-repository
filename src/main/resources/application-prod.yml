@@ -5,25 +5,17 @@ spring:
         static: ap-northeast-2
       parameter-store:
         enabled: false
-
   datasource:
     url: jdbc:mysql://${DB_HOST}:3306/${DB_NAME}?useSSL=false&characterEncoding=UTF-8&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
-
   data:
     redis:
       host: ${REDIS_HOST}
       port: ${REDIS_PORT}
       ssl:
         enabled: true
-
-  #  임시로 주석처리. 확인되면 삭제
-#  autoconfigure:
-#    exclude:
-#      - org.redisson.spring.starter.RedissonAutoConfigurationV2
-
   jpa:
     hibernate:
       ddl-auto: validate
@@ -40,6 +32,22 @@ jwt:
 toss:
   secret:
     key: ${TOSS_SECRET_KEY}
+
+gemini:
+  api-key: ${GEMINI_API_KEY}
+  model-name: gemini-2.0-flash
+  max-tokens: 2048
+  temperature: 0.7
+  top-p: 0.95
+  top-k: 40
+  timeout: 30
+  rate-limit:
+    per-minute: 15
+    per-user-per-minute: 10
+    per-day: 1500
+
+chatbot:
+  enabled: true
 
 springdoc:
   api-docs.enabled: false
