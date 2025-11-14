@@ -37,6 +37,9 @@ jwt:
   access-token-expiration: ${access.token.expiration:3600000}
   refresh-token-expiration: ${refresh.token.expiration:1209600000}
 
+toss:
+  secret-key: ${TOSS_SECRET_KEY}
+
 springdoc:
   api-docs.enabled: false
   swagger-ui:
