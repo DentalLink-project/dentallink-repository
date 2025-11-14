@@ -36,7 +36,10 @@
         { "name": "DB_NAME",     "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:db.name::" },
         { "name": "DB_USERNAME", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:db.username::" },
         { "name": "DB_PASSWORD", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:db.password::" },
-        { "name": "JWT_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:prod/jwt/secret:key::" }
+        { "name": "REDIS_HOST", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:redis.host::" },
+        { "name": "REDIS_PORT", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:<PROFILE>/mysql/credentials:redis.port::" },
+        { "name": "JWT_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:prod/jwt/secret:key::" },
+        { "name": "TOSS_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:ap-northeast-2:506999399369:secret:prod/toss/secret:key::" }
       ]
     }
   ]

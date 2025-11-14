@@ -12,6 +12,18 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
 
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      ssl:
+        enabled: true
+
+  #  임시로 주석처리. 확인되면 삭제
+#  autoconfigure:
+#    exclude:
+#      - org.redisson.spring.starter.RedissonAutoConfigurationV2
+
   jpa:
     hibernate:
       ddl-auto: validate
@@ -25,9 +37,11 @@ jwt:
   access-token-expiration: ${access.token.expiration:3600000}
   refresh-token-expiration: ${refresh.token.expiration:1209600000}
 
+toss:
+  secret:
+    key: ${TOSS_SECRET_KEY}
+
 springdoc:
   api-docs.enabled: false
   swagger-ui:
     enabled: false
-
-logging.level.root: debug
