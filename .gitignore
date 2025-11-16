@@ -57,6 +57,7 @@ src/main/java/com/dentallink/common/config/WebConfig.java
 .env
 .env.local
 .env.*.local
+docs/
 
 src/main/resources/application-local.yml
 
