@@ -103,11 +103,4 @@ public class ChatMessage {
         message.sentAt = LocalDateTime.now();
         return message;
     }
-
-    public boolean hasFunctionCall() {
-        return functionName != null && !functionName.isEmpty();
-    }
-
-
-
 }

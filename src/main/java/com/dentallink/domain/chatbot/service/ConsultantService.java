@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 /**
  * 상담원 서비스
@@ -40,8 +39,6 @@ public class ConsultantService {
     // Redis 키 상수
     private static final String WAITING_QUEUE_KEY = "chatbot:waiting:queue";
     private static final String SESSION_POSITION_KEY = "chatbot:session:position:";
-    private static final String ACTIVE_CONSULTANTS_KEY = "chatbot:active:consultants:";
-
     /**
      * 상담원에게 전환
      */

@@ -10,7 +10,6 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -79,25 +78,13 @@ public class ChatSession {
         this.waitingPosition = position;
     }
 
-    public void updateWaitingPosition(Long position) {
-        this.waitingPosition = position;
-    }
-
     public void close() {
         this.status = SessionStatus.CLOSED;
         this.endedAt = LocalDateTime.now();
     }
 
-    public void addMessage(ChatMessage message) {
-        this.messages.add(message);
-    }
-
     public boolean isOwnedBy(Long userId) {
         return this.user.getId().equals(userId);
-    }
-
-    public boolean isActive() {
-        return this.status == SessionStatus.ACTIVE;
     }
 
     public boolean isConsultantMode() {
