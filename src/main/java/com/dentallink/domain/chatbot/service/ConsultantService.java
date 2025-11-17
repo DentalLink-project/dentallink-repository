@@ -317,9 +317,16 @@ public class ConsultantService {
 
         //일괄 정리 (Redis 명령 최소화)
         if (!invalidSessionIds.isEmpty()) {
+            log.debug("대기열에서 유효하지 않은 세션 {}개를 정리합니다: {}", invalidSessionIds.size(), invalidSessionIds);
+            List<String> positionKeysToDelete = new ArrayList<>();
             for (Long sessionId : invalidSessionIds) {
-                removeFromWaitingQueue(sessionId);
+                redisTemplate.opsForList().remove(WAITING_QUEUE_KEY, 0, sessionId.toString());
+                positionKeysToDelete.add(SESSION_POSITION_KEY + sessionId);
             }
+            redisTemplate.delete(positionKeysToDelete);
+
+            // 모든 유효하지 않은 세션을 제거한 후 대기 순번을 한 번만 업데이트합니다.
+            updateWaitingPositions();
         }
 
         return waitingSessions;
