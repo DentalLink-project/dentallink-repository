@@ -7,7 +7,7 @@ import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import com.dentallink.domain.reservation.dto.ReservationResponse;
 import com.dentallink.domain.reservation.entity.Reservation;
-import com.dentallink.domain.reservation.execption.ReservationErrorCode;
+import com.dentallink.domain.reservation.exception.ReservationErrorCode;
 import com.dentallink.domain.reservation.repository.ReservationRepository;
 import com.dentallink.domain.user.entity.User;
 import com.dentallink.domain.user.enums.UserRole;
@@ -25,7 +25,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
