@@ -1,7 +1,7 @@
 package com.dentallink.domain.reservation.service;
 
 import com.dentallink.common.exception.GlobalException;
-import com.dentallink.common.lock.DistributedLock; //(분산락) 락 어노테이션 import 추가
+import com.dentallink.common.lock.DistributedLock;
 import com.dentallink.domain.pointAccount.entity.PointAccount;
 import com.dentallink.domain.pointAccount.service.PointAccountExternalService;
 import com.dentallink.domain.reservation.dto.AvailableTimeSlotResponse;
@@ -47,6 +47,9 @@ public class ReservationInternalService {
     private static final int MAX_RESERVATIONS_PER_TIME_SLOT = 3;
     private static final int TIME_PERIOD = 30;
 
+    //추가: 최소 예약 가능 시간 여유 (분 단위)
+    private static final int MIN_RESERVATION_BUFFER_MINUTES = 30;
+
     //예약 조회 (단건)
     public ReservationResponse getReservation(Long id, Long userId) {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
@@ -73,7 +76,6 @@ public class ReservationInternalService {
     public ReservationResponse updateReservationStatus(Long id, ReservationUpdateStatusRequest request, Long hospitalAdminId) {
         Reservation reservation = reservationRepository.findByIdAndNotDeleted(id)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.RESERVATION_NOT_FOUND));
-        // 병원 소유권 확인 (@PreAuthorize로 역할은 체크됨)
         validateHospitalOwnership(reservation.getHospital().getId(), hospitalAdminId);
 
         switch (request.status()) {
@@ -106,7 +108,6 @@ public class ReservationInternalService {
 
     /**
      * 예약 생성 (분산락 적용)
-     * 병원 ID + 예약 시간대 조합으로 락을 걸어 중복 예약 방지
      */
     @DistributedLock(
             key = "'reservation:' + #request.hospitalId() + ':' + "
@@ -114,16 +115,15 @@ public class ReservationInternalService {
             waitTime = 10,
             leaseTime = 15
     )
-
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ReservationResponse createReservation(ReservationCreateRequest request, Long userId) {
-
-        // (분산락) — Redisson이 reservation:{hospitalId}:{time} 키로 락을 획득한 상태에서만 아래 코드가 실행됨
 
         Hospital hospital = hospitalRepository.findById(request.hospitalId())
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.HOSPITAL_NOT_FOUND));
 
         validateHospitalIsOpen(hospital);
+
+        // 개선: 과거 시간 체크를 가장 먼저 수행
         validateAppointmentDateTime(request.appointmentDate());
 
         HospitalSchedule schedule = hospitalScheduleRepository.findByHospitalId(request.hospitalId())
@@ -136,7 +136,6 @@ public class ReservationInternalService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
 
-        // 예약비가 있고 0보다 클 때만 포인트 차감
         if (hospital.getReservationCost() != null && hospital.getReservationCost() > 0) {
             try {
                 PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(user.getId());
@@ -172,7 +171,6 @@ public class ReservationInternalService {
         LocalDateTime startDay = date.atStartOfDay();
         LocalDateTime endDay = date.atTime(LocalTime.MAX);
 
-        // DB에서 GROUP BY로 시간대별 예약 개수 조회
         List<ReservationCountDto> reservationCounts = reservationRepository.countReservationsByTimeSlot(
                 hospitalId, startDay, endDay
         );
@@ -203,10 +201,24 @@ public class ReservationInternalService {
         }
     }
 
+    /**
+     * 개선: 과거 시간 체크 강화 + 최소 예약 여유 시간 추가
+     */
     private void validateAppointmentDateTime(LocalDateTime appointmentDate) {
-        if (appointmentDate.isBefore(LocalDateTime.now())) {
+        LocalDateTime now = LocalDateTime.now();
+
+        //1. 과거 시간 체크 (기본)
+        if (appointmentDate.isBefore(now)) {
             throw new GlobalException(ReservationErrorCode.PAST_APPOINTMENT_TIME);
         }
+
+        //2. 최소 예약 여유 시간 체크 (예: 30분 전에는 예약 불가)
+        LocalDateTime minReservationTime = now.plusMinutes(MIN_RESERVATION_BUFFER_MINUTES);
+        if (appointmentDate.isBefore(minReservationTime)) {
+            throw new GlobalException(ReservationErrorCode.TOO_CLOSE_APPOINTMENT_TIME);
+        }
+
+        // 3. 시간 단위 체크 (30분 단위)
         if (appointmentDate.getMinute() % TIME_PERIOD != 0 || appointmentDate.getSecond() != 0) {
             throw new GlobalException(ReservationErrorCode.INVALID_TIME_UNIT);
         }
@@ -243,20 +255,27 @@ public class ReservationInternalService {
         }
     }
 
+    /**
+     * 개선: 예약 가능 시간대 생성 시 과거 시간 + 여유 시간 필터링
+     */
     private List<LocalDateTime> generateTimePeriod(LocalDate date, HospitalSchedule schedule) {
         List<LocalDateTime> timePeriod = new ArrayList<>();
         LocalTime currentTime = schedule.getOpenTime();
-        // 마감 시간 30분 전까지만 예약 가능
         LocalTime lastSlot = schedule.getCloseTime().minusMinutes(TIME_PERIOD);
 
+        // 현재 시간 + 여유 시간
+        LocalDateTime minReservationTime = LocalDateTime.now().plusMinutes(MIN_RESERVATION_BUFFER_MINUTES);
+
         while (!currentTime.isAfter(lastSlot)) {
-            // 휴게시간이 아닌 경우에만 추가
+            // 휴게시간 체크
             if (schedule.getBreakStart() == null || schedule.getBreakEnd() == null ||
                     currentTime.isBefore(schedule.getBreakStart()) ||
                     !currentTime.isBefore(schedule.getBreakEnd())) {
-                // 과거 시간이 아닌 경우에만 추가
+
                 LocalDateTime timeSlot = LocalDateTime.of(date, currentTime);
-                if (!timeSlot.isBefore(LocalDateTime.now())) {
+
+                //개선: 최소 예약 여유 시간 이후만 추가
+                if (!timeSlot.isBefore(minReservationTime)) {
                     timePeriod.add(timeSlot);
                 }
             }
@@ -265,11 +284,6 @@ public class ReservationInternalService {
         return timePeriod;
     }
 
-    /**
-     * 병원 소유권 검증
-     *
-     * @PreAuthorize로 역할은 이미 체크되었으므로, 비즈니스 로직만 체크
-     */
     private void validateHospitalOwnership(Long hospitalId, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
@@ -281,42 +295,30 @@ public class ReservationInternalService {
         }
     }
 
-    /**
-     * 예약 조회 권한 검증
-     * - 시스템 관리자: 모든 예약 조회 가능
-     * - 예약 소유자: 본인 예약 조회 가능
-     * - 병원 관리자: 자기 병원 예약 조회 가능
-     */
     private void validateReservationAccess(Reservation reservation, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GlobalException(ReservationErrorCode.USER_NOT_FOUND));
 
-        // 1. 시스템 관리자는 모든 예약 조회 가능
         if (user.getUserRole() == UserRole.ROLE_ADMIN) return;
-        // 2. 본인 예약은 조회 가능
         if (reservation.isOwnedBy(userId)) return;
-        // 3. 해당 병원의 관리자는 조회 가능
         if (user.getUserRole() == UserRole.ROLE_HOSPITAL
                 && reservation.getHospital().getId().equals(user.getHospitalId())) return;
 
         throw new GlobalException(ReservationErrorCode.NOT_HOSPITAL_ADMIN);
     }
 
-    // 소유자 확인
     private void validateReservationOwner(Reservation reservation, Long userId) {
         if (!reservation.isOwnedBy(userId)) {
             throw new GlobalException(ReservationErrorCode.NOT_RESERVATION_OWNER);
         }
     }
 
-    // 시간 검증
     private void validateAppointmentTime(Reservation reservation) {
         if (reservation.getAppointmentDate().isBefore(LocalDateTime.now())) {
             throw new GlobalException(ReservationErrorCode.PAST_APPOINTMENT_TIME);
         }
     }
 
-    // 포인트 환불 (중복 제거)
     private void refundPoints(Long userId, Long points) {
         if (points <= 0) return;
         PointAccount pointAccount = pointAccountExternalService.getPointAccountByUserId(userId);
