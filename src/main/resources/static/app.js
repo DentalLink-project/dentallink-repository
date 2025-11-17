@@ -1,3 +1,20 @@
+// WebSocket URL 생성 함수 - 환경별 분기
+const getWebSocketUrl = () => {
+    const hostname = window.location.hostname;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        // 로컬 개발 환경
+        return 'ws://localhost:8080/ws/chat';
+    } else if (hostname === '13.124.156.240') {
+        // 개발 서버 환경
+        return 'ws://13.124.156.240:8080/ws/chat';
+    } else {
+        // 프로덕션 환경 (www.dentallink.store)
+        return `${protocol}//${hostname}/ws/chat`;
+    }
+};
+
 // Global State
 let currentUser = null;
 let hospitals = [];
@@ -1612,10 +1629,8 @@ function appendFabChatMessage(sender, text) {
  */
 function connectFabChatbot() {
     try {
-        // 현재 호스트 기반 WebSocket URL 동적 생성
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
+        // WebSocket URL 생성
+        const socket = new WebSocket(getWebSocketUrl());
         window.fabChatStompClient = Stomp.over(socket);
         window.fabChatStompClient.debug = null;
 
@@ -2671,10 +2686,8 @@ function connectChatbot() {
     const connectionText = document.getElementById('connection-text');
 
     try {
-        // 현재 호스트 기반 WebSocket URL 동적 생성
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
+        // WebSocket URL 생성
+        const socket = new WebSocket(getWebSocketUrl());
         chatbotStompClient = Stomp.over(socket);
         chatbotStompClient.debug = null; // 프로덕션에서는 디버그 로그 비활성화
 
@@ -3256,10 +3269,8 @@ function connectConsultantWebSocket() {
     const connectionText = document.getElementById('consultant-connection-text');
 
     try {
-        // 현재 호스트 기반 WebSocket URL 동적 생성
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        const socket = new WebSocket(`${protocol}//${host}/ws/chat`);
+        // WebSocket URL 생성
+        const socket = new WebSocket(getWebSocketUrl());
         consultantStompClient = Stomp.over(socket);
         consultantStompClient.debug = null;
 
@@ -3634,7 +3645,7 @@ async function loadSessionMessages(sessionId) {
         // 메시지 렌더링
         messages.forEach(msg => {
             const sender = msg.type === 'USER' ? 'user' :
-                          (msg.type === 'CONSULTANT' ? 'consultant' : 'system');
+                (msg.type === 'CONSULTANT' ? 'consultant' : 'system');
             console.log('메시지 추가:', sender, msg.content);
             appendConsultantChatMessage(sender, msg.content);
         });

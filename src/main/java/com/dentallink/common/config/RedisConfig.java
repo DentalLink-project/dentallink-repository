@@ -14,37 +14,28 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @EnableRedisRepositories
 public class RedisConfig {
 
-    // yml 값을 주입합니다.
-    @Value("${spring.data.redis.host}") // 호스트
+    @Value("${spring.data.redis.host}")
     private String host;
-    @Value("${spring.data.redis.port}") // 포트
+    @Value("${spring.data.redis.port}")
     private int port;
 
-    // Redis  연결 팩토리 설정
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        // Redis 설정
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
         redisStandaloneConfiguration.setHostName(host);
         redisStandaloneConfiguration.setPort(port);
 
-        // Lettuce 선택했습니다. (비동기 처리)
         return new LettuceConnectionFactory(redisStandaloneConfiguration);
     }
 
-    // RedisTemplate 설정 (Set, Get, Delete ... etc)
     @Bean
     public RedisTemplate<String, Object> redisTemplate() {
-
-        // 통신 템플릿
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory());
 
-        // key-value 직렬화 방법 설정
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setValueSerializer(new StringRedisSerializer());
 
-        // hash key-hash value 직렬화 방법 설정
         redisTemplate.setHashKeySerializer(new StringRedisSerializer());
         redisTemplate.setHashValueSerializer(new StringRedisSerializer());
 

@@ -5,9 +5,13 @@ const getApiBaseUrl = () => {
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
         // 로컬 개발 환경
         return 'http://localhost:8080/api';
-    } else {
-        // 프로덕션 환경
+    } else if (hostname === '13.124.156.240') {
+        // 개발 서버 환경
         return 'http://13.124.156.240:8080/api';
+    } else {
+        // 프로덕션 환경 (www.dentallink.store)
+        // 같은 도메인 사용 - 상대 경로
+        return '/api';
     }
 };
 

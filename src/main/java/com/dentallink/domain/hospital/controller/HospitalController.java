@@ -12,14 +12,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
-import java.util.List;
 
 import static com.dentallink.common.response.CommonApiResponse.*;
 
@@ -55,7 +51,7 @@ public class HospitalController {
             @ApiResponse(responseCode = "200", description = "조회 성공"),
             @ApiResponse(responseCode = "404", description = "병원을 찾을 수 없음")
     })
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9]+}")
     public ResponseEntity<CommonApiResponse<HospitalDetailResponse>> getHospitalById(
             @PathVariable Long id,
             @AuthenticationPrincipal AuthUser authUser
@@ -212,84 +208,6 @@ public class HospitalController {
         hospitalInternalService.deleteHospitalSchedule(hospitalId, authUser.getUserId());
         return deleteSuccess(
                 "병원 일정이 성공적으로 삭제되었습니다."
-        );
-    }
-
-    // 병원 예약 가능 시간 자동 생성 테스트용
-    @PostMapping("/{hospitalId}/available-times")
-    @PreAuthorize("hasAnyRole('ADMIN')")
-    public ResponseEntity<String> createAvailableTimesManually(
-            @PathVariable Long hospitalId,
-            @RequestParam("date") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
-    ) {
-        hospitalInternalService.hospitalAvailableTimesTest(hospitalId, date);
-        return ResponseEntity.ok("병원: " + hospitalId + " / 날짜: " + date);
-    }
-
-    // 병원 예약 가능 시간 조회
-    @Operation(summary = "병원 예약 가능 시간 조회", description = "사용자가 특정 병원의 예약 가능한 시간을 조회합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "조회 성공"),
-            @ApiResponse(responseCode = "404", description = "병원을 찾을 수 없음")
-    })
-    @GetMapping("/{hospitalId}/available-times")
-    public ResponseEntity<CommonApiResponse<List<HospitalReservationTimeResponse>>> getAvailableTimes(
-            @PathVariable Long hospitalId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
-    ) {
-        List<HospitalReservationTimeResponse> response = hospitalInternalService.getAvailableTimes(hospitalId, date);
-        return success(
-                response,
-                "예약 가능 시간이 조회되었습니다."
-        );
-    }
-
-    // 병원 예약 등록
-    @Operation(summary = "병원 예약 등록", description = "병원 예약을 등록합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "병원 예약 등록 성공"),
-            @ApiResponse(responseCode = "400", description = "잘못된 요청"),
-            @ApiResponse(responseCode = "401", description = "인증 실패"),
-            @ApiResponse(responseCode = "403", description = "권한 없음"),
-            @ApiResponse(responseCode = "404", description = "병원 혹은 예약 가능 시간을 찾을 수 없음"),
-            @ApiResponse(responseCode = "409", description = "이미 예약된 시간")
-    })
-    @PostMapping("/{hospitalId}/reservations")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<CommonApiResponse<HospitalReservationResponse>> createHospitalReservation(
-            @PathVariable Long hospitalId,
-            @AuthenticationPrincipal AuthUser authUser,
-            @Valid @RequestBody HospitalReservationCreateRequest request
-    ) {
-        HospitalReservationResponse response = hospitalInternalService.createHospitalReservation(
-                hospitalId,
-                authUser.getUserId(),
-                request
-        );
-        return created(
-                response,
-                "병원 예약이 성공적으로 등록되었습니다."
-        );
-    }
-
-    // 병원 예약 취소
-    @Operation(summary = "병원 예약 취소", description = "자신의 병원 예약을 취소합니다.")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "예약 취소 성공"),
-            @ApiResponse(responseCode = "401", description = "인증 실패"),
-            @ApiResponse(responseCode = "403", description = "권한 없음"),
-            @ApiResponse(responseCode = "404", description = "예약을 찾을 수 없음")
-    })
-    @DeleteMapping("/{hospitalId}/reservations/{reservationId}")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
-    public ResponseEntity<CommonApiResponse<Void>> cancelHospitalReservation(
-            @PathVariable Long hospitalId,
-            @PathVariable Long reservationId,
-            @AuthenticationPrincipal AuthUser authUser
-    ) {
-        hospitalInternalService.cancelHospitalReservation(hospitalId, reservationId, authUser.getUserId());
-        return deleteSuccess(
-                "병원 예약이 성공적으로 취소되었습니다."
         );
     }
 }
