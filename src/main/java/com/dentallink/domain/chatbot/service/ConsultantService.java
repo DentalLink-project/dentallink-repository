@@ -20,14 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 상담원 서비스 - 개선 버전
- *
- * 개선 사항:
- * 1. 대기열 정리 메서드 추가 (removeFromWaitingQueue)
- * 2. 세션 종료 시 Redis 동기화 강화
- * 3. 상담원 연결 해제 로직 개선
- */
 @Slf4j
 @Service
 @Transactional(readOnly = true)
@@ -57,7 +49,7 @@ public class ConsultantService {
             return new ConsultantMatchResult(true, consultantId, 0L);
         }
 
-        // ✅ 개선: 세션이 이미 CLOSED 상태면 새 세션 필요
+        //개선: 세션이 이미 CLOSED 상태면 새 세션 필요
         if (session.getStatus() == SessionStatus.CLOSED) {
             log.warn("종료된 세션에 상담원 연결 시도: sessionId={}", sessionId);
             throw new GlobalException(ChatbotErrorCode.SESSION_ALREADY_CLOSED);
@@ -88,7 +80,7 @@ public class ConsultantService {
         Long position = redisTemplate.opsForList().size(WAITING_QUEUE_KEY);
         redisTemplate.opsForValue().set(SESSION_POSITION_KEY + sessionId, position != null ? position.toString() : "1");
 
-        // ✅ DB의 세션 상태를 WAITING으로 업데이트
+        //DB의 세션 상태를 WAITING으로 업데이트
         session.moveToWaitingPosition(position);
 
         log.info("상담원 대기열 추가: sessionId={}, position={}", sessionId, position);
@@ -96,7 +88,7 @@ public class ConsultantService {
     }
 
     /**
-     * ✅ 신규: 대기열에서 세션 제거 (세션 종료 시 호출)
+     *신규: 대기열에서 세션 제거 (세션 종료 시 호출)
      */
     @Transactional
     public void removeFromWaitingQueue(Long sessionId) {
@@ -144,7 +136,7 @@ public class ConsultantService {
     }
 
     /**
-     * ✅ 개선: 상담원 세션 종료 (DB 상태 및 Redis 동기화)
+     *개선: 상담원 세션 종료 (DB 상태 및 Redis 동기화)
      */
     @Transactional
     public void closeConsultantSession(Long sessionId, Long consultantId) {
@@ -155,7 +147,7 @@ public class ConsultantService {
             throw new GlobalException(ChatbotErrorCode.UNAUTHORIZED_ACCESS);
         }
 
-        // ✅ 세션 종료 처리
+        //세션 종료 처리
         session.close();
 
         ChatMessage systemMessage = ChatMessage.createSystemMessage(
@@ -184,7 +176,7 @@ public class ConsultantService {
 
         ChatSession session = sessionOpt.get();
 
-        // ✅ 개선: 세션이 WAITING 상태인지 확인
+        //개선: 세션이 WAITING 상태인지 확인
         if (session.getStatus() != SessionStatus.WAITING) {
             log.warn("세션이 대기 상태가 아님: sessionId={}, status={}", sessionId, session.getStatus());
 
@@ -198,7 +190,7 @@ public class ConsultantService {
             User consultant = userRepository.findById(consultantId)
                     .orElseThrow(() -> new GlobalException(ChatbotErrorCode.CONSULTANT_NOT_FOUND));
 
-            // ✅ 상담원 연결
+            //상담원 연결
             session.transferToConsultant(consultant);
 
             // Lazy loading 방지
@@ -212,7 +204,7 @@ public class ConsultantService {
             );
             messageRepository.save(systemMessage);
 
-            // ✅ Redis 대기열에서 제거
+            //Redis 대기열에서 제거
             removeFromWaitingQueue(sessionId);
 
             log.info("상담원이 특정 세션을 수락: sessionId={}, consultantId={}, consultantName={}, userId={}",
@@ -242,7 +234,7 @@ public class ConsultantService {
             Long sessionId = Long.parseLong(sessionIdObj.toString());
             ChatSession session = sessionRepository.findById(sessionId).orElse(null);
 
-            // ✅ 유효한 세션 확인
+            //유효한 세션 확인
             if (session != null && session.getStatus() == SessionStatus.WAITING) {
                 // 상담원 조회
                 User consultant = userRepository.findById(consultantId)
@@ -287,7 +279,7 @@ public class ConsultantService {
     }
 
     /**
-     * ✅ 개선: 대기 중인 세션 목록 조회 (Redis-DB 동기화 강화)
+     *개선: 대기 중인 세션 목록 조회 (Redis-DB 동기화 강화)
      */
     public List<WaitingSessionInfo> getWaitingSessions() {
         List<Object> sessionIds = redisTemplate.opsForList().range(WAITING_QUEUE_KEY, 0, -1);
@@ -306,7 +298,7 @@ public class ConsultantService {
             if (session.isPresent()) {
                 ChatSession chatSession = session.get();
 
-                // ✅ WAITING 상태인 세션만 리스트에 추가
+                //WAITING 상태인 세션만 리스트에 추가
                 if (chatSession.getStatus() == SessionStatus.WAITING) {
                     waitingSessions.add(WaitingSessionInfo.from(chatSession, position));
                     position++;
@@ -323,7 +315,7 @@ public class ConsultantService {
             }
         }
 
-        // ✅ 일괄 정리 (Redis 명령 최소화)
+        //일괄 정리 (Redis 명령 최소화)
         if (!invalidSessionIds.isEmpty()) {
             for (Long sessionId : invalidSessionIds) {
                 removeFromWaitingQueue(sessionId);
@@ -416,7 +408,7 @@ public class ConsultantService {
     }
 
     /**
-     * ✅ 개선: 대기 순번 업데이트 (Redis 기반)
+     * 개선: 대기 순번 업데이트 (Redis 기반)
      */
     private void updateWaitingPositions() {
         Long size = redisTemplate.opsForList().size(WAITING_QUEUE_KEY);

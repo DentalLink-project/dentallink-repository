@@ -20,15 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Function Call 핸들러 - 개선 버전
- *
- * 개선 사항:
- * 1. DB 검색 시 5개 제한 제거 → DB의 모든 검색 결과 반환
- * 2. 병원명, 지역, 의사명 검색 모두 지원
- * 3. 예약 가능 시간대 검색 개선
- * 4. 검색 결과에 더 많은 정보 포함 (주소, 의사명, 전화번호 등)
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -38,7 +29,7 @@ public class FunctionCallHandler {
     private final HospitalRepository hospitalRepository;
     private final Gson gson = new Gson();
 
-    // ✅ 개선: 검색 결과 개수 제한 제거 (또는 대폭 증가)
+    //개선: 검색 결과 개수 제한 제거 (또는 대폭 증가)
     private static final int MAX_SEARCH_RESULTS = 100;  // 5개 → 100개
 
     /**
@@ -157,14 +148,14 @@ public class FunctionCallHandler {
     }
 
     /**
-     * ✅ 개선: 병원 검색 (이름으로 검색) - 모든 결과 반환
+     *개선: 병원 검색 (이름으로 검색) - 모든 결과 반환
      */
     private Object handleSearchHospitals(Map<String, Object> arguments) {
         String keyword = getStringValue(arguments, "keyword");
 
         log.info("병원 검색 (이름): keyword={}", keyword);
 
-        // ✅ 개선: 최대 결과 개수 대폭 증가 (5개 → 100개)
+        //개선: 최대 결과 개수 대폭 증가 (5개 → 100개)
         var hospitals = hospitalRepository.searchHospitalsByName(keyword, PageRequest.of(0, MAX_SEARCH_RESULTS))
                 .stream()
                 .map(h -> Map.of(
@@ -201,7 +192,7 @@ public class FunctionCallHandler {
         if (hospitals.isEmpty()) {
             result.put("message", String.format("'%s' 병원을 찾을 수 없습니다. 다른 키워드로 검색해주세요.", keyword));
         } else {
-            // ✅ 개선: "5개" → "실제 검색된 개수" 표시
+            //개선: "5개" → "실제 검색된 개수" 표시
             result.put("message", String.format("'%s' 검색 결과: 총 %d개의 병원을 찾았습니다.", keyword, hospitals.size()));
             result.put("total_count", hospitals.size());
         }
@@ -210,14 +201,14 @@ public class FunctionCallHandler {
     }
 
     /**
-     * ✅ 개선: 병원 검색 (위치/주소로 검색) - 모든 결과 반환
+     *개선: 병원 검색 (위치/주소로 검색) - 모든 결과 반환
      */
     private Object handleSearchHospitalsByLocation(Map<String, Object> arguments) {
         String location = getStringValue(arguments, "location");
 
         log.info("병원 검색 (위치): location={}", location);
 
-        // ✅ 개선: 최대 결과 개수 대폭 증가
+        //개선: 최대 결과 개수 대폭 증가
         var hospitals = hospitalRepository.searchHospitalsByLocation(location, PageRequest.of(0, MAX_SEARCH_RESULTS))
                 .stream()
                 .map(h -> Map.of(
@@ -255,7 +246,7 @@ public class FunctionCallHandler {
         if (hospitals.isEmpty()) {
             result.put("message", String.format("'%s' 지역에서 병원을 찾을 수 없습니다. 다른 지역명으로 검색해주세요.", location));
         } else {
-            // ✅ 개선: 실제 검색된 개수 표시
+            //개선: 실제 검색된 개수 표시
             result.put("message", String.format("'%s' 지역 검색 결과: 총 %d개의 병원을 찾았습니다.", location, hospitals.size()));
             result.put("total_count", hospitals.size());
         }
@@ -264,14 +255,14 @@ public class FunctionCallHandler {
     }
 
     /**
-     * ✅ 개선: 병원 검색 (의사명으로 검색) - 모든 결과 반환
+     *개선: 병원 검색 (의사명으로 검색) - 모든 결과 반환
      */
     private Object handleSearchHospitalsByDoctor(Map<String, Object> arguments) {
         String doctorName = getStringValue(arguments, "doctor_name");
 
         log.info("병원 검색 (의사명): doctorName={}", doctorName);
 
-        // ✅ 개선: 최대 결과 개수 대폭 증가
+        //개선: 최대 결과 개수 대폭 증가
         var hospitals = hospitalRepository.searchHospitalsByDoctor(doctorName, PageRequest.of(0, MAX_SEARCH_RESULTS))
                 .stream()
                 .map(h -> Map.of(
@@ -308,7 +299,7 @@ public class FunctionCallHandler {
         if (hospitals.isEmpty()) {
             result.put("message", String.format("'%s' 의사를 찾을 수 없습니다. 정확한 의사명으로 다시 검색해주세요.", doctorName));
         } else {
-            // ✅ 개선: 실제 검색된 개수 표시
+            // 개선: 실제 검색된 개수 표시
             result.put("message", String.format("'%s' 의사 검색 결과: 총 %d개의 병원을 찾았습니다.", doctorName, hospitals.size()));
             result.put("total_count", hospitals.size());
         }
@@ -317,7 +308,7 @@ public class FunctionCallHandler {
     }
 
     /**
-     * ✅ 개선: Function 선언 목록 - 설명 강화
+     * 개선: Function 선언 목록 - 설명 강화
      */
     public List<GeminiFunction.FunctionDeclaration> getFunctionDeclarations() {
         return List.of(

@@ -33,14 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * 챗봇 메인 서비스 - 개선 버전
- *
- * 개선 사항:
- * 1. 세션 상태 관리 강화 (상담원 연결 → WAITING/ACTIVE 상태 명확화)
- * 2. 세션 종료 시 상태 변경 및 상담원 연결 해제
- * 3. DB 검색 기능 개선 (지역, 병원명, 의사명 모두 지원)
- */
 @Slf4j
 @Service
 @Transactional(readOnly = true)
@@ -72,16 +64,12 @@ public class ChatbotService {
     private final RateLimiter globalRateLimiter = RateLimiter.create(15.0 / 60.0);
     private final ConcurrentHashMap<Long, RateLimiter> userRateLimiters = new ConcurrentHashMap<>();
 
-    /**
-     * ✅ 개선: 메시지 처리 - 세션 상태 확인 강화
-     */
     @Transactional
     public ChatResponse processMessage(ChatRequest request, Long userId) {
 
         validateMessage(request.content());
         ChatSession session = getOrCreateSession(request.sessionId(), userId);
 
-        // ✅ 개선: 세션 상태 확인 (CLOSED 세션은 새로 생성)
         if (session.getStatus() == SessionStatus.CLOSED) {
             log.info("종료된 세션 감지, 새 세션 생성: oldSessionId={}, userId={}", session.getId(), userId);
             session = createNewSession(userId);
@@ -118,7 +106,7 @@ public class ChatbotService {
     }
 
     /**
-     * ✅ 신규: 상담원 연결 요청 처리 로직 분리
+     * 상담원 연결 요청 처리 로직 분리
      */
     private ChatResponse handleConsultantRequest(ChatSession session, Long userId) {
         log.info("상담원 연결 요청 감지: userId={}, sessionId={}", userId, session.getId());
@@ -200,18 +188,18 @@ public class ChatbotService {
     }
 
     /**
-     * ✅ 개선: DB 중심 시스템 프롬프트 (검색 기능 강화)
+     * DB 중심 시스템 프롬프트 (검색 기능 강화)
      */
     private GeminiFunction.GeminiMessage createDBFocusedSystemPrompt() {
         String systemPrompt = """
                 당신은 DentalLink 치과 예약 시스템의 AI 상담사입니다.
                 
-                🎯 핵심 원칙: 데이터베이스 우선 답변
+                핵심 원칙: 데이터베이스 우선 답변
                 - 사용자 질문에 대해 항상 Function Call을 먼저 고려하세요
                 - 추측하지 말고, DB에서 정확한 정보를 조회하세요
                 - 대화 맥락보다 현재 질문에 집중하세요
                 
-                📌 필수 행동 규칙:
+                필수 행동 규칙:
                 1. 병원 관련 질문 → 즉시 적절한 search_hospitals* 함수 호출
                    - 병원 이름이 주어진 경우: search_hospitals
                    - 지역/위치가 주어진 경우: search_hospitals_by_location
@@ -227,13 +215,13 @@ public class ChatbotService {
                 
                 4. 불확실한 정보는 Function Call로 확인 후 답변
                 
-                ❌ 하지 말아야 할 것:
+                하지 말아야 할 것:
                 - "이전에 말씀하신 것처럼..." 같은 대화 맥락 언급
                 - 추측성 답변 ("아마도...", "~일 것 같습니다")
                 - Function Call 없이 병원명이나 예약 정보 언급
                 - 검색 결과를 5개로 제한하는 언급
                 
-                ✅ 올바른 응답 예시:
+                 올바른 응답 예시:
                 Q: "강남에 있는 치과 알려줘"
                 A: [search_hospitals_by_location("강남") 호출] → DB의 모든 강남 치과 결과 제공
                 
@@ -246,7 +234,7 @@ public class ChatbotService {
                 Q: "그 병원 예약 가능한 시간은?"
                 A: [병원 ID 확인 → get_available_times 호출] → 정확한 시간대 제공
                 
-                🔧 제공 가능한 기능:
+                 제공 가능한 기능:
                 - search_hospitals: 병원 이름으로 검색
                 - search_hospitals_by_location: 지역/주소로 병원 검색
                 - search_hospitals_by_doctor: 의사 이름으로 병원 검색
@@ -255,7 +243,7 @@ public class ChatbotService {
                 - get_my_reservations: 내 예약 목록 조회
                 - cancel_reservation: 예약 취소
                 
-                💬 응답 스타일:
+                 응답 스타일:
                 - 간결하고 정확하게 (DB 결과 기반)
                 - 모든 검색 결과를 빠짐없이 제공
                 - 불필요한 대화 맥락 언급 최소화
@@ -365,7 +353,7 @@ public class ChatbotService {
     }
 
     /**
-     * ✅ 개선: 세션 가져오기 또는 생성 (상태 확인 강화)
+     * 개선: 세션 가져오기 또는 생성 (상태 확인 강화)
      */
     private ChatSession getOrCreateSession(Long sessionId, Long userId) {
         if (sessionId != null) {
@@ -374,7 +362,7 @@ public class ChatbotService {
 
             validateSessionAccess(session, userId);
 
-            // ✅ CLOSED 세션은 사용 불가
+            //CLOSED 세션은 사용 불가
             if (session.getStatus() == SessionStatus.CLOSED) {
                 log.info("종료된 세션 접근 시도: sessionId={}", sessionId);
                 return createNewSession(userId);
@@ -387,7 +375,7 @@ public class ChatbotService {
     }
 
     /**
-     * ✅ 신규: 새 세션 생성 헬퍼 메서드
+     * 신규: 새 세션 생성 헬퍼 메서드
      */
     private ChatSession createNewSession(Long userId) {
         User user = userRepository.findById(userId)
@@ -398,7 +386,7 @@ public class ChatbotService {
     }
 
     /**
-     * ✅ 개선: 세션 종료 - 상담원 연결 해제 및 상태 변경
+     * 개선: 세션 종료 - 상담원 연결 해제 및 상태 변경
      */
     @Transactional
     public void closeSession(Long sessionId, Long userId) {
@@ -407,15 +395,15 @@ public class ChatbotService {
 
         validateSessionAccess(session, userId);
 
-        // ✅ 종료 전 상태 저장 (session.close() 호출 전에!)
+        // 종료 전 상태 저장 (session.close() 호출 전에!)
         SessionStatus statusBeforeClose = session.getStatus();
         boolean isConsultantMode = session.isConsultantMode();
         User consultant = session.getConsultant();
 
-        // ✅ 세션 종료 처리
+        // 세션 종료 처리
         session.close();
 
-        // ✅ 상담원 모드였다면 상담원에게 알림
+        // 상담원 모드였다면 상담원에게 알림
         if (isConsultantMode && consultant != null) {
             log.info("상담원 세션 종료 알림: sessionId={}, consultantId={}",
                     sessionId, consultant.getId());
@@ -431,7 +419,7 @@ public class ChatbotService {
             }
         }
 
-        // ✅ WAITING 상태였다면 대기열에서 제거 (종료 전 상태 확인!)
+        // WAITING 상태였다면 대기열에서 제거 (종료 전 상태 확인!)
         if (statusBeforeClose == SessionStatus.WAITING) {
             log.info("대기 중인 세션 종료 - 대기열에서 제거: sessionId={}", sessionId);
             consultantService.removeFromWaitingQueue(sessionId);
@@ -462,7 +450,7 @@ public class ChatbotService {
     }
 
     /**
-     * ✅ 개선: 사용자 로그아웃 시 모든 세션 정리 (상담원 알림 포함)
+     * 개선: 사용자 로그아웃 시 모든 세션 정리 (상담원 알림 포함)
      */
     @Transactional
     public void closeAllSessionsForUser(Long userId) {
@@ -476,7 +464,7 @@ public class ChatbotService {
         );
 
         for (ChatSession session : activeSessions.getContent()) {
-            // ✅ 종료 전 상담원 정보 저장
+            // 종료 전 상담원 정보 저장
             boolean isConsultantMode = session.isConsultantMode();
             User consultant = session.getConsultant();
 
@@ -501,7 +489,7 @@ public class ChatbotService {
 
         sessionRepository.saveAll(activeSessions.getContent());
 
-        // ✅ 대기 중인 세션도 정리
+        // 대기 중인 세션도 정리
         Page<ChatSession> waitingSessions = sessionRepository.findByUserIdAndStatus(
                 userId,
                 SessionStatus.WAITING,
@@ -509,7 +497,7 @@ public class ChatbotService {
         );
 
         for (ChatSession session : waitingSessions.getContent()) {
-            // ✅ 대기열에서 먼저 제거 (종료 전!)
+            // 대기열에서 먼저 제거 (종료 전!)
             consultantService.removeFromWaitingQueue(session.getId());
 
             // 세션 종료
