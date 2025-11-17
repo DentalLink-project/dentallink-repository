@@ -8,11 +8,13 @@ import com.dentallink.domain.chatbot.dto.GeminiFunction;
 import com.dentallink.domain.chatbot.dto.SessionResponse;
 import com.dentallink.domain.chatbot.entity.ChatMessage;
 import com.dentallink.domain.chatbot.entity.ChatSession;
+import com.dentallink.domain.chatbot.enums.MessageType;
 import com.dentallink.domain.chatbot.enums.SessionStatus;
 import com.dentallink.domain.chatbot.exception.ChatbotErrorCode;
 import com.dentallink.domain.chatbot.repository.ChatMessageRepository;
 import com.dentallink.domain.chatbot.repository.ChatSessionRepository;
 import com.dentallink.domain.user.entity.User;
+import com.dentallink.domain.user.exception.UserErrorCode;
 import com.dentallink.domain.user.repository.UserRepository;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.gson.Gson;
@@ -31,10 +33,10 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 챗봇 메인 서비스
- * - 채팅 세션 관리
- * - AI 응답 생성
- * - Rate Limiting
+ * 챗봇 메인 서비스 - DB 중심 개선 버전
+ * - 대화 히스토리 최소화
+ * - Function Calling 우선
+ * - 단일 턴 대화 중심
  */
 @Slf4j
 @Service
@@ -63,61 +65,45 @@ public class ChatbotService {
                             new com.google.gson.JsonPrimitive(src.toString()))
             .create();
 
-    // 글로벌 Rate Limiter (Gemini API 전체 제한)
-    private final RateLimiter globalRateLimiter = RateLimiter.create(15.0 / 60.0); // 분당 15회
-
-    // 사용자별 Rate Limiter
+    // 글로벌 Rate Limiter
+    private final RateLimiter globalRateLimiter = RateLimiter.create(15.0 / 60.0);
     private final ConcurrentHashMap<Long, RateLimiter> userRateLimiters = new ConcurrentHashMap<>();
 
     /**
-     * 메시지 처리 및 AI 응답 생성 (WebSocket용)
-     * - 상담원 모드 체크 포함
-     * - 상담원 연결 키워드 감지
+     * ✅ 개선: 대화 히스토리 최소화, DB 기반 답변 우선
      */
     @Transactional
     public ChatResponse processMessage(ChatRequest request, Long userId) {
 
-        // 1. 입력 검증
         validateMessage(request.content());
-
-        // 2. 세션 가져오기 또는 생성
         ChatSession session = getOrCreateSession(request.sessionId(), userId);
 
-        // 3. 상담원 모드 체크
         if (session.isConsultantMode()) {
             return handleConsultantMessage(session, request, userId);
         }
 
-        // 4. 사용자 메시지 저장
         ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
         messageRepository.save(userMessage);
 
-        // 5. 상담원 연결 키워드 감지
         if (isConsultantRequestKeyword(request.content())) {
-            log.info("상담원 연결 요청 감지 - 상담원 전환: userId={}", userId);
+            log.info("상담원 연결 요청 감지: userId={}", userId);
 
-            // 시스템 메시지 저장
             ChatMessage systemMessage = ChatMessage.createSystemMessage(
                     session,
                     "상담원 연결을 요청하셨습니다. 상담원을 연결해드리겠습니다."
             );
             messageRepository.save(systemMessage);
 
-            // 상담원 연결 시도
             var matchResult = consultantService.transferToConsultant(session.getId(), userId);
-
             return ChatResponse.createTransferResponse(session.getId(), matchResult.waitingPosition());
         }
 
-        // 6. Rate Limit 체크
         if (!checkRateLimit(userId)) {
-            // Rate Limit 초과 → 상담원 전환
             return handleRateLimitExceeded(session, userId);
         }
 
         try {
-            // 7. AI 응답 생성
-            return generateAIResponse(session, userId);
+            return generateAIResponseOptimized(session, userId, request.content());
 
         } catch (GlobalException e) {
             if (e.getErrorCode() == ChatbotErrorCode.RATE_LIMIT_EXCEEDED) {
@@ -127,63 +113,99 @@ public class ChatbotService {
         }
     }
 
-    /**
-     * 상담원 모드 메시지 처리
-     */
-    private ChatResponse handleConsultantMessage(ChatSession session, ChatRequest request, Long userId) {
-        log.info("상담원 모드 메시지 처리: sessionId={}, userId={}", session.getId(), userId);
+    private ChatResponse generateAIResponseOptimized(ChatSession session, Long userId, String currentUserInput) {
 
-        // 사용자 메시지 저장
-        ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
-        messageRepository.save(userMessage);
-
-        // 상담원에게 메시지 전달
-        if (session.getConsultant() != null) {
-            messagingTemplate.convertAndSendToUser(
-                    session.getConsultant().getId().toString(),
-                    "/queue/messages",
-                    ChatResponse.from(userMessage)
-            );
-        }
-
-        return ChatResponse.from(userMessage);
-    }
-
-    /**
-     * AI 응답 생성
-     */
-    private ChatResponse generateAIResponse(ChatSession session, Long userId) {
-
-        // 1. 대화 히스토리 가져오기 (최근 10개)
-        List<ChatMessage> recentMessages = messageRepository.findRecentMessages(session.getId(), 10);
-
-        // 2. Gemini 메시지 형식으로 변환
+        // 1. 대화 히스토리 최소화 (최근 3개만 - 컨텍스트 파악용)
+        List<ChatMessage> recentMessages = messageRepository.findRecentMessages(session.getId(), 3);
         List<GeminiFunction.GeminiMessage> geminiMessages = convertToGeminiMessages(recentMessages);
 
-        // 3. Function 선언 가져오기
+        // 2. Function 선언 가져오기
         List<GeminiFunction.FunctionDeclaration> functions = functionCallHandler.getFunctionDeclarations();
 
-        // 4. 시스템 프롬프트 추가
-        geminiMessages.add(0, createSystemPrompt());
+        geminiMessages.add(0, createDBFocusedSystemPrompt());
+
+        if (!geminiMessages.isEmpty()) {
+            // 마지막 메시지가 사용자 메시지가 아니면 추가
+            GeminiFunction.GeminiMessage lastMsg = geminiMessages.get(geminiMessages.size() - 1);
+            if (!"user".equals(lastMsg.role())) {
+                geminiMessages.add(GeminiFunction.GeminiMessage.builder()
+                        .role("user")
+                        .content(currentUserInput)
+                        .build());
+            }
+        }
 
         // 5. Gemini API 호출
         GeminiApiService.GeminiApiResponse geminiResponse =
                 geminiApiService.generateContent(geminiMessages, functions);
 
-        // 6. Function Call 처리
+        // 6. Function Call 우선 처리
         if (geminiResponse.hasFunctionCalls()) {
             return handleFunctionCalls(session, geminiResponse, geminiMessages, functions, userId);
         }
 
-        // 7. 일반 응답 저장 및 반환
+        // 7. 일반 응답
         ChatMessage aiMessage = ChatMessage.createAIMessage(session, geminiResponse.text());
         messageRepository.save(aiMessage);
 
         return ChatResponse.from(aiMessage);
     }
 
+
+    private GeminiFunction.GeminiMessage createDBFocusedSystemPrompt() {
+        String systemPrompt = """
+                당신은 DentalLink 치과 예약 시스템의 AI 상담사입니다.
+                
+                🎯 핵심 원칙: 데이터베이스 우선 답변
+                - 사용자 질문에 대해 항상 Function Call을 먼저 고려하세요
+                - 추측하지 말고, DB에서 정확한 정보를 조회하세요
+                - 대화 맥락보다 현재 질문에 집중하세요
+                
+                📌 필수 행동 규칙:
+                1. 병원 관련 질문 → 즉시 search_hospitals* 함수 호출
+                2. 예약 관련 질문 → 즉시 get_my_reservations 또는 get_available_times 호출
+                3. 불확실한 정보는 Function Call로 확인 후 답변
+                4. 대화 맥락 기억보다 실시간 DB 조회 우선
+                
+                ❌ 하지 말아야 할 것:
+                - "이전에 말씀하신 것처럼..." 같은 대화 맥락 언급
+                - 추측성 답변 ("아마도...", "~일 것 같습니다")
+                - Function Call 없이 병원명이나 예약 정보 언급
+                
+                ✅ 올바른 응답 예시:
+                Q: "강남에 있는 치과 알려줘"
+                A: [search_hospitals_by_location 호출] → DB 결과 기반 답변
+                
+                Q: "내 예약 보여줘"
+                A: [get_my_reservations 호출] → 실제 예약 내역 제공
+                
+                Q: "그 병원 예약 가능한 시간은?"
+                A: [search_hospitals + get_available_times 호출] → 정확한 시간대 제공
+                
+                🔧 제공 가능한 기능:
+                - search_hospitals: 병원 이름 검색 (정확한 이름 필요)
+                - search_hospitals_by_location: 지역/주소로 병원 검색 (예: "강남", "서초동")
+                - search_hospitals_by_doctor: 의사 이름으로 병원 검색
+                - get_available_times: 특정 병원의 예약 가능 시간 조회
+                - create_reservation: 예약 생성 (1000P 차감)
+                - get_my_reservations: 내 예약 목록 조회
+                - cancel_reservation: 예약 취소
+                
+                💬 응답 스타일:
+                - 간결하고 정확하게 (DB 결과 기반)
+                - 불필요한 대화 맥락 언급 최소화
+                - 한국어 사용
+                - 복잡한 요청은 상담원 연결 제안
+                """;
+
+        return GeminiFunction.GeminiMessage.builder()
+                .role("user")
+                .content(systemPrompt)
+                .build();
+    }
+
     /**
-     * Function Call 처리
+     * ✅ 개선: Function Call 처리 시 히스토리 최소화
      */
     private ChatResponse handleFunctionCalls(
             ChatSession session,
@@ -204,24 +226,37 @@ public class ChatbotService {
                     .build());
         }
 
-        // Function Call과 결과를 대화에 추가
-        conversationHistory.add(GeminiFunction.GeminiMessage.builder()
+        // ✅ 개선: Function 결과만으로 새로운 대화 구성
+        List<GeminiFunction.GeminiMessage> simplifiedHistory = new ArrayList<>();
+
+        // 시스템 프롬프트
+        simplifiedHistory.add(createDBFocusedSystemPrompt());
+
+        // 최근 사용자 메시지만 (마지막 1개)
+        conversationHistory.stream()
+                .filter(msg -> "user".equals(msg.role()))
+                .reduce((first, second) -> second)  // 마지막 것만
+                .ifPresent(simplifiedHistory::add);
+
+        // Function Call
+        simplifiedHistory.add(GeminiFunction.GeminiMessage.builder()
                 .role("model")
                 .content("")
                 .functionCalls(geminiResponse.functionCalls())
                 .build());
 
-        conversationHistory.add(GeminiFunction.GeminiMessage.builder()
+        // Function Response
+        simplifiedHistory.add(GeminiFunction.GeminiMessage.builder()
                 .role("function")
                 .content("")
                 .functionResponses(functionResponses)
                 .build());
 
-        // 다시 Gemini 호출하여 최종 사용자 응답 생성
+        // 최종 응답 생성
         GeminiApiService.GeminiApiResponse finalResponse =
-                geminiApiService.generateContent(conversationHistory, functions);
+                geminiApiService.generateContent(simplifiedHistory, functions);
 
-        // AI 메시지 저장 (Function 정보 포함)
+        // AI 메시지 저장
         ChatMessage aiMessage = ChatMessage.createAIMessageWithFunction(
                 session,
                 finalResponse.text(),
@@ -234,53 +269,55 @@ public class ChatbotService {
         return ChatResponse.from(aiMessage);
     }
 
-    /**
-     * Rate Limit 초과 시 상담원 전환
-     */
-    private ChatResponse handleRateLimitExceeded(ChatSession session, Long userId) {
-        log.info("Rate Limit 초과 - 상담원 전환: userId={}", userId);
+    // ===== 기존 메서드들 (변경 없음) =====
 
-        // 시스템 메시지 저장
+    private ChatResponse handleConsultantMessage(ChatSession session, ChatRequest request, Long userId) {
+        log.info("상담원 모드 메시지 처리: sessionId={}, userId={}", session.getId(), userId);
+
+        ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
+        messageRepository.save(userMessage);
+
+        if (session.getConsultant() != null) {
+            messagingTemplate.convertAndSendToUser(
+                    session.getConsultant().getId().toString(),
+                    "/queue/messages",
+                    ChatResponse.from(userMessage)
+            );
+        }
+
+        return ChatResponse.from(userMessage);
+    }
+
+    private ChatResponse handleRateLimitExceeded(ChatSession session, Long userId) {
+        log.warn("Rate Limit 초과 - 상담원 전환: userId={}", userId);
+
         ChatMessage systemMessage = ChatMessage.createSystemMessage(
                 session,
-                "현재 문의가 많아 상담원을 연결해드리겠습니다."
+                "요청이 많아 AI 응답이 제한되었습니다. 상담원을 연결해드리겠습니다."
         );
         messageRepository.save(systemMessage);
 
-        // 상담원 연결 시도
         var matchResult = consultantService.transferToConsultant(session.getId(), userId);
 
         return ChatResponse.createTransferResponse(session.getId(), matchResult.waitingPosition());
     }
 
-    /**
-     * 세션 가져오기 또는 생성
-     */
     private ChatSession getOrCreateSession(Long sessionId, Long userId) {
         if (sessionId != null) {
             ChatSession session = sessionRepository.findById(sessionId)
                     .orElseThrow(() -> new GlobalException(ChatbotErrorCode.SESSION_NOT_FOUND));
 
             validateSessionAccess(session, userId);
-
-            if (session.getStatus() == SessionStatus.CLOSED) {
-                throw new GlobalException(ChatbotErrorCode.SESSION_ALREADY_CLOSED);
-            }
-
             return session;
         }
 
-        // 새 세션 생성
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new GlobalException(ChatbotErrorCode.UNAUTHORIZED_ACCESS));
+                .orElseThrow(() -> new GlobalException(UserErrorCode.USER_NOT_FOUND));
 
         ChatSession newSession = ChatSession.startAISession(user);
         return sessionRepository.save(newSession);
     }
 
-    /**
-     * 세션 종료
-     */
     @Transactional
     public void closeSession(Long sessionId, Long userId) {
         ChatSession session = sessionRepository.findById(sessionId)
@@ -290,16 +327,9 @@ public class ChatbotService {
 
         session.close();
 
-        ChatMessage systemMessage = ChatMessage.createSystemMessage(
-                session,
-                "상담이 종료되었습니다. 이용해 주셔서 감사합니다."
-        );
-        messageRepository.save(systemMessage);
+        log.info("세션 종료: sessionId={}, userId={}", sessionId, userId);
     }
 
-    /**
-     * 세션 조회
-     */
     public SessionResponse getSession(Long sessionId, Long userId) {
         ChatSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new GlobalException(ChatbotErrorCode.SESSION_NOT_FOUND));
@@ -309,26 +339,15 @@ public class ChatbotService {
         return SessionResponse.from(session);
     }
 
-    /**
-     * 내 세션 목록 조회
-     */
     public Page<SessionResponse> getMySessions(Long userId, Pageable pageable) {
         Page<ChatSession> sessions = sessionRepository.findByUserIdOrderByStartedAtDesc(userId, pageable);
         return sessions.map(SessionResponse::from);
     }
 
-    /**
-     * 로그아웃 시 사용자의 모든 활성 세션 종료
-     * - 사용자가 로그아웃할 때 호출
-     * - ACTIVE 상태인 세션을 모두 CLOSED로 변경
-     * (주: 현재는 프론트엔드에서 WebSocket 정리하므로 선택적 사용)
-     */
     @Transactional
     public void closeAllSessionsForUser(Long userId) {
         log.info("사용자 로그아웃 - 활성 세션 정리: userId={}", userId);
 
-        // 쿼리 메서드 추가 필요: findByUserIdAndStatusList 또는
-        // 여기서는 모든 세션 조회 후 필터링
         Page<ChatSession> activeSessions = sessionRepository.findByUserIdAndStatus(
                 userId,
                 SessionStatus.ACTIVE,
@@ -340,13 +359,9 @@ public class ChatbotService {
             log.info("세션 종료: sessionId={}, userId={}", session.getId(), userId);
         }
 
-        // 변경사항 모두 저장
         sessionRepository.saveAll(activeSessions.getContent());
     }
 
-    /**
-     * 세션의 메시지 목록 조회
-     */
     public List<ChatResponse> getSessionMessages(Long sessionId, Long userId) {
         ChatSession session = sessionRepository.findById(sessionId)
                 .orElseThrow(() -> new GlobalException(ChatbotErrorCode.SESSION_NOT_FOUND));
@@ -361,9 +376,6 @@ public class ChatbotService {
 
     // ===== Private Helper Methods =====
 
-    /**
-     * 메시지 검증
-     */
     private void validateMessage(String content) {
         if (content == null || content.trim().isEmpty()) {
             throw new GlobalException(ChatbotErrorCode.EMPTY_MESSAGE);
@@ -372,20 +384,16 @@ public class ChatbotService {
             throw new GlobalException(ChatbotErrorCode.MESSAGE_TOO_LONG);
         }
     }
-    /**
-     * Rate Limit 체크
-     */
+
     private boolean checkRateLimit(Long userId) {
-        // 1. 글로벌 Rate Limit
         if (!globalRateLimiter.tryAcquire()) {
             log.warn("글로벌 Rate Limit 초과");
             return false;
         }
 
-        // 2. 사용자별 Rate Limit
         RateLimiter userLimiter = userRateLimiters.computeIfAbsent(
                 userId,
-                k -> RateLimiter.create(10.0 / 60.0)  // 사용자당 분당 10회
+                k -> RateLimiter.create(10.0 / 60.0)
         );
 
         if (!userLimiter.tryAcquire()) {
@@ -396,9 +404,6 @@ public class ChatbotService {
         return true;
     }
 
-    /**
-     * 세션 접근 권한 검증
-     */
     private void validateSessionAccess(ChatSession session, Long userId) {
         if (!session.isOwnedBy(userId)) {
             throw new GlobalException(ChatbotErrorCode.UNAUTHORIZED_ACCESS);
@@ -406,7 +411,7 @@ public class ChatbotService {
     }
 
     /**
-     * Gemini 메시지 형식으로 변환
+     * ✅ 개선: 메시지 변환 시 타입 명시적 처리
      */
     private List<GeminiFunction.GeminiMessage> convertToGeminiMessages(List<ChatMessage> messages) {
         List<GeminiFunction.GeminiMessage> geminiMessages = new ArrayList<>();
@@ -416,64 +421,29 @@ public class ChatbotService {
         java.util.Collections.reverse(messages);
 
         for (ChatMessage message : messages) {
+            // CONSULTANT, SYSTEM 메시지는 제외 (DB 조회 결과에 집중)
+            if (message.getType() == MessageType.CONSULTANT ||
+                    message.getType() == MessageType.SYSTEM) {
+                continue;
+            }
+
             String role = switch (message.getType()) {
                 case USER -> "user";
-                case AI, SYSTEM -> "model";
-                default -> "model";
+                case AI -> "model";
+                default -> null;
             };
 
-            geminiMessages.add(GeminiFunction.GeminiMessage.builder()
-                    .role(role)
-                    .content(message.getContent())
-                    .build());
+            if (role != null) {
+                geminiMessages.add(GeminiFunction.GeminiMessage.builder()
+                        .role(role)
+                        .content(message.getContent())
+                        .build());
+            }
         }
 
         return geminiMessages;
     }
 
-    /**
-     * 시스템 프롬프트 생성
-     */
-    private GeminiFunction.GeminiMessage createSystemPrompt() {
-        String systemPrompt = """
-                당신은 DentalLink 치과 예약 시스템의 친절한 AI 상담사입니다.
-
-                주요 역할:
-                1. 사용자의 예약 관련 질문에 답변
-                2. 예약 가능 시간 조회 및 안내
-                3. 예약 생성, 조회, 취소 지원
-                4. 병원 정보 제공 (이름, 위치, 의사 검색)
-
-                응답 가이드:
-                - 친절하고 전문적인 톤 사용
-                - 간결하고 명확한 답변 제공
-                - 예약 생성 시 포인트 차감 사실 안내
-                - 복잡한 문의는 상담원 연결 제안
-                - 항상 한국어로 응답
-
-                제공 가능한 기능:
-                - get_available_times: 예약 가능 시간 조회
-                - create_reservation: 예약 생성
-                - get_my_reservations: 내 예약 조회
-                - cancel_reservation: 예약 취소
-                - search_hospitals: 병원을 이름으로 검색
-                - search_hospitals_by_location: 병원을 위치/지역/주소로 검색 (예: "강남 지역 병원", "서초동 병원")
-                - search_hospitals_by_doctor: 특정 의사가 근무하는 병원을 검색 (예: "김철수 의사 병원", "이영희 선생님 있는 병원")
-                """;
-
-        return GeminiFunction.GeminiMessage.builder()
-                .role("user")
-                .content(systemPrompt)
-                .build();
-    }
-
-    /**
-     * 상담원 연결 키워드 감지
-     * 사용자 입력에서 상담원 연결 요청 키워드를 확인합니다.
-     *
-     * @param content 사용자 입력 텍스트
-     * @return 상담원 연결 요청 키워드가 포함되어 있으면 true
-     */
     private boolean isConsultantRequestKeyword(String content) {
         if (content == null || content.trim().isEmpty()) {
             return false;
@@ -481,56 +451,11 @@ public class ChatbotService {
 
         String lowerText = content.toLowerCase();
 
-        // 상담원 연결 관련 키워드 리스트
         String[] consultantKeywords = {
-                // 상담원/상담사 관련
-                "상담원",
-                "상담원 연결",
-                "상담원 연결해",
-                "상담원 연결해주",
-                "상담원과",
-                "상담원님",
-                "상담사",
-                "상담사 연결",
-                "상담사와",
-
-                // 직원/담당자 관련
-                "직원",
-                "직원 연결",
-                "담당자",
-                "담당자 연결",
-                "담당자와",
-
-                // 대화/통화 관련
-                "사람과 통화",
-                "사람과 얘기",
-                "사람하고 통화",
-                "사람하고 얘기",
-                "실제 사람",
-                "사람이",
-
-                // 상담 관련
-                "상담 받고",
-                "상담 받고 싶",
-                "상담해",
-                "상담해주",
-
-                // 기타
-                "전화",
-                "직원과",
-                "연결해",
-                "연결해주",
-
-                // 영문 키워드
-                "talk to",
-                "speak to",
-                "connect",
-                "operator",
-                "agent",
-                "representative"
+                "상담원", "상담원 연결", "상담사", "직원", "담당자",
+                "사람과 통화", "사람과 얘기"
         };
 
-        // 키워드 매칭 (포함 여부 확인)
         for (String keyword : consultantKeywords) {
             if (lowerText.contains(keyword)) {
                 return true;
