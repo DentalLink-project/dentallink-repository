@@ -1,4 +1,4 @@
-package com.dentallink.domain.reservation.execption;
+package com.dentallink.domain.reservation.exception;
 
 import com.dentallink.common.exception.ErrorCode;
 import lombok.Getter;

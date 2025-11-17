@@ -6,7 +6,7 @@ import com.dentallink.domain.hospital.entity.HospitalSchedule;
 import com.dentallink.domain.hospital.repository.HospitalRepository;
 import com.dentallink.domain.hospital.repository.HospitalScheduleRepository;
 import com.dentallink.domain.reservation.dto.AvailableTimeSlotResponse;
-import com.dentallink.domain.reservation.execption.ReservationErrorCode;
+import com.dentallink.domain.reservation.exception.ReservationErrorCode;
 import com.dentallink.domain.reservation.repository.ReservationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

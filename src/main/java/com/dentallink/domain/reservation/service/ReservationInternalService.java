@@ -10,7 +10,7 @@ import com.dentallink.domain.reservation.dto.ReservationCreateRequest;
 import com.dentallink.domain.reservation.dto.ReservationResponse;
 import com.dentallink.domain.reservation.dto.ReservationUpdateStatusRequest;
 import com.dentallink.domain.reservation.entity.Reservation;
-import com.dentallink.domain.reservation.execption.ReservationErrorCode;
+import com.dentallink.domain.reservation.exception.ReservationErrorCode;
 import com.dentallink.domain.reservation.repository.ReservationRepository;
 import com.dentallink.domain.hospital.entity.Hospital;
 import com.dentallink.domain.hospital.entity.HospitalSchedule;
