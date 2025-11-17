@@ -40,8 +40,6 @@ class ReservationLockTest {
     private HospitalRepository hospitalRepository;
     @Autowired
     private HospitalScheduleRepository hospitalScheduleRepository;
-//    @Autowired
-//    private HospitalReservationTimeRepository reservationTimeRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
@@ -63,6 +61,7 @@ class ReservationLockTest {
         );
         hospitalRepository.saveAndFlush(hospital);
 
+        // 스케줄 저장 (테스트에서는 실제 사용되지 않지만 병원의 운영시간으로 존재 필요)
         HospitalSchedule schedule = new HospitalSchedule(
                 LocalTime.of(9, 0),
                 LocalTime.of(18, 0),
@@ -72,35 +71,25 @@ class ReservationLockTest {
         );
         hospitalScheduleRepository.saveAndFlush(schedule);
 
-        // 오늘 기준으로 내일 예약 슬롯 생성
+        // “슬롯 엔티티 없이” 테스트에서 직접 예약 시간 생성
         LocalDate targetDate = LocalDate.now().plusDays(1);
-        LocalTime startTime = LocalTime.of(10, 0);
-//        LocalTime endTime = LocalTime.of(10, 30);
-
-//        HospitalReservationTime slot = new HospitalReservationTime(
-//                hospital,
-//                targetDate,
-//                startTime,
-//                endTime
-//        );
-//        reservationTimeRepository.saveAndFlush(slot);
+        LocalDateTime appointmentDate = LocalDateTime.of(targetDate, LocalTime.of(10, 0));
 
         User user = userRepository.saveAndFlush(
                 User.of("test@example.com", "password123!A", "테스트유저", UserRole.ROLE_USER)
         );
 
-        PointAccount pointAccount = PointAccount.create(user, 10_000L); // 잔액 1만 원 예시
-        pointAccountRepository.saveAndFlush(pointAccount);
+        PointAccount account = PointAccount.create(user, 10_000L);
+        pointAccountRepository.saveAndFlush(account);
 
-        // 항상 미래 시점으로 설정
-        LocalDateTime appointmentDate = LocalDateTime.of(targetDate, startTime);
-        ReservationCreateRequest request = new ReservationCreateRequest(hospital.getId(), appointmentDate);
+        ReservationCreateRequest request =
+                new ReservationCreateRequest(hospital.getId(), appointmentDate);
 
         int threadCount = 5;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
 
-        // when
+        // when (동시에 같은 시간대 예약 시도)
         for (int i = 0; i < threadCount; i++) {
             executor.submit(() -> {
                 try {
@@ -124,8 +113,8 @@ class ReservationLockTest {
         List<Reservation> all = reservationRepository.findAll();
         System.out.println("총 예약 개수: " + all.size());
 
-        PointAccount latestAccount = pointAccountRepository.findById(pointAccount.getId())
-                .orElseThrow(() -> new IllegalStateException("포인트 계좌 없음"));
+        PointAccount latestAccount = pointAccountRepository.findById(account.getId())
+                .orElseThrow();
         System.out.println("최종 잔액: " + latestAccount.getBalance() + "원");
 
         assertThat(all.size()).isEqualTo(1);
