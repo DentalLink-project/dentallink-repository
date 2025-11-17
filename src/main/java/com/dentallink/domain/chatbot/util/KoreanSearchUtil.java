@@ -141,21 +141,4 @@ public class KoreanSearchUtil {
         }
         return true;
     }
-
-    /**
-     * 여러 필드에서 검색어 매칭
-     */
-    public static boolean matchesAny(String query, String... targets) {
-        if (query == null || query.isEmpty()) {
-            return false;
-        }
-
-        for (String target : targets) {
-            if (target != null && matches(target, query)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

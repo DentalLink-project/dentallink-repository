@@ -51,15 +51,4 @@ public record ChatResponse (
                 .waitingPosition(waitingPosition)
                 .build();
     }
-
-    public static ChatResponse createSessionClosedResponse(Long sessionId) {
-        return ChatResponse.builder()
-                .sessionId(sessionId)
-                .type(MessageType.SYSTEM)
-                .content("상담이 종료되었습니다. 이용해 주셔서 감사합니다.")
-                .sentAt(LocalDateTime.now())
-                .actionType(ActionType.SESSION_CLOSED)
-                .build();
-    }
-
 }

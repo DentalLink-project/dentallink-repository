@@ -8,7 +8,6 @@ import com.dentallink.domain.chatbot.dto.GeminiFunction;
 import com.dentallink.domain.chatbot.dto.SessionResponse;
 import com.dentallink.domain.chatbot.entity.ChatMessage;
 import com.dentallink.domain.chatbot.entity.ChatSession;
-import com.dentallink.domain.chatbot.enums.MessageType;
 import com.dentallink.domain.chatbot.enums.SessionStatus;
 import com.dentallink.domain.chatbot.exception.ChatbotErrorCode;
 import com.dentallink.domain.chatbot.repository.ChatMessageRepository;
