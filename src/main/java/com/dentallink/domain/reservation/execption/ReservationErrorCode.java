@@ -21,6 +21,8 @@ public enum ReservationErrorCode implements ErrorCode {
     HOSPITAL_CLOSED(HttpStatus.BAD_REQUEST, "병원이 운영 중이 아닙니다"),
     OUTSIDE_BUSINESS_HOURS(HttpStatus.BAD_REQUEST, "병원 진료 시간이 아닙니다"),
     BREAK_TIME(HttpStatus.BAD_REQUEST, "점심시간에는 예약할 수 없습니다"),
+    TOO_CLOSE_APPOINTMENT_TIME(HttpStatus.BAD_REQUEST, "예약은 최소 30분 이전에 해주셔야 합니다."),
+
 
     NOT_RESERVATION_OWNER(HttpStatus.FORBIDDEN, "예약 소유자만 접근할 수 있습니다"),
     NOT_HOSPITAL_ADMIN(HttpStatus.FORBIDDEN, "병원 관리자만 접근할 수 있습니다"),
@@ -32,6 +34,7 @@ public enum ReservationErrorCode implements ErrorCode {
     ALREADY_COMPLETED(HttpStatus.CONFLICT, "이미 완료된 예약입니다"),
 
     INSUFFICIENT_POINTS(HttpStatus.BAD_REQUEST, "포인트가 부족합니다");
+
 
 
 
