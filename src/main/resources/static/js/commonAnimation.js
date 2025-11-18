@@ -92,4 +92,4 @@ document.addEventListener('DOMContentLoaded', function() {
     initFloatingMenu();
 });
 
-console.log('✅ CommonAnimation.js loaded');
+console.log('CommonAnimation.js loaded');

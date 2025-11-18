@@ -71,17 +71,17 @@ function connectWebSocket() {
 }
 
 function onConnected() {
-    console.log('✅ WebSocket connected');
+    console.log('WebSocket connected');
     isConnected = true;
     updateStatusIndicator('connected');
 
     // 사용자별 메시지 구독
     stompClient.subscribe('/user/queue/reply', onMessageReceived);
-    console.log('📡 Subscribed to /user/queue/reply');
+    console.log('Subscribed to /user/queue/reply');
 }
 
 function onError(error) {
-    console.error('❌ WebSocket connection error:', error);
+    console.error('WebSocket connection error:', error);
     isConnected = false;
     updateStatusIndicator('offline');
     showMessage('채팅 서버 연결에 실패했습니다.', 'error');
@@ -89,21 +89,21 @@ function onError(error) {
     // 5초 후 재연결 시도
     setTimeout(() => {
         if (getToken()) {
-            console.log('🔄 Reconnecting WebSocket...');
+            console.log('Reconnecting WebSocket...');
             connectWebSocket();
         }
     }, 5000);
 }
 
 function onMessageReceived(message) {
-    console.log('📨 Message received:', message.body);
+    console.log('Message received:', message.body);
 
     try {
         const response = JSON.parse(message.body);
 
         // null 응답은 무시 (상담 모드에서 사용자가 보낸 메시지)
         if (response === null || !response) {
-            console.log('📭 Empty response (user message in consultant mode)');
+            console.log('Empty response (user message in consultant mode)');
             hideTypingIndicator();
             enableInput();
             return;
@@ -118,12 +118,12 @@ function onMessageReceived(message) {
         // 세션 ID 저장
         if (response.sessionId && !currentSessionId) {
             currentSessionId = response.sessionId;
-            console.log('📝 Session ID:', currentSessionId);
+            console.log('Session ID:', currentSessionId);
         }
 
         // 에러 체크 (content에 "오류" 또는 "실패" 포함 시)
         if (response.content && (response.content.includes('오류') || response.content.includes('실패'))) {
-            console.error('❌ Error in response:', response.content);
+            console.error('Error in response:', response.content);
             displayMessage('system', response.content);
         } else {
             // 정상 메시지 표시 (content가 있을 때만)
@@ -203,14 +203,14 @@ function sendMessage() {
             content: content
         };
 
-        console.log('📤 Sending message:', messagePayload);
+        console.log('Sending message:', messagePayload);
 
         stompClient.send('/app/chat/send', {}, JSON.stringify(messagePayload));
 
         // 5초 후 응답이 없으면 입력창 활성화 (상담 모드에서는 응답이 없을 수 있음)
         setTimeout(() => {
             if (isTyping) {
-                console.log('⏱️ Response timeout - enabling input for consultant mode');
+                console.log('Response timeout - enabling input for consultant mode');
                 hideTypingIndicator();
                 enableInput();
             }
@@ -416,4 +416,4 @@ window.addEventListener('beforeunload', function() {
     disconnectWebSocket();
 });
 
-console.log('✅ Chatbot.js - WebSocket Only Mode loaded');
+console.log('Chatbot.js - WebSocket Only Mode loaded');

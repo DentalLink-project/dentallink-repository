@@ -212,4 +212,4 @@ async function createReservation() {
     }
 }
 
-console.log('✅ reservation.js loaded');
+console.log('reservation.js loaded');

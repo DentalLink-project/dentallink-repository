@@ -92,7 +92,7 @@
                         <h3 class="point-label">내 포인트 계좌</h3>
                         <button class="btn-charge" id="btnChargePoint">충전하기</button>
                     </div>
-                    <div class="point-amount" id="currentPoints">2500P</div>
+                    <div class="point-amount" id="currentPoints">0</div>
                 </div>
 
                 <!-- 포인트 로그 -->
@@ -112,14 +112,13 @@
                                 <tr>
                                     <th>유형</th>
                                     <th>거래 금액</th>
-                                    <th>거래 전 포인트</th>
                                     <th>거래 후 포인트</th>
                                 </tr>
                             </thead>
                             <tbody id="pointLogBody">
                                 <!-- JavaScript로 동적 생성 -->
                                 <tr>
-                                    <td colspan="4" class="loading-row">
+                                    <td colspan="3" class="loading-row">
                                         <div class="loading-spinner"></div>
                                         <p>포인트 로그를 불러오는 중...</p>
                                     </td>

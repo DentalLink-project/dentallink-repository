@@ -92,30 +92,30 @@ function connectWebSocket() {
 }
 
 function onConnected() {
-    console.log('✅ WebSocket connected');
+    console.log('WebSocket connected');
     isConnected = true;
 
     // 상담원이 수신할 메시지 채널 구독
     stompClient.subscribe('/user/queue/reply', onMessageReceived);
-    console.log('📡 Subscribed to /user/queue/reply');
+    console.log('Subscribed to /user/queue/reply');
 }
 
 function onError(error) {
-    console.error('❌ WebSocket connection error:', error);
+    console.error('WebSocket connection error:', error);
     isConnected = false;
     showMessage('채팅 서버 연결에 실패했습니다.', 'error');
 
     // 5초 후 재연결 시도
     setTimeout(() => {
         if (getToken()) {
-            console.log('🔄 Reconnecting WebSocket...');
+            console.log('Reconnecting WebSocket...');
             connectWebSocket();
         }
     }, 5000);
 }
 
 function onMessageReceived(message) {
-    console.log('📨 Message received:', message.body);
+    console.log('Message received:', message.body);
 
     try {
         const response = JSON.parse(message.body);
@@ -265,7 +265,7 @@ async function loadSessionMessages(sessionId) {
             const apiResponse = await response.json();
             const messages = apiResponse.data || apiResponse || [];
 
-            console.log('📨 Session messages:', messages);
+            console.log('Session messages:', messages);
 
             // 채팅 메시지 영역 초기화
             const messagesContainer = document.getElementById('chatMessages');
@@ -324,7 +324,7 @@ function sendConsultantMessage() {
             content: content
         };
 
-        console.log('📤 Sending consultant message:', messagePayload);
+        console.log('Sending consultant message:', messagePayload);
 
         stompClient.send('/app/consultant/send', {}, JSON.stringify(messagePayload));
 
@@ -591,4 +591,4 @@ if (document.readyState === 'loading') {
     setupCloseSessionButton();
 }
 
-console.log('✅ Admin-chat.js - WebSocket Only Mode loaded');
+console.log('Admin-chat.js - WebSocket Only Mode loaded');

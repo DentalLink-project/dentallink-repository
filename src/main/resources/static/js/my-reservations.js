@@ -294,4 +294,4 @@ function formatDateTime(dateTimeString) {
     return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
-console.log('✅ My-Reservations.js loaded');
+console.log('My-Reservations.js loaded');
