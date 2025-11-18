@@ -26,7 +26,7 @@ window.addEventListener("DOMContentLoaded", () => {
 // === 현재 포인트 불러오기 ===
 async function loadCurrentPoints() {
     try {
-        const response = await fetch("/api/point-logs/my?page=0&size=1", {
+        const response = await fetch("/api/point-log/me?page=0&size=1", {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",

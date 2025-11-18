@@ -101,7 +101,7 @@ function displayUserInfo(user) {
 async function loadCurrentPoints() {
     try {
         const token = getToken();
-        const response = await fetch(`${window.API_URL}/api/point-logs/my?page=0&size=1`, {
+        const response = await fetch(`${window.API_URL}/api/point-log/me?page=0&size=1`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -129,7 +129,7 @@ async function loadPointLogs() {
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
         
-        let url = `${window.API_URL}/api/point-logs/my?page=${currentPage}&size=10&sort=latest`;
+        let url = `${window.API_URL}/api/point-log/me?page=${currentPage}&size=10&sort=latest`;
         
         if (startDateInput && startDateInput.value) {
             url += `&startDate=${startDateInput.value}T00:00:00`;
