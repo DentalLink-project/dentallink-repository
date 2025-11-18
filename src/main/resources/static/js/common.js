@@ -9,6 +9,7 @@ if (window.location.hostname === 'localhost') {
 } else {
     window.API_URL = 'http://aws-demo-alb-269710650.ap-northeast-2.elb.amazonaws.com';
 }
+
 // --- [토큰 관리] ---
 function getToken() {
     return localStorage.getItem('token');
