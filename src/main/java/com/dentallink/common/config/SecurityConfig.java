@@ -35,59 +35,60 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // CSRF 설정 비활성
         http.csrf(AbstractHttpConfigurer::disable);
 
-        // CORS 설정 활성화
         http.cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
-        http.sessionManagement((sessionManagement) ->
-                sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+        http.sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         );
 
-        // 요청 권한 설정
-        http.authorizeHttpRequests((authorizeHttpRequests) ->
-                authorizeHttpRequests
-                        .requestMatchers("/ws/**").permitAll() //챗봇 접근허용
-                        .requestMatchers(
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/swagger-resources/**",
-                                "/webjars/**").permitAll()//Swagger 접근허용
-                        .requestMatchers("/api/users/signup", "/api/auth/login/**").permitAll() // 회원가입/로그인만 허용
-                        .requestMatchers("/api/hospitals/**").permitAll() //    병원조회는 누구나
-                        .requestMatchers("/api/reservations/available-slots").permitAll() //예약 가능시간조회
-                        .requestMatchers("/api/admin").permitAll() // 테스트용 어드민 생성 기능입니다.
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers(
-                                "/payment.html",
-                                "/success.html",
-                                "/fail.html"
-                        ).permitAll()
-                        .requestMatchers(
-                                "/",
-                                "/index.html",
-                                "/hospital.html",
-                                "/reservation.html",
-                                "/reservation",
-                                "/chatbot",
-                                "/chatbot.html",
-                                "/admin-chat.html",
-                                "/my-reservations",
-                                "/my-reservations.html"
-                        ).permitAll()
-                        .requestMatchers("/my-page", "/my-page.html").permitAll()
-                        .requestMatchers("/hospitals/**").permitAll()
-                        .requestMatchers("/*.css", "/*.js", "/*.ico").permitAll()
-                        .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
-                        .anyRequest().authenticated() // 그 외 모든 요청은 인증 처리
+        http.authorizeHttpRequests(auth -> auth
+                .requestMatchers("/ws/**").permitAll()
+
+                .requestMatchers(
+                        "/swagger-ui.html",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/swagger-resources/**",
+                        "/webjars/**"
+                ).permitAll()
+
+                .requestMatchers("/api/users/signup").permitAll()
+                .requestMatchers("/api/auth/login/**").permitAll()
+
+                .requestMatchers("/api/hospitals/**").permitAll()
+                .requestMatchers("/api/reservations/available-slots").permitAll()
+                .requestMatchers("/api/admin").permitAll()
+                .requestMatchers("/actuator/**").permitAll()
+
+                .requestMatchers(
+                        "/payment.html",
+                        "/success.html",
+                        "/fail.html",
+                        "/",
+                        "/index.html",
+                        "/hospital.html",
+                        "/reservation.html",
+                        "/reservation",
+                        "/chatbot",
+                        "/chatbot.html",
+                        "/admin-chat.html",
+                        "/my-reservations",
+                        "/my-reservations.html",
+                        "/my-page",
+                        "/my-page.html"
+                ).permitAll()
+
+                .requestMatchers("/*.css", "/*.js", "/*.ico").permitAll()
+                .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
+
+                .anyRequest().authenticated()
         );
 
         http.formLogin(AbstractHttpConfigurer::disable);
         http.httpBasic(AbstractHttpConfigurer::disable);
 
-        // 필터 순서 설정: 우리가 만든 JwtAuthenticationFilter를 UsernamePasswordAuthenticationFilter 앞에 추가
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -97,7 +98,6 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. 명시적 Origin 지정 (로컬 개발 포트 + 외부 서버)
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:8000",
                 "http://127.0.0.1:8000",
@@ -110,7 +110,6 @@ public class SecurityConfig {
                 "https://dentallink.store"
         ));
 
-        // 2. 필요한 헤더만 명시
         configuration.setAllowedHeaders(List.of(
                 "Content-Type",
                 "Authorization",
@@ -119,37 +118,31 @@ public class SecurityConfig {
                 "Refresh-Token"
         ));
 
-        // 3. 필요한 HTTP 메서드만 명시
         configuration.setAllowedMethods(List.of(
-                "GET",
-                "POST",
-                "PUT",
-                "DELETE",
-                "PATCH",
-                "OPTIONS"
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
 
-        // 4. 인증정보 포함 허용
         configuration.setAllowCredentials(true);
 
-        // 5. 클라이언트에 노출할 헤더
         configuration.setExposedHeaders(List.of(
                 "Authorization",
                 "Refresh-Token",
                 "Content-Disposition"
         ));
 
-        // 6. preflight 요청 캐시 시간 (1시간)
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
-        // 7. 공개 API 경로만 CORS 허용 (관리자/민감한 엔드포인트 제외)
+        // 기존 공개 API
         source.registerCorsConfiguration("/api/hospitals/**", configuration);
         source.registerCorsConfiguration("/api/auth/**", configuration);
         source.registerCorsConfiguration("/api/reservations/**", configuration);
-        source.registerCorsConfiguration("/api/point-logs/**", configuration);
+        source.registerCorsConfiguration("/api/point-log/**", configuration); // 오타 수정됨
         source.registerCorsConfiguration("/api/reviews/**", configuration);
+        source.registerCorsConfiguration("/api/users/**", configuration);
+
+        // WebSocket
         source.registerCorsConfiguration("/ws/**", configuration);
 
         return source;
