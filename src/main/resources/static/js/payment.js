@@ -10,7 +10,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     console.log("payment.js loaded");
 
-    // ⭐ 현재 포인트 표시
+    // 현재 포인트 표시
     loadCurrentPoints();
 
     // 폼 이벤트 등록
@@ -147,6 +147,6 @@ async function startDepositPayment(amount) {
 
     } catch (err) {
         console.error("결제 요청 오류:", err);
-        showAlert("결제 요청 중 오류 발생", "error");
+        showMessage("결제 모듈 로딩 실패!", "error");
     }
 }
