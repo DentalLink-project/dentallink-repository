@@ -1,5 +1,5 @@
 // 로그인 정보 로딩
-let currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+let currentUser = JSON.parse(localStorage.getItem("user") || "{}");
 let authToken = localStorage.getItem("token");
 
 // Toss Widgets 전역
@@ -40,9 +40,10 @@ async function loadCurrentPoints() {
         }
 
         const apiResponse = await response.json();
-        if (apiResponse.data.content.length > 0) {
-            const latestLog = apiResponse.data.content[0];
-            const balance = latestLog.account.balance;
+        const logs = apiResponse?.data?.content ?? [];
+
+        if (logs.length > 0) {
+            const balance = logs[0].account.balance;
             document.getElementById("currentPoints").textContent = `${balance}P`;
         } else {
             document.getElementById("currentPoints").textContent = "0P";
@@ -86,7 +87,7 @@ async function initTossWidgets() {
 
     } catch (err) {
         console.error("Toss 위젯 로딩 실패:", err);
-        showAlert("결제 모듈 로딩 실패!", "error");
+        showMessage("결제 모듈 로딩 실패!", "error");
     }
 }
 
@@ -98,7 +99,7 @@ async function handleDepositSubmit(event) {
     const amount = Number(document.getElementById("depositAmount").value);
 
     if (!amount || amount < 1000) {
-        showAlert("최소 1,000P 이상 입력하세요", "error");
+        showMessage("최소 1,000P 이상 입력하세요", "error");
         return;
     }
 
@@ -122,12 +123,17 @@ async function startDepositPayment(amount) {
         });
 
         if (!readyRes.ok) {
-            showAlert("결제 준비 실패", "error");
+            showMessage("결제 준비 실패", "error");
             return;
         }
 
         const readyData = await readyRes.json();
-        const orderId = readyData.data.orderId;
+        const orderId = readyData?.data?.orderId;
+
+        if (!orderId) {
+            showMessage("결제 요청 실패 (orderId 없음)", "error");
+            return;
+        }
 
         // 금액 반영
         await tossWidgets.setAmount({
@@ -140,8 +146,8 @@ async function startDepositPayment(amount) {
             orderName: "Dentallink 포인트 충전",
             successUrl: window.location.origin + "/success.html",
             failUrl: window.location.origin + "/fail.html",
-            customerEmail: currentUser.email,
-            customerName: currentUser.name,
+            customerEmail: currentUser.email ?? "test@dentallink.com",
+            customerName: currentUser.name ?? "사용자",
             customerMobilePhone: currentUser.phone ?? "01000000000"
         });
 
