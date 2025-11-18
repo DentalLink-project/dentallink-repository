@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="치과 예약을 쉽고 빠르게. 안전한 예약 플랫폼 Dentallink">
-    <title>Dentallink - 병원 찾기</title>
+    <title>내 예약 보기 - DentalLink</title>
     <link rel="stylesheet" href="/css/common.css">
-    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/my-reservations.css">
     <script src="/js/common.js"></script>
-    <script src="/js/index.js"></script>
+    <script src="/js/my-reservations.js"></script>
 </head>
 <body>
-<!--공통 header 부분입니다. -->
+<!-- Message Box -->
+<div id="messageBox"></div>
+
+<!-- Header -->
 <header>
     <div class="logo-wrapper">
         <a href="/" class="logo">DentalLink</a>
@@ -26,41 +28,95 @@
     </div>
 </header>
 
-<!-- Message Box -->
-<div id="messageBox"></div>
-
+<!-- Main Layout -->
 <main>
+    <!-- Left Sidebar -->
     <aside>
         <nav>
             <ul>
-                <li><a href="/" class="active">🏥 병원 찾기</a></li>
-                <li><a href="/my-reservations">📋 내 예약 보기</a></li>
+                <li><a href="/">🏥 병원 찾기</a></li>
+                <li><a href="/my-reservations" class="active">📋 내 예약 보기</a></li>
                 <li><a href="/my-page">💖 내 정보 보기</a></li>
                 <li><a href="/chatbot">💬 채팅</a></li>
                 <li id="adminChatMenu" style="display: none;"><a href="/admin-chat.html">👥 상담원 관리</a></li>
             </ul>
         </nav>
     </aside>
+
+    <!-- Main Content -->
     <section>
-        <article>
-            <!-- Hospital Grid -->
-            <div class="hospital-grid" id="hospitalGrid">
-                <!-- Hospital cards will be loaded here -->
+        <article class="reservations-container">
+            <!-- 필터 & 정렬 -->
+            <div class="filter-bar">
+                <div class="status-filters" id="statusFilters">
+                    <button class="filter-btn active" data-status="ALL">전체</button>
+                    <button class="filter-btn status-pending" data-status="PENDING">대기중</button>
+                    <button class="filter-btn status-approved" data-status="APPROVED">승인</button>
+                    <button class="filter-btn status-rejected" data-status="REJECTED">거부</button>
+                    <button class="filter-btn status-cancelled" data-status="CANCELLED">취소</button>
+                    <button class="filter-btn status-completed" data-status="COMPLETED">완료</button>
+                </div>
+                <div class="sort-section">
+                    <select class="sort-select" id="sortSelect">
+                        <option value="appointmentDate,desc">최신순</option>
+                        <option value="appointmentDate,asc">오래된순</option>
+                        <option value="createdAt,desc">예약일 최신순</option>
+                    </select>
+                </div>
             </div>
 
-            <!-- Pagination -->
+            <!-- 예약 목록 -->
+            <div class="reservations-list" id="reservationsList">
+                <!-- 로딩 상태 -->
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>예약 목록을 불러오는 중...</p>
+                </div>
+            </div>
+
+            <!-- 페이지네이션 -->
             <div class="pagination" id="pagination">
-                <button class="pagination-btn" id="prevBtn" onclick="changePage(-1)">
-                    이전
-                </button>
-                <div class="pagination-numbers" id="paginationNumbers"></div>
-                <button class="pagination-btn" id="nextBtn" onclick="changePage(1)">
-                    다음
-                </button>
+                <!-- JavaScript로 동적 생성 -->
             </div>
         </article>
     </section>
 </main>
+
+<!-- 예약 상세 모달 -->
+<div class="modal" id="reservationDetailModal">
+    <div class="modal-content reservation-detail-content">
+        <button class="close-modal" onclick="closeReservationDetailModal()">×</button>
+        <h2 class="modal-header">예약 상세 <span class="status-badge-modal" id="modalStatusBadge"></span></h2>
+        
+        <div class="detail-section">
+            <div class="detail-row">
+                <span class="detail-label">병원</span>
+                <span class="detail-value" id="modalHospitalName">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">예약 일시</span>
+                <span class="detail-value" id="modalAppointmentDate">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">예약 생성일</span>
+                <span class="detail-value" id="modalCreatedAt">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">사용 포인트</span>
+                <span class="detail-value-points" id="modalUsedPoints">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">예약 ID</span>
+                <span class="detail-value" id="modalReservationId">-</span>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-detail" id="btnViewHospital">예약 병원 상세</button>
+            <button class="btn-cancel" id="btnCancelReservation">예약 삭제</button>
+        </div>
+    </div>
+</div>
 
 <!-- Login Modal -->
 <div class="modal" id="loginModal">
@@ -121,22 +177,12 @@
 <!-- Floating Menu (Mobile) -->
 <div class="floating-menu" id="floatingMenu">
     <div class="floating-items" id="floatingItems">
-        <div class="floating-item">
-            🏥 병원 찾기
-        </div>
-        <div class="floating-item">
-            📋 내 예약 보기
-        </div>
-        <div class="floating-item">
-            💰 포인트
-        </div>
-        <div class="floating-item">
-            💬 채팅
-        </div>
+        <a href="/" class="floating-item">🏥 병원 찾기</a>
+        <a href="/my-reservations" class="floating-item">📋 내 예약 보기</a>
+        <a href="#" class="floating-item">💰 포인트</a>
+        <a href="/chatbot" class="floating-item">💬 채팅</a>
     </div>
-    <button class="floating-toggle" id="floatingToggle">
-        ☰
-    </button>
+    <button class="floating-toggle" id="floatingToggle">☰</button>
 </div>
 </body>
 </html>

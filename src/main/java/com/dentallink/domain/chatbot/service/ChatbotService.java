@@ -327,12 +327,13 @@ public class ChatbotService {
         if (session.getConsultant() != null) {
             messagingTemplate.convertAndSendToUser(
                     session.getConsultant().getId().toString(),
-                    "/queue/messages",
+                    "/queue/reply",
                     ChatResponse.from(userMessage)
             );
         }
 
-        return ChatResponse.from(userMessage);
+        // 사용자는 자신의 메시지를 이미 UI에서 표시했으므로 null 반환 (프론트에서 처리하지 않음)
+        return null;
     }
 
     /**

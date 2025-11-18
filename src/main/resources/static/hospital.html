@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="치과 예약을 쉽고 빠르게. 안전한 예약 플랫폼 Dentallink">
-    <title>Dentallink - 병원 찾기</title>
+    <title>DentalLink - 병원 상세</title>
     <link rel="stylesheet" href="/css/common.css">
-    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/hospital.css">
     <script src="/js/common.js"></script>
-    <script src="/js/index.js"></script>
+    <script src="/js/hospital.js"></script>
 </head>
 <body>
-<!--공통 header 부분입니다. -->
+<!-- Message Box -->
+<div id="messageBox"></div>
+
+<!-- Header -->
 <header>
     <div class="logo-wrapper">
         <a href="/" class="logo">DentalLink</a>
@@ -26,10 +28,8 @@
     </div>
 </header>
 
-<!-- Message Box -->
-<div id="messageBox"></div>
-
 <main>
+    <!-- Left Sidebar -->
     <aside>
         <nav>
             <ul>
@@ -41,22 +41,14 @@
             </ul>
         </nav>
     </aside>
-    <section>
-        <article>
-            <!-- Hospital Grid -->
-            <div class="hospital-grid" id="hospitalGrid">
-                <!-- Hospital cards will be loaded here -->
-            </div>
 
-            <!-- Pagination -->
-            <div class="pagination" id="pagination">
-                <button class="pagination-btn" id="prevBtn" onclick="changePage(-1)">
-                    이전
-                </button>
-                <div class="pagination-numbers" id="paginationNumbers"></div>
-                <button class="pagination-btn" id="nextBtn" onclick="changePage(1)">
-                    다음
-                </button>
+    <!-- Main Content -->
+    <section>
+        <article class="hospital-detail-container">
+            <!-- JavaScript로 템플릿 채움 -->
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p>병원 정보를 불러오는 중...</p>
             </div>
         </article>
     </section>
@@ -118,25 +110,42 @@
     </div>
 </div>
 
+<!-- Review Modal -->
+<div class="modal" id="reviewModal">
+    <div class="modal-content review-modal-content">
+        <button class="close-modal" onclick="closeReviewModal()">×</button>
+        <h2 class="modal-header">리뷰 작성</h2>
+        <form id="reviewForm" onsubmit="submitReview(event)">
+            <div class="form-group">
+                <label class="form-label">별점</label>
+                <div class="star-rating" id="starRating">
+                    <span class="star" data-value="1">★</span>
+                    <span class="star" data-value="2">★</span>
+                    <span class="star" data-value="3">★</span>
+                    <span class="star" data-value="4">★</span>
+                    <span class="star" data-value="5">★</span>
+                </div>
+                <input type="hidden" id="reviewPoint" name="point" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">리뷰 내용</label>
+                <textarea class="review-textarea" id="reviewContent" name="content"
+                          rows="6" required placeholder="병원 이용 후기를 작성해주세요."></textarea>
+            </div>
+            <button type="submit" class="btn-submit-review">리뷰 등록</button>
+        </form>
+    </div>
+</div>
+
 <!-- Floating Menu (Mobile) -->
 <div class="floating-menu" id="floatingMenu">
     <div class="floating-items" id="floatingItems">
-        <div class="floating-item">
-            🏥 병원 찾기
-        </div>
-        <div class="floating-item">
-            📋 내 예약 보기
-        </div>
-        <div class="floating-item">
-            💰 포인트
-        </div>
-        <div class="floating-item">
-            💬 채팅
-        </div>
+        <a href="/" class="floating-item">🏥 병원 찾기</a>
+        <a href="#" class="floating-item">📋 내 예약 보기</a>
+        <a href="#" class="floating-item">💰 포인트</a>
+        <a href="/chatbot" class="floating-item">💬 채팅</a>
     </div>
-    <button class="floating-toggle" id="floatingToggle">
-        ☰
-    </button>
+    <button class="floating-toggle" id="floatingToggle">☰</button>
 </div>
 </body>
 </html>

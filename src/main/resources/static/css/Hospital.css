@@ -1,0 +1,544 @@
+/* ===== Hospital Detail Page CSS - Redesigned ===== */
+
+/* 메인 컨테이너 */
+.hospital-detail-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* 로딩 */
+.loading-container {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #6b9cdb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===== 병원 메인 카드 ===== */
+.hospital-main-card {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 0;
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* 왼쪽 그라데이션 영역 */
+.hospital-image-area {
+    background: linear-gradient(135deg, #a8c0ff 0%, #c4a3ff 100%);
+    padding: 40px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hospital-placeholder-text {
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* 오른쪽 정보 영역 */
+.hospital-info-area {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* 타이틀 섹션 */
+.hospital-title-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.hospital-name-text {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.status-badge-pill {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.status-badge-pill.open {
+    background: #d4f4dd;
+    color: #167d3a;
+}
+
+.status-badge-pill.closed {
+    background: #f5f5f5;
+    color: #888;
+}
+
+/* 정보 그리드 */
+.hospital-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.info-key {
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+}
+
+.info-val {
+    font-size: 14px;
+    color: #333;
+}
+
+.info-val-blue {
+    font-size: 14px;
+    font-weight: 700;
+    color: #6b9cdb;
+}
+
+/* 버튼 그룹 */
+.hospital-button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: auto;
+}
+
+.btn-book {
+    flex: 1;
+    padding: 14px 0;
+    background: linear-gradient(135deg, #6b9cdb 0%, #9b7ec5 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-book:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(107, 156, 219, 0.4);
+}
+
+.btn-fav-outline {
+    flex: 1;
+    padding: 14px 0;
+    background: white;
+    color: #6b9cdb;
+    border: 2px solid #6b9cdb;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-fav-outline:hover {
+    background: #f8f9fa;
+}
+
+/* ===== 병원 소개 카드 ===== */
+.hospital-desc-card {
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.desc-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 16px 0;
+}
+
+.desc-content {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #666;
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+/* ===== 리뷰 카드 ===== */
+.reviews-card {
+    background: white;
+    border-radius: 16px;
+    padding: 28px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* 리뷰 상단 */
+.reviews-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.rating-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.big-star {
+    font-size: 36px;
+    color: #6b9cdb;
+}
+
+.big-score {
+    font-size: 36px;
+    font-weight: 700;
+    color: #333;
+}
+
+.btn-write {
+    padding: 12px 28px;
+    background: linear-gradient(135deg, #6b9cdb 0%, #9b7ec5 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-write:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(107, 156, 219, 0.4);
+}
+
+/* 리뷰 그리드 */
+.reviews-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+/* 리뷰 박스 */
+.review-box {
+    background: #f9f9f9;
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 180px;
+}
+
+.review-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.review-star-line {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.review-star-icon {
+    font-size: 20px;
+    color: #6b9cdb;
+}
+
+.review-point {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+}
+
+.review-meta {
+    text-align: right;
+}
+
+.review-user {
+    font-size: 13px;
+    color: #666;
+    font-weight: 600;
+}
+
+.review-time {
+    font-size: 12px;
+    color: #999;
+    margin-top: 2px;
+}
+
+.review-text {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #555;
+    margin: 0;
+}
+
+.review-bottom {
+    text-align: center;
+    font-size: 13px;
+    color: #999;
+    padding-top: 8px;
+    border-top: 1px solid #eee;
+}
+
+/* ===== 페이지네이션 ===== */
+.pagination-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 0 0 0;
+}
+
+.pagination-btn {
+    padding: 8px 16px;
+    border: 2px solid #e0e0e0;
+    background: white;
+    color: #666;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    border-color: #6b9cdb;
+    color: #6b9cdb;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.pagination-numbers {
+    display: flex;
+    gap: 6px;
+}
+
+.pagination-number {
+    min-width: 36px;
+    height: 36px;
+    padding: 0 8px;
+    border: 2px solid #e0e0e0;
+    background: white;
+    color: #666;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-number:hover {
+    border-color: #6b9cdb;
+    color: #6b9cdb;
+}
+
+.pagination-number.active {
+    background: #6b9cdb;
+    border-color: #6b9cdb;
+    color: white;
+}
+
+.pagination-dots {
+    padding: 0 6px;
+    color: #999;
+    font-size: 14px;
+}
+
+/* ===== 리뷰 모달 ===== */
+.review-modal-content {
+    max-width: 520px;
+    position: relative;
+}
+
+.star-rating {
+    display: flex;
+    gap: 10px;
+    font-size: 42px;
+    margin: 16px 0;
+    justify-content: flex-start;
+}
+
+.star-rating .star {
+    cursor: pointer;
+    color: #e8e8e8;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.star-rating .star:hover {
+    color: #a0d0f0;
+    transform: scale(1.05);
+}
+
+.star-rating .star.active {
+    color: #6b9cdb;
+}
+
+/* 리뷰 textarea */
+.review-textarea {
+    width: 100%;
+    padding: 18px;
+    border: 2px solid #e8e8e8;
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    background: #fafafa;
+    line-height: 1.6;
+}
+
+.review-textarea:focus {
+    outline: none;
+    border-color: #d0d0d0;
+    background: white;
+}
+
+.review-textarea::placeholder {
+    color: #b0b0b0;
+}
+
+/* 리뷰 등록 버튼 */
+.btn-submit-review {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #6b9cdb 0%, #9b7ec5 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 8px;
+}
+
+.btn-submit-review:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(107, 156, 219, 0.3);
+}
+
+/* 에러 상태 */
+.error-container {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.error-message {
+    font-size: 18px;
+    color: #e74c3c;
+    margin-bottom: 30px;
+}
+
+.back-btn {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #6b9cdb 0%, #9b7ec5 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+/* ===== 반응형 ===== */
+@media (max-width: 1024px) {
+    .hospital-main-card {
+        grid-template-columns: 1fr;
+    }
+
+    .hospital-image-area {
+        min-height: 140px;
+        padding: 30px 20px;
+    }
+
+    .reviews-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hospital-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .hospital-info-area {
+        padding: 24px;
+    }
+
+    .hospital-desc-card,
+    .reviews-card {
+        padding: 20px;
+    }
+
+    .hospital-name-text {
+        font-size: 20px;
+    }
+
+    .reviews-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .hospital-button-group {
+        flex-direction: column;
+    }
+
+    .info-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}

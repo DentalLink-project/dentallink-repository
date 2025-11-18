@@ -1,0 +1,202 @@
+/* ===== Reservation Page Styles ===== */
+
+/* 메인 컨테이너 */
+.reservation-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+/* 공통 카드 스타일 */
+.hospital-info-card,
+.reservation-form-card {
+    background: white;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.card-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 24px 0;
+}
+
+/* ===== 왼쪽: 병원 정보 카드 ===== */
+.hospital-details {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hospital-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #5dade2;
+    margin: 0 0 8px 0;
+}
+
+.hospital-address {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 16px 0;
+}
+
+.time-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.time-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.time-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+}
+
+.time-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+/* ===== 오른쪽: 예약 폼 카드 ===== */
+.form-section {
+    margin-bottom: 24px;
+}
+
+.input-label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.datetime-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.date-input,
+.time-select {
+    padding: 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: white;
+    cursor: pointer;
+}
+
+.date-input:focus,
+.time-select:focus {
+    outline: none;
+    border-color: #5dade2;
+}
+
+.date-input:hover,
+.time-select:hover {
+    border-color: #b0d4f1;
+}
+
+/* 결제 섹션 */
+.payment-section {
+    text-align: center;
+    margin-top: 8px;
+}
+
+.payment-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 16px 0;
+}
+
+.points-amount {
+    font-size: 48px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #5dade2 0%, #674ea7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 24px;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #5dade2 0%, #674ea7 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-submit:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(93, 173, 226, 0.3);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+/* ===== 반응형 ===== */
+@media (max-width: 1024px) {
+    .reservation-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .hospital-info-card,
+    .reservation-form-card {
+        padding: 24px;
+    }
+
+    .card-title {
+        font-size: 20px;
+    }
+
+    .hospital-name {
+        font-size: 18px;
+    }
+
+    .datetime-group {
+        grid-template-columns: 1fr;
+    }
+
+    .time-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .points-amount {
+        font-size: 36px;
+    }
+}
