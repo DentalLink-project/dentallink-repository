@@ -4,7 +4,7 @@
 // --- [전역 설정] ---
 window.API_URL = window.location.hostname === 'localhost'
     ? 'http://localhost:8080'
-    : 'https://www.dentallink.store
+    : 'https://www.dentallink.store';
 
 // --- [토큰 관리] ---
 function getToken() {
