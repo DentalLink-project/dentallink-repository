@@ -271,24 +271,6 @@ public class ChatbotService {
 
     // ===== 기존 메서드들 (변경 없음) =====
 
-//    private ChatResponse handleConsultantMessage(ChatSession session, ChatRequest request, Long userId) {
-//        log.info("상담원 모드 메시지 처리: sessionId={}, userId={}", session.getId(), userId);
-//
-//        ChatMessage userMessage = ChatMessage.createUserMessage(session, request.content());
-//        messageRepository.save(userMessage);
-//
-//        if (session.getConsultant() != null) {
-//            messagingTemplate.convertAndSendToUser(
-//                    session.getConsultant().getId().toString(),
-//                    "/queue/reply",
-//                    ChatResponse.from(userMessage)
-//            );
-//        }
-//
-//        // 사용자는 자신의 메시지를 이미 UI에서 표시했으므로 null 반환 (프론트에서 처리하지 않음)
-//        return null;
-//    }
-
     private ChatResponse handleConsultantMessage(ChatSession session, ChatRequest request, Long userId) {
         log.info("상담원 모드 메시지 처리: sessionId={}, userId={}", session.getId(), userId);
 
