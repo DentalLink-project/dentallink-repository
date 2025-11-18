@@ -260,20 +260,41 @@ async function handleSignup(event) {
             body: JSON.stringify({ email, username, password })
         });
 
-        const apiResponse = await response.json();
+        // JSON 파싱 안전 처리
+        let apiResponse = null;
+        try {
+            apiResponse = await response.json();
+        } catch (parseError) {
+            console.warn("⚠ JSON 파싱 실패 (서버가 JSON이 아닌 응답을 반환함):", parseError);
+        }
 
-        if (response.ok && apiResponse.success) {
+        // 성공 처리
+        if (response.ok && apiResponse?.success) {
             showMessage(apiResponse.message || '회원가입이 완료되었습니다! 로그인해주세요.', 'success');
             closeSignupModal();
             showLoginModal();
-        } else {
-            showMessage(apiResponse.message || '회원가입에 실패했습니다.', 'error');
+            return;
         }
+
+        // 실패 처리 (백엔드 메시지 있으면 표시)
+        const errorMsg =
+            apiResponse?.message ||
+            `회원가입 실패: 서버가 거부했습니다. (HTTP ${response.status})`;
+
+        showMessage(errorMsg, 'error');
+
     } catch (error) {
         console.error('Signup error:', error);
-        showMessage('서버 연결에 실패했습니다.', 'error');
+
+        // 네트워크 완전 실패 or CORS 완전 차단
+        if (error instanceof TypeError) {
+            showMessage('서버에 연결할 수 없습니다. (네트워크 오류 또는 CORS 차단)', 'error');
+        } else {
+            showMessage('서버 연결에 실패했습니다.', 'error');
+        }
     }
 }
+
 
 // --- [로그아웃] ---
 async function handleLogout() {
