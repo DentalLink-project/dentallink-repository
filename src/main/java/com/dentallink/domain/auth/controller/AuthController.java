@@ -5,6 +5,8 @@ import com.dentallink.common.utility.JwtTokenProvider;
 import com.dentallink.domain.auth.dto.request.LoginRequest;
 import com.dentallink.domain.auth.dto.response.JwtToken;
 import com.dentallink.domain.auth.service.AuthService;
+import com.dentallink.domain.user.dto.response.UserResponse;
+import com.dentallink.domain.user.service.UserExternalService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -24,6 +26,7 @@ import static com.dentallink.common.response.CommonApiResponse.success;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserExternalService userExternalService;
 
     // 로그인 로직
     @Operation(summary = "로그인",
@@ -34,7 +37,7 @@ public class AuthController {
                     @ApiResponse(responseCode = "400", description = "잘못된 요청")
             })
     @PostMapping("/login")
-    public ResponseEntity<CommonApiResponse<Void>> login(
+    public ResponseEntity<CommonApiResponse<UserResponse>> login(
             @Parameter(description = "로그인하기 위한 정보")
             @Valid @RequestBody LoginRequest request,
             HttpServletResponse response
@@ -42,8 +45,13 @@ public class AuthController {
         JwtToken token = authService.login(request);
         response.addHeader(JwtTokenProvider.AUTHORIZATION_HEADER, token.getAccessToken());
         response.addHeader(JwtTokenProvider.REFRESH_TOKEN_HEADER, token.getRefreshToken());
+
+        // 사용자 정보 조회 및 반환
+        var user = userExternalService.getUserByEmail(request.email());
+        UserResponse userResponse = UserResponse.from(user);
+
         return success(
-                null,
+                userResponse,
                 "로그인 성공"
         );
     }

@@ -46,6 +46,22 @@ function requireLogin() {
     return true;
 }
 
+// --- [역할 확인] ---
+function isAdmin() {
+    const user = getUser();
+    return user && user.role === 'ROLE_ADMIN';
+}
+
+function isHospital() {
+    const user = getUser();
+    return user && user.role === 'ROLE_HOSPITAL';
+}
+
+function getUserRole() {
+    const user = getUser();
+    return user ? user.role : null;
+}
+
 // --- [메시지 표시] ---
 function showMessage(message, type = 'success') {
     const messageBox = document.getElementById('messageBox');
@@ -143,6 +159,9 @@ function updateUIAfterLogin(user) {
 
     if (loginBtn) loginBtn.style.display = 'none';
     if (logoutBtn) logoutBtn.style.display = 'inline-block';
+
+    // 네비게이션 업데이트 (역할 기반)
+    updateNavigationByRole();
 }
 
 function updateUIAfterLogout() {
@@ -151,6 +170,9 @@ function updateUIAfterLogout() {
 
     if (logoutBtn) logoutBtn.style.display = 'none';
     if (loginBtn) loginBtn.style.display = 'inline-block';
+
+    // 네비게이션 업데이트 (역할 기반)
+    updateNavigationByRole();
 }
 
 // --- [로그인] ---
@@ -280,6 +302,20 @@ async function handleLogout() {
     }
 }
 
+// --- [네비게이션 업데이트 - 역할 기반] ---
+function updateNavigationByRole() {
+    const adminMenu = document.getElementById('adminChatMenu');
+    if (!adminMenu) return;
+
+    if (isAdmin()) {
+        // 관리자: 메뉴 표시
+        adminMenu.style.display = 'block';
+    } else {
+        // 관리자 아님: 메뉴 숨김
+        adminMenu.style.display = 'none';
+    }
+}
+
 // --- [페이지 로드 시 실행] ---
 document.addEventListener('DOMContentLoaded', function() {
     // 로그인 상태 확인
@@ -287,6 +323,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (user) {
         updateUIAfterLogin(user);
     }
+
+    // 네비게이션 업데이트 (역할 기반)
+    updateNavigationByRole();
 
     // 로그인 버튼 이벤트
     document.getElementById('loginBtn')?.addEventListener('click', showLoginModal);

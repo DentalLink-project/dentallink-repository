@@ -15,7 +15,7 @@ public class GeminiConfig {
 
     /**
      * 사용할 모델 이름
-     * 기본값: gemini-2.0-flash (무료 티어)
+     * 기본값: gemini-2.0-flash (무료 티어)ㄹ
      */
     private String modelName = "gemini-2.0-flash";
 

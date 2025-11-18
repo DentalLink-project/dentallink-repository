@@ -73,6 +73,7 @@ public class SecurityConfig {
                                 "/reservation",
                                 "/chatbot",
                                 "/chatbot.html",
+                                "/admin-chat.html",
                                 "/my-reservations",
                                 "/my-reservations.html"
                         ).permitAll()
