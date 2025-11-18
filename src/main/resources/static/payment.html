@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+
+    <script>
+        window.API_URL = "";
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DentalLink - 포인트 충전</title>
+
+    <!-- 공통 CSS -->
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/payment.css">
+
+    <!-- Toss SDK -->
+    <script src="https://js.tosspayments.com/v2/standard"></script>
+
+    <!-- 공통 JS -->
+    <script src="/js/common.js"></script>
+
+    <!-- 결제 전용 JS -->
+    <script src="/js/payment.js" defer></script>
+</head>
+
+<body>
+
+<!-- Message Box -->
+<div id="messageBox"></div>
+
+<header>
+    <div class="logo-wrapper">
+        <a href="/" class="logo">DentalLink</a>
+    </div>
+
+    <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" placeholder="병원 검색">
+    </div>
+
+    <div class="auth-buttons">
+        <button id="loginBtn" class="btn-login">로그인/가입</button>
+        <button id="logoutBtn" class="btn-login logout" style="display:none;">로그아웃</button>
+    </div>
+</header>
+
+<main>
+    <aside>
+        <nav>
+            <ul>
+                <li><a href="/">🏥 병원 찾기</a></li>
+                <li><a href="/my-reservations">📋 내 예약 보기</a></li>
+                <li><a href="/my-page">💖 내 정보 보기</a></li>
+                <li><a href="/chatbot">💬 채팅</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <section>
+        <article class="payment-container">
+
+            <div class="current-points-box">
+                현재 잔액: <span id="currentPoints">불러오는 중...</span>
+            </div>
+
+            <h2>포인트 충전</h2>
+
+            <form id="depositForm">
+                <div class="form-group">
+                    <label>충전 금액</label>
+                    <div class="amount-input-group">
+                        <input type="number" id="depositAmount" placeholder="최소 1,000P" min="1000" step="1000" />
+                        <span class="amount-unit">P</span>
+                    </div>
+                </div>
+
+                <h3>결제 수단</h3>
+
+                <div id="toss-payment-method"></div>
+                <div id="toss-agreement" style="margin-top: 15px;"></div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn cancel" onclick="history.back()">취소</button>
+                    <button type="submit" class="btn primary">충전하기</button>
+                </div>
+            </form>
+
+        </article>
+    </section>
+
+</main>
+
+</body>
+</html>

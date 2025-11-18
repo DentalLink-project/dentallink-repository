@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>결제 실패</title>
+</head>
+<body>
+<h2>결제가 실패했습니다.</h2>
+<p id="orderId"></p>
+<p id="message"></p>
+
+<script>
+    // --- 1) URL 파라미터 읽기 ---
+    const urlParams = new URLSearchParams(window.location.search);
+    const orderId = urlParams.get("orderId");
+    const message = urlParams.get("message") || "결제가 취소되었거나 실패했습니다.";
+    const paymentKey = urlParams.get("paymentKey");
+
+    document.getElementById("orderId").innerText = "주문번호: " + orderId;
+    document.getElementById("message").innerText = message;
+
+    // --- 2) 로그인 토큰 가져오기 ---
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+        console.warn("토큰 없음 → cancel 요청 생략");
+    } else {
+        // --- 3) cancel-ready 요청 보내기 ---
+        fetch(`${window.location.origin}/api/payments/cancel/ready/${orderId}`, {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        })
+            .then(res => res.json())
+            .then(json => console.log("Cancel ready 응답:", json))
+            .catch(err => console.error("Cancel 요청 오류:", err));
+    }
+</script>
+</body>
+</html>

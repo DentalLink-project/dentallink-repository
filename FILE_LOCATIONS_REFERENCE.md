@@ -245,7 +245,7 @@ This document provides absolute file paths for all key project files related to 
 
 ### Core & Common
 ```
-/Users/hyuncles/Desktop/sparta/dentallink/src/main/resources/static/js/Common.js
+/Users/hyuncles/Desktop/sparta/dentallink/src/main/resources/static/js/common.js
     └─ Token management (getToken, setToken, removeToken)
     └─ User management (getUser, setUser)
     └─ Auth checks (isLoggedIn, requireLogin)
@@ -264,17 +264,17 @@ This document provides absolute file paths for all key project files related to 
 
 ### Page-Specific JavaScript
 ```
-/Users/hyuncles/Desktop/sparta/dentallink/src/main/resources/static/js/Index.js
+/Users/hyuncles/Desktop/sparta/dentallink/src/main/resources/static/js/index.js
     └─ Hospital listing & pagination
     └─ Hospital grid rendering
     └─ Favorite management
 
-/Users/hyuncles/Desktop/sparta/dentallink/src/main/resources/static/js/Hospital.js
+/Users/hyuncles/Desktop/sparta/dentallink/src/main/resources/static/js/hospital.js
     └─ Hospital detail page logic
     └─ Reviews display
     └─ Reservation redirect
 
-/Users/hyuncles/Desktop/sparta/dentallink/src/main/resources/static/js/Reservation.js
+/Users/hyuncles/Desktop/sparta/dentallink/src/main/resources/static/js/reservation.js
     └─ Reservation creation logic
     └─ Date/time selection
     └─ Service selection

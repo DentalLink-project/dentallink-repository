@@ -202,10 +202,10 @@ POST /api/admin (test admin creation)
 ├── Reservation.html        # Make/manage reservation
 ├── hospital.html           # Hospital detail view
 ├── js/
-│   ├── Common.js           # Auth, tokens, modals, messages
-│   ├── Index.js            # Hospital listing & pagination
-│   ├── Hospital.js         # Hospital detail & reviews
-│   ├── Reservation.js      # Reservation logic
+│   ├── common.js           # Auth, tokens, modals, messages
+│   ├── index.js            # Hospital listing & pagination
+│   ├── hospital.js         # Hospital detail & reviews
+│   ├── reservation.js      # Reservation logic
 │   ├── chatbot.js          # WebSocket chat (AI & consultant)
 │   ├── my-page.js          # Profile management
 │   ├── my-reservations.js  # Reservation viewing
@@ -616,10 +616,10 @@ WebSocket sends response via /user/queue/reply
 | `my-page.html` | User profile management |
 | `my-reservations.html` | Reservation history |
 | `chatbot.html` | Chat interface (AI + Consultant) |
-| `Common.js` | Token management, auth, modals |
+| `common.js` | Token management, auth, modals |
 | `chatbot.js` | WebSocket client, message handling |
-| `Index.js` | Hospital listing & pagination |
-| `Hospital.js` | Hospital details & reviews |
+| `index.js` | Hospital listing & pagination |
+| `hospital.js` | Hospital details & reviews |
 
 ---
 
@@ -699,7 +699,7 @@ dentallink/
 │       ├── chatbot.html
 │       ├── my-page.html
 │       ├── js/                  # JavaScript files
-│       │   ├── Common.js
+│       │   ├── common.js
 │       │   ├── chatbot.js
 │       │   └── ...
 │       └── css/                 # Stylesheets
@@ -720,5 +720,5 @@ To create an admin dashboard:
    - HospitalManagement.js - Hospital CRUD
    - ConsultantManagement.js - Consultant queue management
 5. **Update Navigation:** Conditionally show admin link if `userRole === 'ROLE_ADMIN'`
-6. **Add to Common.js:** Helper functions for admin-specific operations
+6. **Add to common.js:** Helper functions for admin-specific operations
 

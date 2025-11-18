@@ -101,7 +101,7 @@ function displayUserInfo(user) {
 async function loadCurrentPoints() {
     try {
         const token = getToken();
-        const response = await fetch(`${window.API_URL}/api/point-logs/my?page=0&size=1`, {
+        const response = await fetch(`${window.API_URL}/api/point-log/me?page=0&size=1`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -129,7 +129,7 @@ async function loadPointLogs() {
         const startDateInput = document.getElementById('startDate');
         const endDateInput = document.getElementById('endDate');
         
-        let url = `${window.API_URL}/api/point-logs/my?page=${currentPage}&size=10&sort=latest`;
+        let url = `${window.API_URL}/api/point-log/me?page=${currentPage}&size=10&sort=latest`;
         
         if (startDateInput && startDateInput.value) {
             url += `&startDate=${startDateInput.value}T00:00:00`;
@@ -372,8 +372,14 @@ async function deleteAccount(event) {
 
 // 포인트 충전 (토스 결제 연동)
 function chargePoint() {
+    window.location.href = "/payment.html";
+}
+
+
+//function chargePoint() {
     // TODO: 토스 결제 연동
-    showMessage('포인트 충전 기능은 준비 중입니다.', 'info');
+
+    // showMessage('포인트 충전 기능은 준비 중입니다.', 'info');
     
     // 토스 결제 연동 예시
     /*
@@ -384,6 +390,6 @@ function chargePoint() {
     // 토스 결제 페이지로 이동
     window.location.href = `${window.API_URL}/api/payment/request?amount=${amount}&orderId=${orderId}&orderName=${orderName}`;
     */
-}
+// }
 
 console.log('✅ My-Page.js loaded');
