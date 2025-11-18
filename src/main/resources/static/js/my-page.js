@@ -167,20 +167,18 @@ function displayPointLogs(logs) {
     const tbody = document.getElementById('pointLogBody');
     
     if (!logs || logs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="empty-row">포인트 로그가 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="3" class="empty-row">포인트 로그가 없습니다.</td></tr>';
         return;
     }
 
     tbody.innerHTML = logs.map(log => {
         const typeText = getPointTypeText(log.type);
         const typeClass = getPointTypeClass(log.type);
-        const balanceBefore = log.account.balance - log.amount;
         
         return `
             <tr>
                 <td><span class="${typeClass}">${typeText}</span></td>
                 <td>${log.amount}P</td>
-                <td>${balanceBefore}P</td>
                 <td>${log.balanceAfter}P</td>
             </tr>
         `;
@@ -190,7 +188,7 @@ function displayPointLogs(logs) {
 // 빈 로그 표시
 function displayEmptyLogs() {
     const tbody = document.getElementById('pointLogBody');
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-row">포인트 로그가 없습니다.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="3" class="empty-row">포인트 로그가 없습니다.</td></tr>';
 }
 
 // 로그 페이지네이션

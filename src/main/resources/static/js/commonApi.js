@@ -208,4 +208,4 @@ async function handleLogout() {
     }
 }
 
-console.log('✅ CommonApi.js loaded');
+console.log('CommonApi.js loaded');
