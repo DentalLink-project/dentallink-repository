@@ -422,4 +422,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-console.log('✅ hhospital.js loaded');
+console.log('✅ hospital.js loaded');
