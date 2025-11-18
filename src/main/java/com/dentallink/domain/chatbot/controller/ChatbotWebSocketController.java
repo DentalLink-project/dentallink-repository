@@ -12,6 +12,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
@@ -28,17 +29,17 @@ import java.security.Principal;
 public class ChatbotWebSocketController {
 
     private final ChatbotService chatbotService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     // ===== WebSocket 메시지 핸들러 =====
 
     /**
      * 채팅 메시지 전송 (WebSocket)
      * 클라이언트: /app/chat/send
-     * 응답: /queue/reply
+     * 응답: /queue/reply (null일 수 있음 - 상담 모드에서는 응답 없음)
      */
     @MessageMapping("/chat/send")
-    @SendToUser("/queue/reply")
-    public ChatResponse sendMessage(
+    public void sendMessage(
             @Payload @Valid ChatRequest request,
             SimpMessageHeaderAccessor headerAccessor) {
 
@@ -49,15 +50,30 @@ public class ChatbotWebSocketController {
 
         try {
             // 서비스에서 모든 로직 처리 (상담원 모드 포함)
-            return chatbotService.processMessage(request, userId);
+            ChatResponse response = chatbotService.processMessage(request, userId);
+
+            // null이 아닌 경우만 사용자에게 응답 전송 (상담 모드에서는 null)
+            if (response != null) {
+                messagingTemplate.convertAndSendToUser(
+                        userId.toString(),
+                        "/queue/reply",
+                        response
+                );
+            }
 
         } catch (Exception e) {
             log.error("메시지 처리 중 오류 발생", e);
 
-            return ChatResponse.builder()
+            ChatResponse errorResponse = ChatResponse.builder()
                     .sessionId(request.sessionId())
                     .content("죄송합니다. 오류가 발생했습니다: " + e.getMessage())
                     .build();
+
+            messagingTemplate.convertAndSendToUser(
+                    userId.toString(),
+                    "/queue/reply",
+                    errorResponse
+            );
         }
     }
 

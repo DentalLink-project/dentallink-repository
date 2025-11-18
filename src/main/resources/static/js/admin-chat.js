@@ -2,6 +2,7 @@
 
 let stompClient = null;
 let currentSessionId = null;
+let currentUserId = null;  // ← 사용자 ID 추가
 let currentConsultantId = null;
 let isTyping = false;
 let isConnected = false;
@@ -208,6 +209,7 @@ function updateSessionList(sessions) {
 // --- [세션 선택] ---
 async function selectSession(session) {
     currentSessionId = session.sessionId;
+    currentUserId = session.userId;  // ← 사용자 ID 저장
     const token = getToken();
 
     if (!token) return;
@@ -318,12 +320,19 @@ function sendConsultantMessage() {
         // WebSocket으로 메시지 전송
         const messagePayload = {
             sessionId: currentSessionId,
+            userId: currentUserId,  // ← userId 추가
             content: content
         };
 
         console.log('📤 Sending consultant message:', messagePayload);
 
         stompClient.send('/app/consultant/send', {}, JSON.stringify(messagePayload));
+
+        // 상담원 메시지는 백엔드에서 응답이 없으므로 즉시 입력창 활성화
+        setTimeout(() => {
+            hideTypingIndicator();
+            enableInput();
+        }, 500);
 
     } catch (error) {
         console.error('Send message error:', error);

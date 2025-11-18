@@ -101,6 +101,14 @@ function onMessageReceived(message) {
     try {
         const response = JSON.parse(message.body);
 
+        // null 응답은 무시 (상담 모드에서 사용자가 보낸 메시지)
+        if (response === null || !response) {
+            console.log('📭 Empty response (user message in consultant mode)');
+            hideTypingIndicator();
+            enableInput();
+            return;
+        }
+
         // 타이핑 표시 제거
         hideTypingIndicator();
 
@@ -118,8 +126,10 @@ function onMessageReceived(message) {
             console.error('❌ Error in response:', response.content);
             displayMessage('system', response.content);
         } else {
-            // 정상 메시지 표시
-            displayMessage(response.type ? response.type.toLowerCase() : 'ai', response.content);
+            // 정상 메시지 표시 (content가 있을 때만)
+            if (response.content) {
+                displayMessage(response.type ? response.type.toLowerCase() : 'ai', response.content);
+            }
         }
 
         // 상태 업데이트
@@ -196,6 +206,15 @@ function sendMessage() {
         console.log('📤 Sending message:', messagePayload);
 
         stompClient.send('/app/chat/send', {}, JSON.stringify(messagePayload));
+
+        // 5초 후 응답이 없으면 입력창 활성화 (상담 모드에서는 응답이 없을 수 있음)
+        setTimeout(() => {
+            if (isTyping) {
+                console.log('⏱️ Response timeout - enabling input for consultant mode');
+                hideTypingIndicator();
+                enableInput();
+            }
+        }, 5000);
 
     } catch (error) {
         console.error('Send message error:', error);
