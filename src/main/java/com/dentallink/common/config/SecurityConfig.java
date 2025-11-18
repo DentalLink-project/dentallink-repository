@@ -106,6 +106,8 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://127.0.0.1:3000",
                 "http://13.124.156.240:8080",
+                "http://www.dentallink.store",
+                "http://dentallink.store",
                 "https://www.dentallink.store",
                 "https://dentallink.store"
         ));
