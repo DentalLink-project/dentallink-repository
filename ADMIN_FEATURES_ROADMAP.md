@@ -388,7 +388,7 @@ DELETE /api/hospitals/{myHospitalId}/staff/{userId}
 </nav>
 ```
 
-**Implementation in Common.js:**
+**Implementation in common.js:**
 ```javascript
 function renderNavigation(userRole) {
     const baseNav = [
@@ -554,7 +554,7 @@ public class HospitalAdminController {
 - [ ] Create `/admin.html` with basic dashboard
 - [ ] User management page with list/view/delete
 - [ ] Update navigation to show admin link for admins
-- [ ] Add role-based navigation logic to Common.js
+- [ ] Add role-based navigation logic to common.js
 
 ### Phase 2: Hospital Management (Weeks 2-3)
 - [ ] Hospital management page (CRUD)
@@ -610,7 +610,7 @@ Backend:
 ### Files to Modify
 
 Frontend:
-- [ ] `Common.js` - Add role-based navigation, admin helper functions
+- [ ] `common.js` - Add role-based navigation, admin helper functions
 - [ ] `index.html` - Add admin nav link
 
 Backend:

@@ -77,7 +77,7 @@ WEBSOCKET/CHAT:
 FRONTEND:
 - 6 user-facing HTML pages
 - 8 page-specific JavaScript files
-- Common.js for auth utilities
+- common.js for auth utilities
 - No admin pages yet
 
 MISSING FEATURES:
@@ -92,7 +92,7 @@ MISSING FEATURES:
 NEXT STEPS (if building admin features):
 1. Create /admin.html dashboard
 2. Create /admin-users.html, /admin-hospitals.html, /admin-consultants.html
-3. Update Common.js with role-based navigation
+3. Update common.js with role-based navigation
 4. Add new backend APIs for dashboard statistics
 5. Create ConsultantStatus entity for tracking availability
 6. Implement AuditLog for admin action tracking
