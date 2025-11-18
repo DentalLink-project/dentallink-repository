@@ -265,7 +265,7 @@ async function handleSignup(event) {
         try {
             apiResponse = await response.json();
         } catch (parseError) {
-            console.warn("⚠ JSON 파싱 실패 (서버가 JSON이 아닌 응답을 반환함):", parseError);
+            console.warn("JSON 파싱 실패 (서버가 JSON이 아닌 응답을 반환함):", parseError);
         }
 
         // 성공 처리
