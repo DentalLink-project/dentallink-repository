@@ -141,6 +141,7 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/api/point-log/**", configuration); // 오타 수정됨
         source.registerCorsConfiguration("/api/reviews/**", configuration);
         source.registerCorsConfiguration("/api/users/**", configuration);
+        source.registerCorsConfiguration("/api/payments/**", configuration);
 
         // WebSocket
         source.registerCorsConfiguration("/ws/**", configuration);
