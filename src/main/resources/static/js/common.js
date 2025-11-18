@@ -2,9 +2,13 @@
 // 기본 유틸리티 함수 (토큰 관리, 메시지, 유효성 검사 등)
 
 // --- [전역 설정] ---
-window.API_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:8080'
-    : 'http://aws-demo-alb-269710650.ap-northeast-2.elb.amazonaws.com';
+if (window.location.hostname === 'localhost') {
+    window.API_URL = 'http://localhost:8080';
+} else if (window.location.protocol === 'https:') {
+    window.API_URL = 'https://www.dentallink.store';
+} else {
+    window.API_URL = 'http://aws-demo-alb-269710650.ap-northeast-2.elb.amazonaws.com';
+}
 // --- [토큰 관리] ---
 function getToken() {
     return localStorage.getItem('token');
