@@ -265,4 +265,4 @@ document.addEventListener('DOMContentLoaded', function() {
     loadHospitals(0);
 });
 
-console.log('✅ iindex.js loaded');
+console.log('✅ index.js loaded');
