@@ -146,8 +146,8 @@ async function startDepositPayment(amount) {
             orderName: "Dentallink 포인트 충전",
             successUrl: window.location.origin + "/success.html",
             failUrl: window.location.origin + "/fail.html",
-            customerEmail: currentUser.email ?? "test@dentallink.com",
-            customerName: currentUser.name ?? "사용자",
+            customerEmail: currentUser.email,
+            customerName: currentUser.name,
             customerMobilePhone: currentUser.phone ?? "01000000000"
         });
 

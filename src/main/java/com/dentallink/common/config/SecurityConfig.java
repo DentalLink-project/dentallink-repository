@@ -68,6 +68,7 @@ public class SecurityConfig {
                         "/fail.html",
                         "/",
                         "/index.html",
+                        "/hospitals/**",
                         "/hospital.html",
                         "/reservation.html",
                         "/reservation",
