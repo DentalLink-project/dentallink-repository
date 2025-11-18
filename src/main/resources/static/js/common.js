@@ -2,9 +2,10 @@
 // 기본 유틸리티 함수 (토큰 관리, 메시지, 유효성 검사 등)
 
 // --- [전역 설정] ---
-window.API_URL = window.location.hostname === 'localhost'
+window.API_URL = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
     ? 'http://localhost:8080'
     : 'https://www.dentallink.store';
+
 
 // --- [토큰 관리] ---
 function getToken() {
