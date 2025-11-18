@@ -1,0 +1,256 @@
+/* ===== Index Page Styles ===== */
+
+/* Hospital Grid */
+.hospital-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+/* Hospital Card */
+.hospital-card {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.hospital-card:hover {
+    border-color: #5dade2;
+    box-shadow: 0 4px 20px rgba(93, 173, 226, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Card Header */
+.hospital-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.hospital-card-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #333;
+    flex: 1;
+}
+
+.hospital-favorite {
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hospital-favorite:hover {
+    transform: scale(1.2);
+}
+
+.hospital-favorite svg {
+    width: 28px;
+    height: 28px;
+}
+
+/* Status Badge */
+.hospital-status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid;
+    white-space: nowrap;
+    width: fit-content;
+    align-self: flex-start;
+}
+
+.hospital-status-badge.open {
+    background-color: #d4edda;
+    border-color: #28a745;
+    color: #28a745;
+}
+
+.hospital-status-badge.closed {
+    background-color: #f8f9fa;
+    border-color: #6c757d;
+    color: #6c757d;
+}
+
+/* Card Info */
+.hospital-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.hospital-info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+}
+
+.hospital-info-label {
+    font-weight: 600;
+    color: #5dade2;
+}
+
+.hospital-info-value {
+    color: #666;
+}
+
+/* Card Footer */
+.hospital-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: auto;
+}
+
+.hospital-detail-btn {
+    padding: 10px 32px;
+    background: linear-gradient(135deg, #5dade2 0%, #674ea7 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.hospital-detail-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(93, 173, 226, 0.3);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    padding: 20px 0;
+}
+
+.pagination-btn {
+    padding: 10px 20px;
+    border: 2px solid #5dade2;
+    background: white;
+    color: #5dade2;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: #5dade2;
+    color: white;
+}
+
+.pagination-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    border-color: #ccc;
+    color: #ccc;
+}
+
+.pagination-numbers {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.pagination-number {
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    border: 2px solid #e0e0e0;
+    background: white;
+    color: #666;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pagination-number:hover {
+    border-color: #5dade2;
+    color: #5dade2;
+}
+
+.pagination-number.active {
+    background: #5dade2;
+    border-color: #5dade2;
+    color: white;
+}
+
+.pagination-dots {
+    padding: 0 8px;
+    color: #999;
+    font-weight: 600;
+}
+
+/* Empty State */
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+    font-size: 16px;
+}
+
+/* Loading State */
+.loading-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #5dade2;
+    font-size: 16px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .hospital-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .hospital-card {
+        padding: 20px;
+    }
+
+    .hospital-card-title {
+        font-size: 18px;
+    }
+
+    .pagination {
+        gap: 8px;
+        padding: 16px 0;
+    }
+
+    .pagination-btn {
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+
+    .pagination-number {
+        min-width: 36px;
+        height: 36px;
+        font-size: 14px;
+    }
+}

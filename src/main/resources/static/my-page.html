@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 정보 & 포인트 - DentalLink</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/my-page.css">
+    <script src="/js/common.js"></script>
+    <script src="/js/my-page.js"></script>
+</head>
+<body>
+<!-- Message Box -->
+<div id="messageBox"></div>
+
+<!-- Header -->
+<header>
+    <div class="logo-wrapper">
+        <a href="/" class="logo">DentalLink</a>
+    </div>
+    <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" placeholder="지역, 병원장 명, 병원명 검색" id="searchInput">
+    </div>
+    <div class="auth-buttons">
+        <button class="btn-login" id="loginBtn">로그인/가입</button>
+        <button class="btn-login logout" id="logoutBtn" style="display: none;">로그아웃</button>
+    </div>
+</header>
+
+<!-- Main Layout -->
+<main>
+    <!-- Left Sidebar -->
+    <aside>
+        <nav>
+            <ul>
+                <li><a href="/">🏥 병원 찾기</a></li>
+                <li><a href="/my-reservations">📋 내 예약 보기</a></li>
+                <li><a href="/my-page" class="active">💖 내 정보 보기</a></li>
+                <li><a href="/chatbot">💬 채팅</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <section>
+        <article class="mypage-container">
+            <!-- 왼쪽: 내 정보 -->
+            <div class="profile-section">
+                <div class="profile-card">
+                    <div class="card-header">
+                        <h2 class="card-title">내 정보</h2>
+                        <button class="btn-save" id="btnSaveProfile" style="display: none;">수정</button>
+                    </div>
+                    
+                    <div class="profile-form">
+                        <div class="form-row">
+                            <label class="profile-label">이름</label>
+                            <div class="profile-value-group">
+                                <span class="profile-value" id="displayUsername">홍길동</span>
+                                <input type="text" class="profile-input" id="inputUsername" style="display: none;">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <label class="profile-label">이메일</label>
+                            <div class="profile-value-group">
+                                <span class="profile-value" id="displayEmail">someone@example.com</span>
+                                <input type="email" class="profile-input" id="inputEmail" style="display: none;">
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <label class="profile-label">가입일</label>
+                            <span class="profile-value" id="displayCreatedAt">yyyy.mm.dd</span>
+                        </div>
+                    </div>
+                    
+                    <div class="profile-actions">
+                        <button class="btn-edit" id="btnEditProfile">비밀번호 변경</button>
+                        <button class="btn-delete" id="btnDeleteAccount">회원 탈퇴</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽: 포인트 정보 -->
+            <div class="point-section">
+                <!-- 포인트 카드 -->
+                <div class="point-card">
+                    <div class="point-header">
+                        <h3 class="point-label">내 포인트 계좌</h3>
+                        <button class="btn-charge" id="btnChargePoint">충전하기</button>
+                    </div>
+                    <div class="point-amount" id="currentPoints">2500P</div>
+                </div>
+
+                <!-- 포인트 로그 -->
+                <div class="point-log-card">
+                    <h3 class="log-title">내 포인트 로그</h3>
+                    
+                    <!-- 날짜 필터 -->
+                    <div class="date-filter">
+                        <input type="date" class="date-input" id="startDate" placeholder="조회 시작 날짜">
+                        <input type="date" class="date-input" id="endDate" placeholder="조회 종료 날짜">
+                    </div>
+                    
+                    <!-- 로그 테이블 -->
+                    <div class="log-table-wrapper">
+                        <table class="log-table">
+                            <thead>
+                                <tr>
+                                    <th>유형</th>
+                                    <th>거래 금액</th>
+                                    <th>거래 전 포인트</th>
+                                    <th>거래 후 포인트</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pointLogBody">
+                                <!-- JavaScript로 동적 생성 -->
+                                <tr>
+                                    <td colspan="4" class="loading-row">
+                                        <div class="loading-spinner"></div>
+                                        <p>포인트 로그를 불러오는 중...</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- 페이지네이션 -->
+                    <div class="pagination" id="logPagination"></div>
+                </div>
+            </div>
+        </article>
+    </section>
+</main>
+
+<!-- 비밀번호 변경 모달 -->
+<div class="modal" id="passwordModal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closePasswordModal()">×</button>
+        <h2 class="modal-header">비밀번호 변경</h2>
+        <form id="passwordForm" onsubmit="changePassword(event)">
+            <div class="form-group">
+                <label class="form-label">기존 비밀번호</label>
+                <input type="password" class="form-input" id="oldPassword" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">새 비밀번호</label>
+                <input type="password" class="form-input" id="newPassword" required
+                       placeholder="영대/소문자, 숫자, 특수문자 포함 8-20자">
+                <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
+                    영어 대/소문자, 숫자, 특수문자를 모두 포함해야 합니다.
+                </small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">새 비밀번호 확인</label>
+                <input type="password" class="form-input" id="newPasswordConfirm" required>
+            </div>
+            <button type="submit" class="btn-primary">변경하기</button>
+        </form>
+    </div>
+</div>
+
+<!-- 회원 탈퇴 모달 -->
+<div class="modal" id="deleteModal">
+    <div class="modal-content">
+        <button class="close-modal" onclick="closeDeleteModal()">×</button>
+        <h2 class="modal-header" style="color: #ff6b6b;">회원 탈퇴</h2>
+        <p style="margin: 16px 0; color: #666; text-align: center;">
+            정말로 탈퇴하시겠습니까?<br>
+            탈퇴 시 모든 데이터가 삭제됩니다.
+        </p>
+        <form id="deleteForm" onsubmit="deleteAccount(event)">
+            <div class="form-group">
+                <label class="form-label">비밀번호 확인</label>
+                <input type="password" class="form-input" id="deletePassword" required>
+            </div>
+            <button type="submit" class="btn-primary" style="background: #ff6b6b;">탈퇴하기</button>
+        </form>
+    </div>
+</div>
+
+<!-- Login Modal -->
+<div class="modal" id="loginModal">
+    <div class="modal-content" style="position: relative;">
+        <button class="close-modal" onclick="closeLoginModal()">×</button>
+        <h2 class="modal-header">로그인</h2>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label class="form-label">이메일</label>
+                <input type="email" class="form-input" id="loginEmail" required placeholder="example@email.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">비밀번호</label>
+                <input type="password" class="form-input" id="loginPassword" required>
+            </div>
+            <button type="submit" class="btn-primary">로그인</button>
+        </form>
+        <div class="modal-footer">
+            아직 회원이 아니신가요? <a href="#" onclick="showSignupModal()">회원가입</a>
+        </div>
+    </div>
+</div>
+
+<!-- Signup Modal -->
+<div class="modal" id="signupModal">
+    <div class="modal-content" style="position: relative;">
+        <button class="close-modal" onclick="closeSignupModal()">×</button>
+        <h2 class="modal-header">회원가입</h2>
+        <form id="signupForm" onsubmit="handleSignup(event)">
+            <div class="form-group">
+                <label class="form-label">이메일</label>
+                <input type="email" class="form-input" id="signupEmail" required placeholder="example@email.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">사용자 이름</label>
+                <input type="text" class="form-input" id="signupUsername" required placeholder="홍길동">
+            </div>
+            <div class="form-group">
+                <label class="form-label">비밀번호</label>
+                <input type="password" class="form-input" id="signupPassword" required
+                       placeholder="영대/소문자, 숫자, 특수문자 포함">
+                <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
+                    영어 대/소문자, 숫자, 특수문자를 모두 포함해야 합니다.
+                </small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">비밀번호 확인</label>
+                <input type="password" class="form-input" id="signupPasswordConfirm" required>
+            </div>
+            <button type="submit" class="btn-primary">가입하기</button>
+        </form>
+        <div class="modal-footer">
+            이미 계정이 있으신가요? <a href="#" onclick="showLoginModal()">로그인</a>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Menu (Mobile) -->
+<div class="floating-menu" id="floatingMenu">
+    <div class="floating-items" id="floatingItems">
+        <a href="/" class="floating-item">🏥 병원 찾기</a>
+        <a href="/my-reservations" class="floating-item">📋 내 예약 보기</a>
+        <a href="/my-page" class="floating-item">💰 포인트</a>
+        <a href="/chatbot" class="floating-item">💬 채팅</a>
+    </div>
+    <button class="floating-toggle" id="floatingToggle">☰</button>
+</div>
+</body>
+</html>

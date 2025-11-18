@@ -3,15 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="치과 예약을 쉽고 빠르게. 안전한 예약 플랫폼 Dentallink">
-    <title>Dentallink - 병원 찾기</title>
+    <title>예약하기 - DentalLink</title>
     <link rel="stylesheet" href="/css/common.css">
-    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/reservation.css">
     <script src="/js/common.js"></script>
-    <script src="/js/index.js"></script>
+    <script src="/js/reservation.js"></script>
 </head>
 <body>
-<!--공통 header 부분입니다. -->
+<!-- Message Box -->
+<div id="messageBox"></div>
+
+<!-- Header -->
 <header>
     <div class="logo-wrapper">
         <a href="/" class="logo">DentalLink</a>
@@ -26,36 +28,67 @@
     </div>
 </header>
 
-<!-- Message Box -->
-<div id="messageBox"></div>
-
+<!-- Main Layout -->
 <main>
+    <!-- Left Sidebar -->
     <aside>
         <nav>
             <ul>
-                <li><a href="/" class="active">🏥 병원 찾기</a></li>
-                <li><a href="/my-reservations">📋 내 예약 보기</a></li>
-                <li><a href="/my-page">💖 내 정보 보기</a></li>
+                <li><a href="/">🏥 병원 찾기</a></li>
+                <li><a href="#">📋 내 예약 보기</a></li>
+                <li><a href="#">💰 포인트</a></li>
                 <li><a href="/chatbot">💬 채팅</a></li>
             </ul>
         </nav>
     </aside>
+
+    <!-- Main Content -->
     <section>
-        <article>
-            <!-- Hospital Grid -->
-            <div class="hospital-grid" id="hospitalGrid">
-                <!-- Hospital cards will be loaded here -->
+        <article class="reservation-container">
+            <!-- 왼쪽: 병원 정보 -->
+            <div class="hospital-info-card">
+                <h2 class="card-title">선택된 병원</h2>
+                
+                <div class="hospital-details">
+                    <h3 class="hospital-name" id="hospitalName">병원 정보를 불러오는 중...</h3>
+                    <p class="hospital-address" id="hospitalAddress">주소를 불러오는 중...</p>
+                    
+                    <div class="divider"></div>
+                    
+                    <div class="time-grid">
+                        <div class="time-item">
+                            <span class="time-label">영업시간</span>
+                            <span class="time-value" id="businessHours">-</span>
+                        </div>
+                        <div class="time-item">
+                            <span class="time-label">점심시간</span>
+                            <span class="time-value" id="breakTime">-</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <!-- Pagination -->
-            <div class="pagination" id="pagination">
-                <button class="pagination-btn" id="prevBtn" onclick="changePage(-1)">
-                    이전
-                </button>
-                <div class="pagination-numbers" id="paginationNumbers"></div>
-                <button class="pagination-btn" id="nextBtn" onclick="changePage(1)">
-                    다음
-                </button>
+            <!-- 오른쪽: 예약 폼 -->
+            <div class="reservation-form-card">
+                <h2 class="card-title">날짜</h2>
+                
+                <div class="form-section">
+                    <label class="input-label">날짜 및 시간 선택</label>
+                    <div class="datetime-group">
+                        <input type="date" class="date-input" id="appointmentDate">
+                        <select class="time-select" id="appointmentTime">
+                            <option value="">시간 선택</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div class="payment-section">
+                    <h3 class="payment-title">결제 예정 포인트</h3>
+                    <div class="points-amount" id="requiredPoints">1000P</div>
+                    <button class="btn-submit" id="btnReserve">예약 하기</button>
+                </div>
             </div>
         </article>
     </section>
@@ -120,22 +153,12 @@
 <!-- Floating Menu (Mobile) -->
 <div class="floating-menu" id="floatingMenu">
     <div class="floating-items" id="floatingItems">
-        <div class="floating-item">
-            🏥 병원 찾기
-        </div>
-        <div class="floating-item">
-            📋 내 예약 보기
-        </div>
-        <div class="floating-item">
-            💰 포인트
-        </div>
-        <div class="floating-item">
-            💬 채팅
-        </div>
+        <a href="/" class="floating-item">🏥 병원 찾기</a>
+        <a href="#" class="floating-item">📋 내 예약 보기</a>
+        <a href="#" class="floating-item">💰 포인트</a>
+        <a href="/chatbot" class="floating-item">💬 채팅</a>
     </div>
-    <button class="floating-toggle" id="floatingToggle">
-        ☰
-    </button>
+    <button class="floating-toggle" id="floatingToggle">☰</button>
 </div>
 </body>
 </html>

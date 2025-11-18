@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 예약 보기 - DentalLink</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <link rel="stylesheet" href="/css/my-reservations.css">
+    <script src="/js/common.js"></script>
+    <script src="/js/my-reservations.js"></script>
+</head>
+<body>
+<!-- Message Box -->
+<div id="messageBox"></div>
+
+<!-- Header -->
+<header>
+    <div class="logo-wrapper">
+        <a href="/" class="logo">DentalLink</a>
+    </div>
+    <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" placeholder="지역, 병원장 명, 병원명 검색" id="searchInput">
+    </div>
+    <div class="auth-buttons">
+        <button class="btn-login" id="loginBtn">로그인/가입</button>
+        <button class="btn-login logout" id="logoutBtn" style="display: none;">로그아웃</button>
+    </div>
+</header>
+
+<!-- Main Layout -->
+<main>
+    <!-- Left Sidebar -->
+    <aside>
+        <nav>
+            <ul>
+                <li><a href="/">🏥 병원 찾기</a></li>
+                <li><a href="/my-reservations" class="active">📋 내 예약 보기</a></li>
+                <li><a href="/my-page">💖 내 정보 보기</a></li>
+                <li><a href="/chatbot">💬 채팅</a></li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <section>
+        <article class="reservations-container">
+            <!-- 필터 & 정렬 -->
+            <div class="filter-bar">
+                <div class="status-filters" id="statusFilters">
+                    <button class="filter-btn active" data-status="ALL">전체</button>
+                    <button class="filter-btn status-pending" data-status="PENDING">대기중</button>
+                    <button class="filter-btn status-approved" data-status="APPROVED">승인</button>
+                    <button class="filter-btn status-rejected" data-status="REJECTED">거부</button>
+                    <button class="filter-btn status-cancelled" data-status="CANCELLED">취소</button>
+                    <button class="filter-btn status-completed" data-status="COMPLETED">완료</button>
+                </div>
+                <div class="sort-section">
+                    <select class="sort-select" id="sortSelect">
+                        <option value="appointmentDate,desc">최신순</option>
+                        <option value="appointmentDate,asc">오래된순</option>
+                        <option value="createdAt,desc">예약일 최신순</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 예약 목록 -->
+            <div class="reservations-list" id="reservationsList">
+                <!-- 로딩 상태 -->
+                <div class="loading-state">
+                    <div class="loading-spinner"></div>
+                    <p>예약 목록을 불러오는 중...</p>
+                </div>
+            </div>
+
+            <!-- 페이지네이션 -->
+            <div class="pagination" id="pagination">
+                <!-- JavaScript로 동적 생성 -->
+            </div>
+        </article>
+    </section>
+</main>
+
+<!-- 예약 상세 모달 -->
+<div class="modal" id="reservationDetailModal">
+    <div class="modal-content reservation-detail-content">
+        <button class="close-modal" onclick="closeReservationDetailModal()">×</button>
+        <h2 class="modal-header">예약 상세 <span class="status-badge-modal" id="modalStatusBadge"></span></h2>
+        
+        <div class="detail-section">
+            <div class="detail-row">
+                <span class="detail-label">병원</span>
+                <span class="detail-value" id="modalHospitalName">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">예약 일시</span>
+                <span class="detail-value" id="modalAppointmentDate">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">예약 생성일</span>
+                <span class="detail-value" id="modalCreatedAt">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">사용 포인트</span>
+                <span class="detail-value-points" id="modalUsedPoints">-</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">예약 ID</span>
+                <span class="detail-value" id="modalReservationId">-</span>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-detail" id="btnViewHospital">예약 병원 상세</button>
+            <button class="btn-cancel" id="btnCancelReservation">예약 삭제</button>
+        </div>
+    </div>
+</div>
+
+<!-- Login Modal -->
+<div class="modal" id="loginModal">
+    <div class="modal-content" style="position: relative;">
+        <button class="close-modal" onclick="closeLoginModal()">×</button>
+        <h2 class="modal-header">로그인</h2>
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label class="form-label">이메일</label>
+                <input type="email" class="form-input" id="loginEmail" required placeholder="example@email.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">비밀번호</label>
+                <input type="password" class="form-input" id="loginPassword" required>
+            </div>
+            <button type="submit" class="btn-primary">로그인</button>
+        </form>
+        <div class="modal-footer">
+            아직 회원이 아니신가요? <a href="#" onclick="showSignupModal()">회원가입</a>
+        </div>
+    </div>
+</div>
+
+<!-- Signup Modal -->
+<div class="modal" id="signupModal">
+    <div class="modal-content" style="position: relative;">
+        <button class="close-modal" onclick="closeSignupModal()">×</button>
+        <h2 class="modal-header">회원가입</h2>
+        <form id="signupForm" onsubmit="handleSignup(event)">
+            <div class="form-group">
+                <label class="form-label">이메일</label>
+                <input type="email" class="form-input" id="signupEmail" required placeholder="example@email.com">
+            </div>
+            <div class="form-group">
+                <label class="form-label">사용자 이름</label>
+                <input type="text" class="form-input" id="signupUsername" required placeholder="홍길동">
+            </div>
+            <div class="form-group">
+                <label class="form-label">비밀번호</label>
+                <input type="password" class="form-input" id="signupPassword" required
+                       placeholder="영대/소문자, 숫자, 특수문자 포함">
+                <small style="color: #666; font-size: 12px; margin-top: 4px; display: block;">
+                    영어 대/소문자, 숫자, 특수문자를 모두 포함해야 합니다.
+                </small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">비밀번호 확인</label>
+                <input type="password" class="form-input" id="signupPasswordConfirm" required>
+            </div>
+            <button type="submit" class="btn-primary">가입하기</button>
+        </form>
+        <div class="modal-footer">
+            이미 계정이 있으신가요? <a href="#" onclick="showLoginModal()">로그인</a>
+        </div>
+    </div>
+</div>
+
+<!-- Floating Menu (Mobile) -->
+<div class="floating-menu" id="floatingMenu">
+    <div class="floating-items" id="floatingItems">
+        <a href="/" class="floating-item">🏥 병원 찾기</a>
+        <a href="/my-reservations" class="floating-item">📋 내 예약 보기</a>
+        <a href="#" class="floating-item">💰 포인트</a>
+        <a href="/chatbot" class="floating-item">💬 채팅</a>
+    </div>
+    <button class="floating-toggle" id="floatingToggle">☰</button>
+</div>
+</body>
+</html>

@@ -48,28 +48,38 @@ public class SecurityConfig {
         // 요청 권한 설정
         http.authorizeHttpRequests((authorizeHttpRequests) ->
                 authorizeHttpRequests
-
-                        .requestMatchers("/", "/index.html").permitAll()
-                        .requestMatchers("/*.css", "/*.js", "/*.ico").permitAll()
-                        .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
-
+                        .requestMatchers("/ws/**").permitAll() //챗봇 접근허용
                         .requestMatchers(
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
                                 "/webjars/**").permitAll()//Swagger 접근허용
-                        .requestMatchers("/ws/**").permitAll() //챗봇 접근허용
                         .requestMatchers("/api/users/signup", "/api/auth/login/**").permitAll() // 회원가입/로그인만 허용
                         .requestMatchers("/api/hospitals/**").permitAll() //    병원조회는 누구나
                         .requestMatchers("/api/reservations/available-slots").permitAll() //예약 가능시간조회
-                        //.requestMatchers("/api/admin").permitAll() // 테스트용 어드민 생성 기능입니다.
+                        .requestMatchers("/api/admin").permitAll() // 테스트용 어드민 생성 기능입니다.
                         .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers(
                                 "/payment.html",
                                 "/success.html",
                                 "/fail.html"
                         ).permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/hospital.html",
+                                "/reservation.html",
+                                "/reservation",
+                                "/chatbot",
+                                "/chatbot.html",
+                                "/my-reservations",
+                                "/my-reservations.html"
+                        ).permitAll()
+                        .requestMatchers("/my-page", "/my-page.html").permitAll()
+                        .requestMatchers("/hospitals/**").permitAll()
+                        .requestMatchers("/*.css", "/*.js", "/*.ico").permitAll()
+                        .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 처리
         );
 
