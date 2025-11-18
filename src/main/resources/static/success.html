@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <title>결제 승인 중...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 40px;
+            text-align: center;
+            background: #f7f7f7;
+        }
+        .box {
+            background: white;
+            padding: 30px 25px;
+            border-radius: 12px;
+            max-width: 420px;
+            margin: 60px auto;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .loading {
+            font-size: 14px;
+            color: #777;
+            margin-top: 10px;
+        }
+        .success {
+            color: #2ecc71;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        .fail {
+            color: #e74c3c;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+<div class="box">
+    <h2>결제 승인 중...</h2>
+
+    <p id="status" class="loading">잠시만 기다려주세요...</p>
+
+    <p id="paymentKey"></p>
+    <p id="orderId"></p>
+    <p id="amount"></p>
+</div>
+
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentKey = urlParams.get("paymentKey");
+    const orderId = urlParams.get("orderId");
+    const amount = parseInt(urlParams.get("amount"));
+
+    document.getElementById("paymentKey").textContent = "Payment Key: " + paymentKey;
+    document.getElementById("orderId").textContent = "주문 번호: " + orderId;
+    document.getElementById("amount").textContent = "결제 금액: " + amount + "원";
+
+    const token = localStorage.getItem("token");
+
+    async function confirmPayment() {
+        try {
+            const response = await fetch("/api/payments/confirm", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    paymentKey: paymentKey,
+                    orderId: orderId,
+                    amount: amount,
+                }),
+            });
+
+            const json = await response.json();
+
+            if (!response.ok) {
+                console.error("결제 승인 실패:", json);
+                document.getElementById("status").textContent = "결제 승인 실패";
+                document.getElementById("status").className = "fail";
+                return;
+            }
+
+            document.getElementById("status").textContent = "결제 승인 완료!";
+            document.getElementById("status").className = "success";
+
+            setTimeout(() => {
+                window.location.href = "/index.html#points";
+            }, 1000);
+
+        } catch (error) {
+            console.error("서버 통신 오류:", error);
+            document.getElementById("status").textContent = "네트워크 오류 발생";
+            document.getElementById("status").className = "fail";
+        }
+    }
+
+    confirmPayment();
+</script>
+
+</body>
+</html>
