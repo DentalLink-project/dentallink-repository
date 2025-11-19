@@ -67,19 +67,19 @@ public class UserAdminController {
         );
     }
 
-    @Operation(summary = "테스트용 ADMIN 생성",
-            description = "테스트를 위한 ADMIN 계정을 한 번 생성합니다.",
-            responses = {
-                    @ApiResponse(responseCode = "201", description = "생성 성공"),
-                    @ApiResponse(responseCode = "400", description = "잘못된 요청")
-            })
-    @PostMapping("/admin")
-    public ResponseEntity<CommonApiResponse<UserResponse>> createTestAdmin(){
-        return created(
-                userInternalService.createTestAdmin(),
-                "테스트용 관리자 계정이 생성되었습니다."
-        );
-    }
+//    @Operation(summary = "테스트용 ADMIN 생성",
+//            description = "테스트를 위한 ADMIN 계정을 한 번 생성합니다.",
+//            responses = {
+//                    @ApiResponse(responseCode = "201", description = "생성 성공"),
+//                    @ApiResponse(responseCode = "400", description = "잘못된 요청")
+//            })
+//    @PostMapping("/admin")
+//    public ResponseEntity<CommonApiResponse<UserResponse>> createTestAdmin(){
+//        return created(
+//                userInternalService.createTestAdmin(),
+//                "테스트용 관리자 계정이 생성되었습니다."
+//        );
+//    }
 
     // 병원 관계자 가입
     @Operation(summary = "병원 관계자 가입",
